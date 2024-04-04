@@ -92,8 +92,8 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
     rr_joints = np.array(robot.find_joints("RR.*")[0])
 
     # Simulate physics
-
     while simulation_app.is_running():
+
         # 'FL_foot', 'FR_foot', 'RL_foot', 'RR_foot'
         fl_jacobian = robot.root_physx_view.get_jacobians()[:, foot_idx[0], 0:3, fl_joints + 6]
         fr_jacobian = robot.root_physx_view.get_jacobians()[:, foot_idx[1], 0:3, fr_joints + 6]
