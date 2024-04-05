@@ -78,12 +78,14 @@ class CommandsCfg:
     com_target = mdp.UniformTargetCommandCfg(
         asset_name="robot",
         body_name="trunk",
-        resampling_time_range=(4.0, 4.0),
+        # command is sampled on a new episode
+        # resampling_time > episode_length_s = no target change during episode
+        resampling_time_range=(5, 5),
         debug_vis=True,
         ranges=mdp.UniformTargetCommandCfg.Ranges(
-            pos_x=(0, 0),
-            pos_y=(0, 0),
-            pos_z=(0.38, 0.38),
+            pos_x=(-0.5, 0.5),
+            pos_y=(-0.5, 0.5),
+            pos_z=(0.38, 0.6),
             roll=(0.0, 0.0),
             pitch=(0, 0),  # depends on end-effector axis
             yaw=(0, 0),
@@ -162,7 +164,7 @@ class LocomotionJumpEnvCfg(RLTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
+        self.decimation = 5
         self.episode_length_s = 2.0
         # simulation settings
         self.sim.dt = 0.005

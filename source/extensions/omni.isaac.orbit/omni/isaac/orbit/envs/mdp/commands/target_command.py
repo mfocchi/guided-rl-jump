@@ -58,8 +58,6 @@ class UniformTargetCommand(CommandTerm):
         # extract the robot and body index for which the command is generated
         self.robot: Articulation = env.scene[cfg.asset_name]
         self.body_idx = self.robot.find_bodies(cfg.body_name)[0][0]
-        print(env.scene.env_origins)
-        print(self.robot.data.root_pos_w)
 
         # create buffers
         # -- commands: (x, y, z, qw, qx, qy, qz) in world frame

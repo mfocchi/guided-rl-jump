@@ -18,18 +18,9 @@ def reset_root_state(
     env_ids: torch.Tensor,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ):
-    """Reset the asset root state to a random position and velocity uniformly within the given ranges.
+    """Reset the asset root state to the default position and velocity.
 
-    This function randomizes the root position and velocity of the asset.
-
-    * It samples the root position from the given ranges and adds them to the default root position, before setting
-      them into the physics simulation.
-    * It samples the root orientation from the given ranges and sets them into the physics simulation.
-    * It samples the root velocity from the given ranges and sets them into the physics simulation.
-
-    The function takes a dictionary of position and velocity ranges for each axis and rotation. The keys of the
-    dictionary are ``x``, ``y``, ``z``, ``roll``, ``pitch``, and ``yaw``. The values are tuples of the form
-    ``(min, max)``. If the dictionary does not contain a key, the position or velocity is set to zero for that axis.
+    This function reset the root position and velocity of the asset.
     """
     # extract the used quantities (to enable type-hinting)
     asset: RigidObject | Articulation = env.scene[asset_cfg.name]
