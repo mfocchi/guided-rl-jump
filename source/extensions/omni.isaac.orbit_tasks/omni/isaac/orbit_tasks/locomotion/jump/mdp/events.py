@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from omni.isaac.orbit.envs import RLTaskEnv
 
 
-def reset_root_state(
+def reset_robot_state(
     env: RLTaskEnv,
     env_ids: torch.Tensor,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),

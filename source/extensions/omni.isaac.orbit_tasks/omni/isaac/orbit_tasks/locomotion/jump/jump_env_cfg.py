@@ -41,9 +41,9 @@ class MySceneCfg(InteractiveSceneCfg):
     # robots
     robot: ArticulationCfg = MISSING
 
-    # add cube
-    cube: RigidObjectCfg = RigidObjectCfg(
-        prim_path="{ENV_REGEX_NS}/cube",
+    # add landing_platform
+    landing_platform: RigidObjectCfg = RigidObjectCfg(
+        prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
             size=(0.5, 0.5, 0.1),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0, disable_gravity=True),
@@ -51,7 +51,7 @@ class MySceneCfg(InteractiveSceneCfg):
             physics_material=sim_utils.RigidBodyMaterialCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.5, 0.0, 0.0)),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(2.0, 0.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
     )
 
     # sensors
@@ -120,10 +120,15 @@ class ObservationsCfg:
 class EventCfg:
     """Configuration for events."""
 
-    reset_base = EventTerm(
-        func=mdp.reset_root_state,
+    reset_robot = EventTerm(
+        func=mdp.reset_robot_state,
         mode="reset",
     )
+
+    # _landing_platform = EventTerm(
+    #     func=mdp.reset_landing_platform,
+    #     mode="reset",
+    # )
 
 
 @configclass

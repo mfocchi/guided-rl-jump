@@ -11,7 +11,7 @@ import torch
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from omni.isaac.orbit.assets import Articulation
+from omni.isaac.orbit.assets import Articulation, RigidObject
 from omni.isaac.orbit.managers import CommandTerm
 from omni.isaac.orbit.markers import VisualizationMarkers
 from omni.isaac.orbit.markers.config import FRAME_MARKER_CFG
@@ -112,6 +112,23 @@ class UniformTargetCommand(CommandTerm):
         self.pose_command_o[env_ids, 3:] = quat_from_euler_xyz(
             euler_angles[:, 0], euler_angles[:, 1], euler_angles[:, 2]
         )
+
+        # TODO: This is very hard-coded, plus it need to be executed after apex
+        # place the landing platform accordingly to the com_target
+        # height distance from the actual com_target
+        z_distance = 0.38
+
+        asset: RigidObject | Articulation = self._env.scene["landing_platform"]
+        root_states = asset.data.default_root_state[env_ids].clone()
+
+        positions = root_states[:, 0:3] + self._env.scene.env_origins[env_ids] + self.pose_command_o[:, 0:3]
+        positions[:, 2] -= z_distance
+
+        orientations = root_states[:, 3:7] + self.pose_command_o[:, 3:7]
+        velocities = root_states[:, 7:13]
+
+        asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1), env_ids=env_ids)
+        asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
 
     def _update_command(self):
         pass
