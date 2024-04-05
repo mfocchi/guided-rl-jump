@@ -15,8 +15,7 @@ from omni.isaac.orbit.managers import RewardTermCfg as RewTerm
 from omni.isaac.orbit.managers import SceneEntityCfg
 from omni.isaac.orbit.managers import TerminationTermCfg as DoneTerm
 from omni.isaac.orbit.scene import InteractiveSceneCfg
-from omni.isaac.orbit.sensors import ContactSensorCfg, RayCasterCfg, patterns
-from omni.isaac.orbit.terrains import TerrainImporterCfg
+from omni.isaac.orbit.sensors import ContactSensorCfg
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
@@ -57,6 +56,7 @@ class MySceneCfg(InteractiveSceneCfg):
 
     # sensors
     contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
+
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
@@ -75,7 +75,20 @@ class MySceneCfg(InteractiveSceneCfg):
 @configclass
 class CommandsCfg:
     """Command specifications for the MDP."""
-    pass
+    com_target = mdp.UniformTargetCommandCfg(
+        asset_name="robot",
+        body_name="trunk",
+        resampling_time_range=(4.0, 4.0),
+        debug_vis=True,
+        ranges=mdp.UniformTargetCommandCfg.Ranges(
+            pos_x=(0, 0),
+            pos_y=(0, 0),
+            pos_z=(0.38, 0.38),
+            roll=(0.0, 0.0),
+            pitch=(0, 0),  # depends on end-effector axis
+            yaw=(0, 0),
+        ),
+    )
 
 
 @configclass
@@ -135,7 +148,7 @@ class LocomotionJumpEnvCfg(RLTaskEnvCfg):
     """Configuration for the locomotion jump environment."""
 
     # Scene settings
-    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=5)
+    scene: MySceneCfg = MySceneCfg(num_envs=2048, env_spacing=7)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()

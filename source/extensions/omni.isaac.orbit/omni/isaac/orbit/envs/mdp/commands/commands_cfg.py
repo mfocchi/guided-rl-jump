@@ -14,6 +14,7 @@ from omni.isaac.orbit.utils import configclass
 from .null_command import NullCommand
 from .pose_2d_command import TerrainBasedPose2dCommand, UniformPose2dCommand
 from .pose_command import UniformPoseCommand
+from .target_command import UniformTargetCommand
 from .velocity_command import NormalVelocityCommand, UniformVelocityCommand
 
 
@@ -123,8 +124,34 @@ class UniformPoseCommandCfg(CommandTermCfg):
 
 
 @configclass
+class UniformTargetCommandCfg(CommandTermCfg):
+    """Configuration for uniform pose command generator."""
+
+    class_type: type = UniformTargetCommand
+
+    asset_name: str = MISSING
+    """Name of the asset in the environment for which the commands are generated."""
+    body_name: str = MISSING
+    """Name of the body in the asset for which the commands are generated."""
+
+    @configclass
+    class Ranges:
+        """Uniform distribution ranges for the pose commands."""
+
+        pos_x: tuple[float, float] = MISSING  # min max [m]
+        pos_y: tuple[float, float] = MISSING  # min max [m]
+        pos_z: tuple[float, float] = MISSING  # min max [m]
+        roll: tuple[float, float] = MISSING  # min max [rad]
+        pitch: tuple[float, float] = MISSING  # min max [rad]
+        yaw: tuple[float, float] = MISSING  # min max [rad]
+
+    ranges: Ranges = MISSING
+    """Ranges for the commands."""
+
+
+@configclass
 class UniformPose2dCommandCfg(CommandTermCfg):
-    """Configuration for the uniform 2D-pose command generator."""
+    """Configuration for the uniform 2D - pose command generator."""
 
     class_type: type = UniformPose2dCommand
 
@@ -132,7 +159,7 @@ class UniformPose2dCommandCfg(CommandTermCfg):
     """Name of the asset in the environment for which the commands are generated."""
 
     simple_heading: bool = MISSING
-    """Whether to use simple heading or not.
+    """Whether to use simple heading or not .
 
     If True, the heading is in the direction of the target position.
     """
@@ -148,7 +175,7 @@ class UniformPose2dCommandCfg(CommandTermCfg):
         heading: tuple[float, float] = MISSING
         """Heading range for the position commands (in rad).
 
-        Used only if :attr:`simple_heading` is False.
+        Used only if : attr: `simple_heading` is False.
         """
 
     ranges: Ranges = MISSING
@@ -157,7 +184,7 @@ class UniformPose2dCommandCfg(CommandTermCfg):
 
 @configclass
 class TerrainBasedPose2dCommandCfg(UniformPose2dCommandCfg):
-    """Configuration for the terrain-based position command generator."""
+    """Configuration for the terrain - based position command generator."""
 
     class_type = TerrainBasedPose2dCommand
 
@@ -168,7 +195,7 @@ class TerrainBasedPose2dCommandCfg(UniformPose2dCommandCfg):
         heading: tuple[float, float] = MISSING
         """Heading range for the position commands (in rad).
 
-        Used only if :attr:`simple_heading` is False.
+        Used only if : attr: `simple_heading` is False.
         """
 
     ranges: Ranges = MISSING
