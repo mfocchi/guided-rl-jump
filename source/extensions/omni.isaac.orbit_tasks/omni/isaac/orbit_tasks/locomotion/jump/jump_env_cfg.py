@@ -47,12 +47,13 @@ class MySceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
             size=(0.75, 0.75, 0.05),
-            rigid_props=sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0, disable_gravity=True),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0, disable_gravity=True, kinematic_enabled=True),
             mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
-            physics_material=sim_utils.RigidBodyMaterialCfg(),
+            collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.5, 0.0, 0.0)),
         ),
         init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.05)),
+        collision_group=0
     )
 
     # sensors
@@ -84,9 +85,10 @@ class CommandsCfg:
         resampling_time_range=(5, 5),
         debug_vis=True,
         ranges=mdp.UniformTargetCommandCfg.Ranges(
-            pos_x=(0, 0),
-            pos_y=(0, 0),
-            pos_z=(0.38, 0.6),
+            pos_x=(-1, 1),
+            pos_y=(-1, 1),
+            pos_z=(0.3, 0.6),
+            # TODO: change orientation
             roll=(0.0, 0.0),
             pitch=(0, 0),  # depends on end-effector axis
             yaw=(0, 0),
@@ -97,7 +99,7 @@ class CommandsCfg:
 @configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
-    pass
+    joint_pos = mdp.JointPositionActionCfg(asset_name="robot", joint_names=[".*"], scale=0.5, use_default_offset=True)
 
 
 @configclass

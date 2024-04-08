@@ -66,7 +66,7 @@ def move_landing_platform(
     landing_platform_cfg: SceneEntityCfg = SceneEntityCfg("landing_platform"),
     base_lin_vel_threshold: float = 0,
     foot_z_threshold: float = 0.02,
-    base_z_threshold: float = 0.2,
+    base_z_threshold: float = 0.35,
 
 ):
     """Reset the asset root state to the default position and velocity.
