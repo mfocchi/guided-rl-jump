@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+import numpy as np
 from dataclasses import MISSING
 
 import omni.isaac.orbit.sim as sim_utils
@@ -45,13 +46,13 @@ class MySceneCfg(InteractiveSceneCfg):
     landing_platform: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
-            size=(0.5, 0.5, 0.1),
+            size=(0.75, 0.75, 0.05),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0, disable_gravity=True),
             mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
             physics_material=sim_utils.RigidBodyMaterialCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.5, 0.0, 0.0)),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.05)),
     )
 
     # sensors
@@ -83,8 +84,8 @@ class CommandsCfg:
         resampling_time_range=(5, 5),
         debug_vis=True,
         ranges=mdp.UniformTargetCommandCfg.Ranges(
-            pos_x=(-0.5, 0.5),
-            pos_y=(-0.5, 0.5),
+            pos_x=(0, 0),
+            pos_y=(0, 0),
             pos_z=(0.38, 0.6),
             roll=(0.0, 0.0),
             pitch=(0, 0),  # depends on end-effector axis
@@ -125,10 +126,16 @@ class EventCfg:
         mode="reset",
     )
 
-    # _landing_platform = EventTerm(
-    #     func=mdp.reset_landing_platform,
-    #     mode="reset",
-    # )
+    reset_landing_platform = EventTerm(
+        func=mdp.reset_landing_platform,
+        mode="reset",
+    )
+
+    move_landing_platform = EventTerm(
+        func=mdp.move_landing_platform,
+        mode="interval",
+        interval_range_s=(0.1, 0.1)
+    )
 
 
 @configclass
