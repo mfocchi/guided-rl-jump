@@ -98,8 +98,8 @@ class CommandsCfg:
             # TODO: change orientation
             roll=(0.0, 0.0),
             pitch=(0, 0),  # depends on end-effector axis
-            yaw=(0, 0),
-        ),
+            yaw=(0, 0)
+        )
     )
 
 
@@ -132,12 +132,12 @@ class EventCfg:
 
     reset_robot = EventTerm(
         func=mdp.reset_robot_state,
-        mode="reset",
+        mode="reset"
     )
 
     reset_landing_platform = EventTerm(
         func=mdp.reset_landing_platform,
-        mode="reset",
+        mode="reset"
     )
 
     move_landing_platform = EventTerm(
@@ -150,18 +150,48 @@ class EventCfg:
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
+    # -- Task
+    target_position_error = RewTerm(
+        func=mdp.target_position_error,
+        weight=1.0,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "com_target"},
+    )
+
+    target_orientation_error = RewTerm(
+        func=mdp.target_orientation_error,
+        weight=-1.0,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "com_target"},
+    )
 
     # -- Penalities
     #    Must use a negative weight value
 
-    friction = RewTerm(
+    joint_pos_limits = RewTerm(
+        func=mdp.joint_pos_limits,
+        weight=-1.0
+    )
+
+    joint_vel_limits = RewTerm(
+        func=mdp.joint_vel_limits,
+        weight=-1.0,
+        params={"soft_ratio": 1.0}
+    )
+
+    applied_torque_limits = RewTerm(
+        func=mdp.applied_torque_limits,
+        weight=-1.0
+    )
+
+    friction_constraint = RewTerm(
         func=mdp.friction_constraint,
         weight=-1.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
             "mu": mu,
-        },
+        }
     )
+
+    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
 
 
 @ configclass
