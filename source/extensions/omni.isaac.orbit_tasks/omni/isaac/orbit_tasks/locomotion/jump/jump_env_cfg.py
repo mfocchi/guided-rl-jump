@@ -116,7 +116,18 @@ class ObservationsCfg:
     @configclass
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
+        root_pos_w = ObsTerm(func=mdp.root_pos_w, noise=Unoise(n_min=-0.1, n_max=0.1))
+        root_quat_w = ObsTerm(func=mdp.root_quat_w, noise=Unoise(n_min=-0.1, n_max=0.1))
+
+        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
+        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
+
         joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
+        joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
+
+        actions = ObsTerm(func=mdp.last_action)
+
+        target_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "com_target"})
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -222,7 +233,7 @@ class LocomotionJumpEnvCfg(RLTaskEnvCfg):
     """Configuration for the locomotion jump environment."""
 
     # Scene settings
-    scene: MySceneCfg = MySceneCfg(num_envs=2048, env_spacing=7)
+    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=5)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
@@ -241,8 +252,9 @@ class LocomotionJumpEnvCfg(RLTaskEnvCfg):
         # simulation settings
         self.sim.dt = 0.005
         self.sim.disable_contact_processing = True
+        # TODO: verify and improve this initialization
+        self.sim.physics_material = sim_utils.RigidBodyMaterialCfg(dynamic_friction=mu)
 
-        # self.sim.physics_material = self.scene.terrain.physics_material
         # update sensor update periods
         # we tick all the sensors based on the smallest update period (physics update period)
         if self.scene.contact_forces is not None:
