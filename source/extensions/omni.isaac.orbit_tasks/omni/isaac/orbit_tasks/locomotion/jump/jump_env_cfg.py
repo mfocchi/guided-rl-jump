@@ -19,7 +19,7 @@ from omni.isaac.orbit.scene import InteractiveSceneCfg
 from omni.isaac.orbit.sensors import ContactSensorCfg
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.utils.noise import AdditiveUniformNoiseCfg as Unoise
-
+from omni.isaac.orbit.markers.config import CONTACT_SENSOR_JUMP_MARKER_CFG
 import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 
 
@@ -42,22 +42,22 @@ class MySceneCfg(InteractiveSceneCfg):
     # robots
     robot: ArticulationCfg = MISSING
 
+    # sensorsc
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot|trunk)$", history_length=3, track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=True)
+
     # add landing_platform
     landing_platform: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
             size=(0.75, 0.75, 0.05),
-            rigid_props=sim_utils.RigidBodyPropertiesCfg(max_depenetration_velocity=1.0, disable_gravity=True, kinematic_enabled=True),
-            mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, kinematic_enabled=True),
+            mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
-            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.5, 0.0, 0.0)),
+            activate_contact_sensors=True,
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.2, 0.0)),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.05)),
-        collision_group=0
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, 0.05))
     )
-
-    # sensors
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", history_length=3, track_air_time=True)
 
     # lights
     light = AssetBaseCfg(
@@ -157,6 +157,11 @@ class TerminationsCfg:
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="trunk"), "threshold": 1.0},
     )
 
+    # touchdown = DoneTerm(
+    #     func=mdp.touch_down,
+    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "air_time_threshold": 0.1, "contact_threshold": 10.0},
+    # )
+
 
 @configclass
 class CurriculumCfg:
@@ -188,6 +193,7 @@ class LocomotionJumpEnvCfg(RLTaskEnvCfg):
         # simulation settings
         self.sim.dt = 0.005
         self.sim.disable_contact_processing = True
+
         # self.sim.physics_material = self.scene.terrain.physics_material
         # update sensor update periods
         # we tick all the sensors based on the smallest update period (physics update period)
