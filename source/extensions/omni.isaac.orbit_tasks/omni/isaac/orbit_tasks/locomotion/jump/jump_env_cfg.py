@@ -23,6 +23,11 @@ from omni.isaac.orbit.markers.config import CONTACT_SENSOR_JUMP_MARKER_CFG
 import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 
 
+# External variables definition
+
+# friction (which one?)
+mu = 0.8
+
 ##
 # Scene definition
 ##
@@ -35,7 +40,9 @@ class MySceneCfg(InteractiveSceneCfg):
     # world
     ground = AssetBaseCfg(
         prim_path="/World/ground",
-        spawn=sim_utils.GroundPlaneCfg(),
+        spawn=sim_utils.GroundPlaneCfg(
+            physics_material=sim_utils.RigidBodyMaterialCfg(dynamic_friction=mu)
+        ),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
     )
 
@@ -43,7 +50,7 @@ class MySceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
 
     # sensorsc
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot|trunk)$", history_length=3, track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=True)
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot|trunk)$", track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=True)
 
     # add landing_platform
     landing_platform: RigidObjectCfg = RigidObjectCfg(
@@ -56,7 +63,7 @@ class MySceneCfg(InteractiveSceneCfg):
             activate_contact_sensors=True,
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.2, 0.0)),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, 0.05))
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.05))
     )
 
     # lights
@@ -143,10 +150,21 @@ class EventCfg:
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
-    pass
+
+    # -- Penalities
+    #    Must use a negative weight value
+
+    friction = RewTerm(
+        func=mdp.friction_constraint,
+        weight=-1.0,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
+            "mu": mu,
+        },
+    )
 
 
-@configclass
+@ configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
@@ -157,19 +175,19 @@ class TerminationsCfg:
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="trunk"), "threshold": 1.0},
     )
 
-    # touchdown = DoneTerm(
-    #     func=mdp.touch_down,
-    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "air_time_threshold": 0.1, "contact_threshold": 10.0},
-    # )
+    touchdown = DoneTerm(
+        func=mdp.touch_down,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "air_time_threshold": 0.1, "contact_threshold": 10.0},
+    )
 
 
-@configclass
+@ configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
     pass
 
 
-@configclass
+@ configclass
 class LocomotionJumpEnvCfg(RLTaskEnvCfg):
     """Configuration for the locomotion jump environment."""
 

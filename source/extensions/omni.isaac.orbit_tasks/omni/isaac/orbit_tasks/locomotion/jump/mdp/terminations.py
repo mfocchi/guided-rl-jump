@@ -28,6 +28,6 @@ def touch_down(env: RLTaskEnv, air_time_threshold: float, contact_threshold: flo
     flew_env_ids = torch.all(net_last_air_time[:, sensor_cfg.body_ids] > air_time_threshold, dim=1)
     in_contact_env_ids = torch.all(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
 
-    print(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1))
-    
-    return flew_env_ids & in_contact_env_ids
+    touchdown_env = flew_env_ids & in_contact_env_ids
+
+    return touchdown_env
