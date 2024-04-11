@@ -67,6 +67,7 @@ def move_landing_platform(
     base_lin_vel_threshold: float = 0,
     foot_z_threshold: float = 0.02,
     base_z_threshold: float = 0.35,
+    base_heigth: float = 0.3
 
 ):
     """Reset the asset root state to the default position and velocity.
@@ -119,7 +120,8 @@ def move_landing_platform(
     if len(apex_env_ids):
         # Transform landing platform position and orientation accordingly to the com_targert command
         positions[apex_env_ids] += com_target[apex_env_ids, 0:3]
-        orientations[apex_env_ids] += com_target[apex_env_ids, 3:7]
+        positions[apex_env_ids, 2] -= base_heigth
+        orientations[apex_env_ids] = com_target[apex_env_ids, 3:7]
 
         # Write the changes to the simulator
         landing_platform.write_root_pose_to_sim(torch.cat([positions[apex_env_ids], orientations[apex_env_ids]], dim=-1), env_ids=apex_env_ids)

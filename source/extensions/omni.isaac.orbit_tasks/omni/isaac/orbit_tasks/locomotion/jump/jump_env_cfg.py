@@ -63,7 +63,7 @@ class MySceneCfg(InteractiveSceneCfg):
             activate_contact_sensors=True,
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.2, 0.0)),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.05))
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.025))
     )
 
     # lights
