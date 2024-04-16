@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import time
 
 import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.assets import AssetBaseCfg, RigidObjectCfg
@@ -20,7 +21,7 @@ class JumpEnv():
         self.sim = sim
         self.scene = scene
 
-        diff_ik_cfg = DifferentialIKControllerCfg(command_type="pose", use_relative_mode=False, ik_method="dls")
+        diff_ik_cfg = DifferentialIKControllerCfg(command_type="position", use_relative_mode=False, ik_method="dls")
 
         self.fl_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=scene.num_envs, device=sim.device)
         self.fr_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=scene.num_envs, device=sim.device)
@@ -28,6 +29,9 @@ class JumpEnv():
         self.rr_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=scene.num_envs, device=sim.device)
 
         self.base_des = torch.tensor([-0.0003, 0.0017, 0.3, 1, 0, 0, 0], device=sim.device)
+        # fl_foot_pos_b, fl_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], fl_pose_w[:, 0:3], fl_pose_w[:, 3:7])
+
+        # [0,  0, 0.25,  1, 0, 0,  0]
 
         self.fl_entity_cfg = SceneEntityCfg("robot", joint_names=["FL.*"], body_names=["FL_foot"])
         self.fl_entity_cfg.resolve(self.scene)
@@ -46,10 +50,21 @@ class JumpEnv():
         self.rr_jacobi_idx = self.rr_entity_cfg.body_ids[0]
 
         # Default configuration for having the robot at z = 0.3
-        self.fl_diff_ik_controller.set_command(torch.tensor([[0.1995, 0.1708, -0.2641, 0.8993, 0.0727, -0.4298, -0.0348]], device=self.sim.device))
-        self.fr_diff_ik_controller.set_command(torch.tensor([[0.2009, -0.1701, -0.2643, 0.8983, -0.0715, -0.4321, 0.0344]], device=self.sim.device))
-        self.rl_diff_ik_controller.set_command(torch.tensor([[-0.2355, 0.1642, -0.2678, 0.9422, 0.0643, -0.3281, -0.0224]], device=self.sim.device))
-        self.rr_diff_ik_controller.set_command(torch.tensor([[-0.2368, -0.1640, -0.2680, 0.9431, -0.0639, -0.3256, 0.0221]], device=self.sim.device))
+        foot_orient_def = torch.tensor([[1, 0, 0, 0]], device=self.sim.device)
+
+        self.fl_diff_ik_controller.set_command(torch.tensor([[0.1995, 0.1708, -0.2641]], device=self.sim.device), ee_quat=foot_orient_def)
+        self.fr_diff_ik_controller.set_command(torch.tensor([[0.2009, -0.1701, -0.2643]], device=self.sim.device), ee_quat=foot_orient_def)
+        self.rl_diff_ik_controller.set_command(torch.tensor([[-0.2355, 0.1642, -0.2678]], device=self.sim.device), ee_quat=foot_orient_def)
+        self.rr_diff_ik_controller.set_command(torch.tensor([[-0.2368, -0.1640, -0.2680]], device=self.sim.device), ee_quat=foot_orient_def)
+
+        # self.fl_diff_ik_controller.set_command(torch.tensor([[0.1995, 0.1708, -0.2641, 0.8993, 0.0727, -0.4298, -0.0348]], device=self.sim.device))
+        # self.fr_diff_ik_controller.set_command(torch.tensor([[0.2009, -0.1701, -0.2643, 0.8983, -0.0715, -0.4321, 0.0344]], device=self.sim.device))
+        # self.rl_diff_ik_controller.set_command(torch.tensor([[-0.2355, 0.1642, -0.2678, 0.9422, 0.0643, -0.3281, -0.0224]], device=self.sim.device))
+        # self.rr_diff_ik_controller.set_command(torch.tensor([[-0.2368, -0.1640, -0.2680, 0.9431, -0.0639, -0.3256, 0.0221]], device=self.sim.device))
+        # self.fl_diff_ik_controller.set_command(torch.tensor([[0.1995, 0.1708, -0.2641, 0.8993, 0.0727, -0.4298, -0.0348], [0.1995, 0.1708, -0.2641, 1, 0, 0, 0]], device=self.sim.device))
+        # self.fr_diff_ik_controller.set_command(torch.tensor([[0.2009, -0.1701, -0.2643, 0.8983, -0.0715, -0.4321, 0.0344], [0.2009, -0.1701, -0.2643, 1, 0, 0, 0]], device=self.sim.device))
+        # self.rl_diff_ik_controller.set_command(torch.tensor([[-0.2355, 0.1642, -0.2678, 0.9422, 0.0643, -0.3281, -0.0224], [-0.2355, 0.1642, -0.2678, 1, 0, 0, 0]], device=self.sim.device))
+        # self.rr_diff_ik_controller.set_command(torch.tensor([[-0.2368, -0.1640, -0.2680, 0.9431, -0.0639, -0.3256, 0.0221], [-0.2368, -0.1640, -0.2680, 1, 0, 0, 0]], device=self.sim.device))
 
     def compute_quantities(self, robot):
         fl_joints = np.array(robot.find_joints("FL.*")[0])
@@ -137,9 +152,14 @@ class JumpEnv():
                     robot.write_root_state_to_sim(root_state)
                     robot.reset()
 
-                # TODO convert ik_command to each foot position
+                    self.fl_diff_ik_controller.reset()
+                    self.fr_diff_ik_controller.reset()
+                    self.rl_diff_ik_controller.reset()
+                    self.rr_diff_ik_controller.reset()
+
                 root_pose_w = robot.data.root_state_w[:, 0:7]
 
+                start = time.time()
                 fl_jacobian = robot.root_physx_view.get_jacobians()[:, self.fl_jacobi_idx, :, np.array(self.fl_entity_cfg.joint_ids) + 6]
                 fl_pose_w = robot.data.body_state_w[:, self.fl_entity_cfg.body_ids[0], 0:7]
                 fl_joint_pos = robot.data.joint_pos[:, self.fl_entity_cfg.joint_ids]
@@ -155,7 +175,7 @@ class JumpEnv():
                 rl_jacobian = robot.root_physx_view.get_jacobians()[:, self.rl_jacobi_idx, :, np.array(self.rl_entity_cfg.joint_ids) + 6]
                 rl_pose_w = robot.data.body_state_w[:, self.rl_entity_cfg.body_ids[0], 0:7]
                 rl_joint_pos = robot.data.joint_pos[:, self.rl_entity_cfg.joint_ids]
-                rl_foot_pos_b, rl_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rl_pose_w[:, 0:3], rl_pose_w[:, 3:7])
+                rl_foot_pos_b, rl_foot_orient_b = v(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rl_pose_w[:, 0:3], rl_pose_w[:, 3:7])
                 joint_pos_des[:, self.rl_entity_cfg.joint_ids] = self.rl_diff_ik_controller.compute(rl_foot_pos_b, rl_foot_orient_b, rl_jacobian, rl_joint_pos)
 
                 rr_jacobian = robot.root_physx_view.get_jacobians()[:, self.rr_jacobi_idx, :, np.array(self.rr_entity_cfg.joint_ids) + 6]
@@ -164,8 +184,14 @@ class JumpEnv():
                 rr_foot_pos_b, rr_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rr_pose_w[:, 0:3], rr_pose_w[:, 3:7])
                 joint_pos_des[:, self.rr_entity_cfg.joint_ids] = self.rr_diff_ik_controller.compute(rr_foot_pos_b, rr_foot_orient_b, rr_jacobian, rr_joint_pos)
 
+                print('-' * 10)
+                print(fl_pose_w[:, 0:3], fl_pose_w[:, 3:7])
+                print(fr_pose_w[:, 0:3], fr_pose_w[:, 3:7])
+                print(rl_pose_w[:, 0:3], rl_pose_w[:, 3:7])
+                print(rr_pose_w[:, 0:3], rr_pose_w[:, 3:7])
+
                 robot.set_joint_position_target(joint_pos_des, joint_ids=robot_joint_ids)
-                print(root_pose_w)
+                # print(root_pose_w, time.time() - start)
 
                 # write data to sim
                 robot.write_data_to_sim()
