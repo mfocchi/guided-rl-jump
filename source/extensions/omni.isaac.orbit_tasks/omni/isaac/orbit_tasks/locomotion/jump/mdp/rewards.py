@@ -42,7 +42,8 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
 
     # TODO:experiment with this function
-    return 1.0 / torch.norm(curr_pos_w - des_pos_w, dim=1)
+    # return 1.0 / torch.norm(curr_pos_w - des_pos_w, dim=1)
+    return torch.norm(curr_pos_w - des_pos_w, dim=1)
 
 
 def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
@@ -86,3 +87,37 @@ def friction_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, mu: float = 
     costs = torch.sum(computeActivationFunction('linear', residuals, -torch.inf, 0.0), dim=1)
 
     return costs
+
+
+def feet_contact_time(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """Reward long steps taken by the feet using L2-kernel.
+
+    This function rewards the agent for taking steps that are longer than a threshold. This helps ensure
+    that the robot lifts its feet off the ground and takes steps. The reward is computed as the sum of
+    the time for which the feet are in the air.
+
+    If the commands are small (i.e. the agent is not supposed to take a step), then the reward is zero.
+    """
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    # compute the reward
+    reward = torch.sum(contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids], dim=1)
+
+    return reward
+
+
+def air_time(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """Reward long steps taken by the feet using L2-kernel.
+
+    This function rewards the agent for taking steps that are longer than a threshold. This helps ensure
+    that the robot lifts its feet off the ground and takes steps. The reward is computed as the sum of
+    the time for which the feet are in the air.
+
+    If the commands are small (i.e. the agent is not supposed to take a step), then the reward is zero.
+    """
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    # compute the reward
+    reward = torch.sum(contact_sensor.data.current_air_time[:, sensor_cfg.body_ids], dim=1)
+
+    return reward

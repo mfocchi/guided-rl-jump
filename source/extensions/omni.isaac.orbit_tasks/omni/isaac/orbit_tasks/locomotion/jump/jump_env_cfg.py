@@ -41,7 +41,7 @@ class MySceneCfg(InteractiveSceneCfg):
     ground = AssetBaseCfg(
         prim_path="/World/ground",
         spawn=sim_utils.GroundPlaneCfg(
-            physics_material=sim_utils.RigidBodyMaterialCfg(dynamic_friction=mu)
+            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu)
         ),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
     )
@@ -50,7 +50,8 @@ class MySceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
 
     # sensorsc
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot|trunk)$", track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=True)
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=True)
+    # contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot|trunk)$", track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=True)
 
     # add landing_platform
     landing_platform: RigidObjectCfg = RigidObjectCfg(
@@ -61,6 +62,7 @@ class MySceneCfg(InteractiveSceneCfg):
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
             activate_contact_sensors=True,
+            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.2, 0.0)),
         ),
         init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.025))
@@ -92,9 +94,11 @@ class CommandsCfg:
         resampling_time_range=(5, 5),
         debug_vis=True,
         ranges=mdp.UniformTargetCommandCfg.Ranges(
-            pos_x=(-1, 1),
-            pos_y=(-1, 1),
-            pos_z=(0.3, 0.6),
+            # pos_x=(-1, 1),
+            # pos_y=(-1, 1),
+            pos_x=(0, 0),
+            pos_y=(0, 0),
+            pos_z=(0.45, 0.8),
             # TODO: change orientation
             roll=(0.0, 0.0),
             pitch=(0, 0),  # depends on end-effector axis
@@ -128,6 +132,8 @@ class ObservationsCfg:
         actions = ObsTerm(func=mdp.last_action)
 
         target_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "com_target"})
+
+        # TODO: add contact state
 
         def __post_init__(self):
             self.enable_corruption = True
@@ -164,14 +170,22 @@ class RewardsCfg:
     # -- Task
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=1.0,
+        weight=-1.0,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "com_target"},
     )
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=-1.0,
+        weight=-0.1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "com_target"},
+    )
+
+    air_time = RewTerm(
+        func=mdp.air_time,
+        weight=0.2,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")
+        },
     )
 
     # -- Penalities
@@ -179,28 +193,45 @@ class RewardsCfg:
 
     joint_pos_limits = RewTerm(
         func=mdp.joint_pos_limits,
-        weight=-1.0
+        weight=-0.1
     )
 
     joint_vel_limits = RewTerm(
         func=mdp.joint_vel_limits,
-        weight=-1.0,
+        weight=-0.1,
         params={"soft_ratio": 1.0}
     )
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-1.0
+        weight=-0.1
     )
 
     friction_constraint = RewTerm(
         func=mdp.friction_constraint,
-        weight=-1.0,
+        weight=-0.1,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
-            "mu": mu,
+            "mu": mu
         }
     )
+
+    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
+    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
+
+    undesired_contacts = RewTerm(
+        func=mdp.undesired_contacts,
+        weight=-0.1,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="^(?!.*foot).*$"), "threshold": 1.0},
+    )
+
+    # feet_contact_time = RewTerm(
+    #     func=mdp.feet_contact_time,
+    #     weight=-0.2,
+    #     params={
+    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")
+    #     },
+    # )
 
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
 
@@ -216,10 +247,10 @@ class TerminationsCfg:
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="trunk"), "threshold": 1.0},
     )
 
-    touchdown = DoneTerm(
-        func=mdp.touch_down,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "air_time_threshold": 0.1, "contact_threshold": 10.0},
-    )
+    # touchdown = DoneTerm(
+    #     func=mdp.touch_down,
+    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "air_time_threshold": 0.1, "contact_threshold": 10.0},
+    # )
 
 
 @ configclass
@@ -247,13 +278,13 @@ class LocomotionJumpEnvCfg(RLTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 5
+        self.decimation = 4
         self.episode_length_s = 2.0
         # simulation settings
         self.sim.dt = 0.005
         self.sim.disable_contact_processing = True
         # TODO: verify and improve this initialization
-        self.sim.physics_material = sim_utils.RigidBodyMaterialCfg(dynamic_friction=mu)
+        self.sim.physics_material = sim_utils.RigidBodyMaterialCfg(static_friction=mu)
 
         # update sensor update periods
         # we tick all the sensors based on the smallest update period (physics update period)
