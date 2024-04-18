@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from omni.isaac.orbit.assets import Articulation, RigidObject
 from omni.isaac.orbit.managers import SceneEntityCfg
 from omni.isaac.orbit.utils.math import quat_from_euler_xyz
-
+from omni.isaac.orbit.sensors import ContactSensor
 
 if TYPE_CHECKING:
     from omni.isaac.orbit.envs import RLTaskEnv
@@ -125,3 +125,18 @@ def move_landing_platform(
 
         # Write the changes to the simulator
         landing_platform.write_root_pose_to_sim(torch.cat([positions[apex_env_ids], orientations[apex_env_ids]], dim=-1), env_ids=apex_env_ids)
+
+
+def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, air_time_threshold: float, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg):
+    """Terminate when the contact force on the sensor exceeds the force threshold."""
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    asset: RigidObject | Articulation = env.scene[asset_cfg.name]
+
+    net_contact_forces = contact_sensor.data.net_forces_w
+    net_last_air_time = contact_sensor.data.last_air_time
+
+    flew_env_ids = torch.all(net_last_air_time[:, sensor_cfg.body_ids] > air_time_threshold, dim=1)
+    in_contact_env_ids = torch.all(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
+
+    touchdown_env = flew_env_ids & in_contact_env_ids

@@ -50,7 +50,7 @@ class MySceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
 
     # sensorsc
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=True)
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=False)
     # contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot|trunk)$", track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=True)
 
     # add landing_platform
@@ -98,7 +98,7 @@ class CommandsCfg:
             # pos_y=(-1, 1),
             pos_x=(0, 0),
             pos_y=(0, 0),
-            pos_z=(0.45, 0.8),
+            pos_z=(0.4, 0.6),
             # TODO: change orientation
             roll=(0.0, 0.0),
             pitch=(0, 0),  # depends on end-effector axis
@@ -161,6 +161,13 @@ class EventCfg:
         func=mdp.move_landing_platform,
         mode="interval",
         interval_range_s=(0.1, 0.1)
+    )
+
+    touchdown = EventTerm(
+        func=mdp.touch_down,
+        mode="interval",
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "asset_cfg": SceneEntityCfg("robot"), "air_time_threshold": 0.1, "contact_threshold": 10.0},
+        interval_range_s=(0.0, 0.0)
     )
 
 
@@ -278,7 +285,7 @@ class LocomotionJumpEnvCfg(RLTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 4
+        self.decimation = 5
         self.episode_length_s = 2.0
         # simulation settings
         self.sim.dt = 0.005
