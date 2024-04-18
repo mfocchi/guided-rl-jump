@@ -3,8 +3,6 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-from __future__ import annotations
-
 from typing import Literal
 
 from omni.isaac.orbit.utils import configclass
@@ -65,7 +63,7 @@ class RigidBodyPropertiesCfg:
     max_linear_velocity: float | None = None
     """Maximum linear velocity for rigid bodies (in m/s)."""
     max_angular_velocity: float | None = None
-    """Maximum angular velocity for rigid bodies (in rad/s)."""
+    """Maximum angular velocity for rigid bodies (in deg/s)."""
     max_depenetration_velocity: float | None = None
     """Maximum depenetration velocity permitted to be introduced by the solver (in m/s)."""
     max_contact_impulse: float | None = None
