@@ -249,10 +249,10 @@ class TerminationsCfg:
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
-    base_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="trunk"), "threshold": 1.0},
-    )
+    # base_contact = DoneTerm(
+    #     func=mdp.illegal_contact,
+    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="trunk"), "threshold": 1.0},
+    # )
 
     # touchdown = DoneTerm(
     #     func=mdp.touch_down,
@@ -285,10 +285,10 @@ class LocomotionJumpEnvCfg(RLTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 5
         self.episode_length_s = 2.0
-        # simulation settings
         self.sim.dt = 0.005
+        self.decimation = 1
+        # simulation settings
         self.sim.disable_contact_processing = True
         # TODO: verify and improve this initialization
         self.sim.physics_material = sim_utils.RigidBodyMaterialCfg(static_friction=mu)
