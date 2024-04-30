@@ -133,6 +133,9 @@ def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, air_time_threshold: float,
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     asset: RigidObject | Articulation = env.scene[asset_cfg.name]
 
+    asset.write_root_pose_to_sim(torch.tensor([0., 0., 1, 1, 0, 0, 0], device='cuda'), env_ids=torch.tensor([0], device='cuda').to(torch.int))
+    asset.write_root_velocity_to_sim(torch.tensor([0.], device='cuda'), env_ids=torch.tensor([0], device='cuda').to(torch.int))
+
     net_contact_forces = contact_sensor.data.net_forces_w
     net_last_air_time = contact_sensor.data.last_air_time
 

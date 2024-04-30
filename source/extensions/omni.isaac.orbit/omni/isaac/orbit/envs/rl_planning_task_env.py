@@ -41,6 +41,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
             self.sim.step(render=True)
             # update buffers at sim dt
             self.scene.update(dt=self.physics_dt)
+            # TODO: add running costs
             self.episode_length_buf += 1  # sim step in current episode (per env)
 
             # -- step interval events
