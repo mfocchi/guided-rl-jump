@@ -100,7 +100,7 @@ class CommandsCfg:
             pos_y=(0, 0),
             pos_z=(0.4, 0.6),
             # TODO: change orientation
-            roll=(0.0, 0.0),
+            roll=(-np.pi / 6, np.pi / 6),
             pitch=(0, 0),  # depends on end-effector axis
             yaw=(0, 0)
         )

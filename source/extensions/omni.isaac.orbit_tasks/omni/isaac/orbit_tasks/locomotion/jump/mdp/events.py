@@ -39,7 +39,7 @@ def reset_robot_state(
     asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
 
     # reset touchdown info
-    env.extras['touchdown'] = []
+    env.extras['touchdown'] = {}
 
 
 def reset_landing_platform(
@@ -136,22 +136,24 @@ def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, air_time_threshold: float,
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     asset: RigidObject | Articulation = env.scene[asset_cfg.name]
 
-    # asset.write_root_pose_to_sim(torch.tensor([0., 0., 1, 1, 0, 0, 0], device='cuda'), env_ids=torch.tensor([0], device='cuda').to(torch.int))
-    # asset.write_root_velocity_to_sim(torch.tensor([0.], device='cuda'), env_ids=torch.tensor([0], device='cuda').to(torch.int))
-
     net_contact_forces = contact_sensor.data.net_forces_w
     net_last_air_time = contact_sensor.data.last_air_time
 
     flew_env_ids = torch.all(net_last_air_time[:, sensor_cfg.body_ids] > air_time_threshold, dim=1)
     in_contact_env_ids = torch.all(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
 
-    touchdown_env = torch.nonzero(flew_env_ids & in_contact_env_ids).reshape(1, -1)[0]
+    touchdown_env_ids = torch.nonzero(flew_env_ids & in_contact_env_ids).reshape(1, -1)[0]
 
-    existing_touchdown_ids = set(env.extras.get('touchdown', []))
-    existing_touchdown_ids.update(touchdown_env.tolist())
-    env.extras['touchdown'] = list(existing_touchdown_ids)
+    # Save touchdown pose
+    existing_touchdown_ids = env.extras.get('touchdown', {})
+    for touchdown_env in touchdown_env_ids:
+        touchdown_env = touchdown_env.item()
+        if touchdown_env not in existing_touchdown_ids:
+            # adding the touchdown state
+            env.extras['touchdown'][touchdown_env] = asset.data.root_state_w[touchdown_env][:7]
 
+    # try to pause the simulation for the env that are in touchdown
     if len(env.extras['touchdown']):
-        touchdown_env_ids = torch.tensor(env.extras['touchdown'], device=env.device, dtype=torch.int)
-        print(touchdown_env_ids, torch.zeros_like(touchdown_env_ids))
-        asset.write_root_velocity_to_sim(torch.zeros((len(touchdown_env_ids), 6), device=env.device, dtype=torch.float), env_ids=touchdown_env_ids)
+        existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+        asset.write_root_pose_to_sim(torch.stack(list(env.extras['touchdown'].values())).to(env.device), env_ids=existing_touchdown_ids)
+        asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
