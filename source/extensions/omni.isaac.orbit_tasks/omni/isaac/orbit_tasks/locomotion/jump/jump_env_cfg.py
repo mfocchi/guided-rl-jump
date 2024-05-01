@@ -160,14 +160,14 @@ class EventCfg:
     move_landing_platform = EventTerm(
         func=mdp.move_landing_platform,
         mode="interval",
-        interval_range_s=(0.1, 0.1)
+        interval_range_s=(0., 0.)
     )
 
     touchdown = EventTerm(
         func=mdp.touch_down,
         mode="interval",
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "asset_cfg": SceneEntityCfg("robot"), "air_time_threshold": 0.1, "contact_threshold": 10.0},
-        interval_range_s=(0.0, 0.0)
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "asset_cfg": SceneEntityCfg("robot"), "air_time_threshold": 0.1, "contact_threshold": 20.0},
+        interval_range_s=(0., 0.)
     )
 
 
