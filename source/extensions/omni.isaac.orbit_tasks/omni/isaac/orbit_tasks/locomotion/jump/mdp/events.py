@@ -40,6 +40,7 @@ def reset_robot_state(
 
     # reset touchdown info
     env.extras['touchdown'] = {}
+    env.extras['touchdown_joints'] = {}
 
 
 def reset_landing_platform(
@@ -134,7 +135,7 @@ def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, air_time_threshold: float,
     """Terminate when the contact force on the sensor exceeds the force threshold."""
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    asset: RigidObject | Articulation = env.scene[asset_cfg.name]
+    asset: Articulation = env.scene[asset_cfg.name]
 
     net_contact_forces = contact_sensor.data.net_forces_w
     net_last_air_time = contact_sensor.data.last_air_time
@@ -150,7 +151,7 @@ def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, air_time_threshold: float,
         touchdown_env = touchdown_env.item()
         if touchdown_env not in existing_touchdown_ids:
             # adding the touchdown state
-            env.extras['touchdown'][touchdown_env] = asset.data.root_state_w[touchdown_env][:7]
+            env.extras['touchdown'][touchdown_env] = asset.data.root_state_w[touchdown_env][:7].clone()
 
     # try to pause the simulation for the env that are in touchdown
     if len(env.extras['touchdown']):
