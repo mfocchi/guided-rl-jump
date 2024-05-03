@@ -7,7 +7,7 @@ from dataclasses import MISSING
 
 import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.assets import ArticulationCfg, AssetBaseCfg, RigidObjectCfg
-from omni.isaac.orbit.envs import RLTaskEnvCfg
+from omni.isaac.orbit.envs import RLPlanningTaskEnvCfg
 from omni.isaac.orbit.managers import CurriculumTermCfg as CurrTerm
 from omni.isaac.orbit.managers import EventTermCfg as EventTerm
 from omni.isaac.orbit.managers import ObservationGroupCfg as ObsGroup
@@ -172,28 +172,8 @@ class EventCfg:
 
 
 @configclass
-class RewardsCfg:
-    """Reward terms for the MDP."""
-    # -- Task
-    target_position_error = RewTerm(
-        func=mdp.target_position_error,
-        weight=-1.0,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "com_target"},
-    )
-
-    target_orientation_error = RewTerm(
-        func=mdp.target_orientation_error,
-        weight=-0.1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "com_target"},
-    )
-
-    air_time = RewTerm(
-        func=mdp.air_time,
-        weight=0.2,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")
-        },
-    )
+class RunningRewardsCfg:
+    """Running Reward terms for the MDP."""
 
     # -- Penalities
     #    Must use a negative weight value
@@ -223,24 +203,30 @@ class RewardsCfg:
         }
     )
 
-    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
-    dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-2.5e-7)
-
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
         weight=-0.1,
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="^(?!.*foot).*$"), "threshold": 1.0},
     )
 
-    # feet_contact_time = RewTerm(
-    #     func=mdp.feet_contact_time,
-    #     weight=-0.2,
-    #     params={
-    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")
-    #     },
-    # )
 
-    action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.01)
+@configclass
+class RewardsCfg:
+    """Reward terms for the MDP."""
+
+    # -- Task
+
+    target_position_error = RewTerm(
+        func=mdp.target_position_error,
+        weight=-1.0,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "com_target"},
+    )
+
+    target_orientation_error = RewTerm(
+        func=mdp.target_orientation_error,
+        weight=-0.1,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "com_target"},
+    )
 
 
 @ configclass
@@ -267,7 +253,7 @@ class CurriculumCfg:
 
 
 @ configclass
-class LocomotionJumpEnvCfg(RLTaskEnvCfg):
+class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     """Configuration for the locomotion jump environment."""
 
     # Scene settings
@@ -277,6 +263,7 @@ class LocomotionJumpEnvCfg(RLTaskEnvCfg):
     actions: ActionsCfg = ActionsCfg()
     commands: CommandsCfg = CommandsCfg()
     # MDP settings
+    running_rewards: RunningRewardsCfg = RunningRewardsCfg()
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     events: EventCfg = EventCfg()

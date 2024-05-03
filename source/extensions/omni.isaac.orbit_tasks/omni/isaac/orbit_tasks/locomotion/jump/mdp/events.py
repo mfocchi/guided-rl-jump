@@ -40,7 +40,6 @@ def reset_robot_state(
 
     # reset touchdown info
     env.extras['touchdown'] = {}
-    env.extras['touchdown_joints'] = {}
 
 
 def reset_landing_platform(

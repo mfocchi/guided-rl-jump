@@ -27,3 +27,4 @@ from .base_env_cfg import BaseEnvCfg, ViewerCfg
 from .rl_task_env import RLTaskEnv, VecEnvStepReturn
 from .rl_planning_task_env import RLPlanningTaskEnv
 from .rl_task_env_cfg import RLTaskEnvCfg
+from .rl_planning_task_env_cfg import RLPlanningTaskEnvCfg

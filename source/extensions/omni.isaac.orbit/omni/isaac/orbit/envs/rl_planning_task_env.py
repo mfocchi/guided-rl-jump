@@ -10,13 +10,13 @@ from omni.isaac.orbit.managers import CommandManager, CurriculumManager, RewardM
 
 from .base_env import BaseEnv, VecEnvObs
 from .rl_task_env import RLTaskEnv
-from .rl_task_env_cfg import RLTaskEnvCfg
+from .rl_planning_task_env_cfg import RLPlanningTaskEnvCfg
 
 VecEnvStepReturn = tuple[VecEnvObs, torch.Tensor, torch.Tensor, torch.Tensor, dict]
 
 
 class RLPlanningTaskEnv(RLTaskEnv):
-    def __init__(self, cfg: RLTaskEnvCfg, render_mode: str | None = None, **kwargs):
+    def __init__(self, cfg: RLPlanningTaskEnvCfg, render_mode: str | None = None, **kwargs):
         super().__init__(cfg=cfg, render_mode=render_mode, **kwargs)
         # ATTENTION: step_dt = max_episode_length_s
         # -> max_episode_length = 1
@@ -26,23 +26,32 @@ class RLPlanningTaskEnv(RLTaskEnv):
         """Maximum episode length in environment steps (remove the need for decimation)."""
         return math.ceil(self.max_episode_length_s / self.cfg.sim.dt)
 
+    def load_managers(self):
+        super().load_managers()
+
+        self.running_reward_manager = RewardManager(self.cfg.running_rewards, self)
+
     def step(self, action: torch.Tensor) -> VecEnvStepReturn:
         # process actions
         self.action_manager.process_action(action)
+        self.reward_buf = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
 
         # perform physics stepping until the timeout
-        for _ in range(self.max_episode_length):
+        for i in range(self.max_episode_length):
             # set actions into buffers
             self.action_manager.apply_action()
             # set actions into simulator
             self.scene.write_data_to_sim()
             # simulate
-            # TODO: Enable rendering in case of play? How does this affect the performance during training?
-            self.sim.step(render=True)
+            # Enable rendering once every 5 steps
+            self.sim.step(render=i % 5 == 0)
+
             # update buffers at sim dt
             self.scene.update(dt=self.physics_dt)
-            # TODO: add running costs
+
             self.episode_length_buf += 1  # sim step in current episode (per env)
+            # -- final reward computation
+            self.reward_buf += self.running_reward_manager.compute(dt=1)
 
             # -- step interval events
             # dt = self.cfg.sim.dt
@@ -61,10 +70,10 @@ class RLPlanningTaskEnv(RLTaskEnv):
 
         self.reset_terminated = self.termination_manager.terminated
         self.reset_time_outs = self.termination_manager.time_outs
-        # -- reward computation
+        # -- final reward computation
         # dt=1, because reward is multiplied dt ->
         # value = term_cfg.func(self._env, **term_cfg.params) * term_cfg.weight * dt
-        self.reward_buf = self.reward_manager.compute(dt=1)
+        self.reward_buf += self.reward_manager.compute(dt=1)
 
         # -- reset envs that terminated/timed-out and log the episode information
         # ATTENTION: for us it will always be timeout
