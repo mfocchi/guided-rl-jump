@@ -120,16 +120,11 @@ class ObservationsCfg:
     @configclass
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
-        root_pos_w = ObsTerm(func=mdp.root_pos_w, noise=Unoise(n_min=-0.1, n_max=0.1))
-        root_quat_w = ObsTerm(func=mdp.root_quat_w, noise=Unoise(n_min=-0.1, n_max=0.1))
+
+        # TODO: add foot bosition in base f
 
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
-
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01))
-        joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
-
-        actions = ObsTerm(func=mdp.last_action)
 
         target_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "com_target"})
 
@@ -157,6 +152,7 @@ class EventCfg:
         mode="reset"
     )
 
+    # apex_detection
     move_landing_platform = EventTerm(
         func=mdp.move_landing_platform,
         mode="interval",
@@ -209,6 +205,10 @@ class RunningRewardsCfg:
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="^(?!.*foot).*$"), "threshold": 1.0},
     )
 
+    # TODO: unilaterality, treshold
+
+    # TODO: singularity
+
 
 @configclass
 class RewardsCfg:
@@ -235,21 +235,12 @@ class TerminationsCfg:
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
-    # base_contact = DoneTerm(
-    #     func=mdp.illegal_contact,
-    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="trunk"), "threshold": 1.0},
-    # )
-
-    # touchdown = DoneTerm(
-    #     func=mdp.touch_down,
-    #     params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "air_time_threshold": 0.1, "contact_threshold": 10.0},
-    # )
-
 
 @ configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
     pass
+    # TODO: aumentare difficolta
 
 
 @ configclass
