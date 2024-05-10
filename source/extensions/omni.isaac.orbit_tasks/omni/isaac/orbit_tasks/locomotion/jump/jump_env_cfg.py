@@ -110,7 +110,7 @@ class CommandsCfg:
 @configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
-    joint_pos = mdp.BezierCurveActionCfg(asset_name="robot", joint_names=[".*"])
+    joint_pos = mdp.BezierCurveActionCfg(asset_name="robot", joint_names=[".*"], debug_vis=False)
 
 
 @configclass

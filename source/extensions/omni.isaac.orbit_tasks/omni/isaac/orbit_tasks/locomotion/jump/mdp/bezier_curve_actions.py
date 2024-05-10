@@ -9,7 +9,7 @@ import carb
 import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.utils.assets import ISAAC_NUCLEUS_DIR, ISAAC_ORBIT_NUCLEUS_DIR
 from omni.isaac.orbit.markers import VisualizationMarkers, VisualizationMarkersCfg
-from omni.isaac.orbit.utils.math import euler_xyz_from_quat
+from omni.isaac.orbit.utils.math import euler_xyz_from_quat, quat_from_euler_xyz
 import omni.isaac.orbit.utils.string as string_utils
 from omni.isaac.orbit.assets.articulation import Articulation
 from omni.isaac.orbit.managers.action_manager import ActionTerm
@@ -45,15 +45,16 @@ class BezierCurveAction(ActionTerm):
         self._raw_actions = torch.zeros(self.num_envs, self.action_dim, device=self.device)
         self._processed_actions = torch.zeros_like(self.raw_actions)
 
-        self.com_lo_vis = VisualizationMarkers(
-            VisualizationMarkersCfg(
-                prim_path="/Visuals/trajectory",
-                markers={
-                    "frame": sim_utils.UsdFileCfg(
-                        usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/UIElements/frame_prim.usd",
-                        scale=(0.1, 0.1, 0.1),
-                    ),
-                }))
+        if self.cfg.debug_vis:
+            self.com_lo_vis = VisualizationMarkers(
+                VisualizationMarkersCfg(
+                    prim_path="/Visuals/trajectory",
+                    markers={
+                        "frame": sim_utils.UsdFileCfg(
+                            usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/UIElements/frame_prim.usd",
+                            scale=(0.1, 0.1, 0.1),
+                        ),
+                    }))
 
     """
     Properties.
@@ -61,7 +62,8 @@ class BezierCurveAction(ActionTerm):
 
     @property
     def action_dim(self) -> int:
-        return len(self._joint_ids)
+        # x_lo(sph), xd_lo(sph), o_lo, od_lo, T_th
+        return 2 + 2 + 3 + 3 + 1
 
     @property
     def raw_actions(self) -> torch.Tensor:
@@ -120,35 +122,62 @@ class BezierCurveAction(ActionTerm):
         return bezier_position, bezier_velocity
 
     def process_actions(self, actions: torch.Tensor):
+        print(actions)
         # store the raw actions
         self._raw_actions[:] = actions
         self.dt = 0
 
+        com_tg = self._env.command_manager.get_command("com_target")[:, 0:3]
+
         trunk_x_0 = self._asset.data.root_state_w[:, 0:3] - self._env.scene.env_origins
-        trunk_xd_0 = self._asset.data.root_lin_vel_b
+        trunk_xd_0 = self._asset.data.root_lin_vel_b.clone()
+        trunk_o_0 = torch.stack(euler_xyz_from_quat(self._asset.data.root_state_w[:, 3:7]), dim=1)
+        trunk_od_0 = self._asset.data.root_ang_vel_b.clone()
+
+        # The lo conf is relative to the initial conf
+        trunk_x_lo = trunk_x_0.clone()
+        trunk_o_lo = trunk_o_0.clone()
 
         # TODO: just for development, change and take action instead
-        trunk_x_lo = trunk_x_0.clone()
+        # Add relative position to initial position
         trunk_x_lo[:, 2] += 0.05
-        trunk_x_lo[:, 0] += 0.15
+        trunk_x_lo[:, 0] += 0.25
 
-        trunk_xd_lo = torch.zeros_like(trunk_x_0)
+        trunk_xd_lo = torch.zeros_like(trunk_xd_0)
         trunk_xd_lo[:, 2] = 0.8
         trunk_xd_lo[:, 0] = 0.4
 
+        # Add relative orientation to initial orientation
+        trunk_o_lo[:, 2] += 0.2
+
+        # TODO: just for development, change and take action instead
+        trunk_od_lo = torch.zeros_like(trunk_xd_0)
+        trunk_od_lo[:, 2] += 0.2
+
+        # TODO: just for development, change and take action instead
         self.T_th = torch.rand((self.num_envs, 1), device=self.device)
 
-        self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.T_th)
+        # TODO:compute the yaw angle btwn trunk_x_0 and trunk_x_lo for the action
+        # TODO: convert back the values from spherical to cartesian
 
-        # self.com_lo_vis.visualize(self._env.scene.env_origins + com_f)
-        com_tg = self._env.command_manager.get_command("com_target")[:, 0:3]
+        # Compute the weights of bezier curve for position and orientation
+        self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.T_th)
+        self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.T_th)
+ 
+
         # apply the affine transformations
         self._processed_actions = self._raw_actions
 
     def apply_actions(self):
 
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.T_th)
-        self.com_lo_vis.visualize(self._env.scene.env_origins + x)
+        o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.T_th)
+
+        traj = torch.cat((x, quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])), dim=-1)
+
+        if self.cfg.debug_vis:
+            self.com_lo_vis.visualize(self._env.scene.env_origins + traj[..., 0:3], traj[..., 3:7])
+
         # set position targets
         self._asset.set_joint_position_target(self.q_0)
         # TODO: send velocity

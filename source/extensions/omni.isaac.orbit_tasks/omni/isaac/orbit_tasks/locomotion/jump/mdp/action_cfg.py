@@ -16,5 +16,7 @@ class BezierCurveActionCfg(ActionTermCfg):
 
     joint_names: list[str] = MISSING
     """List of joint names or regex expressions that the action will be mapped to."""
-    
+
     class_type: type[ActionTerm] = bezier_curve_actions.BezierCurveAction
+
+    debug_vis: bool = False
