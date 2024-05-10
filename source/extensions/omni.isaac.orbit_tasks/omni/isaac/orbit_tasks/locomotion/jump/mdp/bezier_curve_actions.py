@@ -121,13 +121,31 @@ class BezierCurveAction(ActionTerm):
 
         return bezier_position, bezier_velocity
 
+    def torch_cart2sph(self, pos: torch.Tensor):
+        # Extract x, y, z components
+        x = pos[:, 0]
+        y = pos[:, 1]
+        z = pos[:, 2]
+
+        # Compute spherical coordinates
+        hxy = torch.hypot(x, y)
+        r = torch.hypot(hxy, z)
+        el = torch.atan2(z, hxy)
+        az = torch.atan2(y, x)
+
+        # Concatenate azimuth, elevation, and radius
+        spherical = torch.stack((az, el, r), dim=1)
+
+        return spherical
+
     def process_actions(self, actions: torch.Tensor):
-        print(actions)
         # store the raw actions
         self._raw_actions[:] = actions
         self.dt = 0
 
-        com_tg = self._env.command_manager.get_command("com_target")[:, 0:3]
+        trunk_tg = self._env.command_manager.get_command("com_target")[:, 0:3]
+        phi = self.torch_cart2sph(trunk_tg)[..., 0]
+        print(phi)
 
         trunk_x_0 = self._asset.data.root_state_w[:, 0:3] - self._env.scene.env_origins
         trunk_xd_0 = self._asset.data.root_lin_vel_b.clone()
@@ -163,7 +181,6 @@ class BezierCurveAction(ActionTerm):
         # Compute the weights of bezier curve for position and orientation
         self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.T_th)
         self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.T_th)
- 
 
         # apply the affine transformations
         self._processed_actions = self._raw_actions
