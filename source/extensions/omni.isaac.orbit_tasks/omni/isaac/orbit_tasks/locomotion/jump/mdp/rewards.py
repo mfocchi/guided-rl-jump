@@ -58,6 +58,7 @@ def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: Scene
     command = env.command_manager.get_command(command_name)
     # obtain the desired and current orientations
     des_quat_b = command[:, 3:7]
+    # TODO: add quaternion conversion
     des_quat_w = quat_mul(asset.data.root_state_w[:, 3:7], des_quat_b)
     curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7]  # type: ignore
 

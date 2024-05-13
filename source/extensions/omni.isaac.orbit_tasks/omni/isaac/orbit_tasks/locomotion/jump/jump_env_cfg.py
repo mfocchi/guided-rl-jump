@@ -50,7 +50,10 @@ class MySceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
 
     # sensorsc
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*", track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=False)
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*",
+                                      track_air_time=True,
+                                      visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"),
+                                      debug_vis=False)
     # contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot|trunk)$", track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=True)
 
     # add landing_platform
@@ -86,18 +89,18 @@ class MySceneCfg(InteractiveSceneCfg):
 @configclass
 class CommandsCfg:
     """Command specifications for the MDP."""
-    com_target = mdp.UniformTargetCommandCfg(
+    trunk_target = mdp.UniformTargetCommandCfg(
         asset_name="robot",
         body_name="trunk",
-        # command is sampled on a new episode
+        # command is sampled on a new episodejoint_pos
         # resampling_time > episode_length_s = no target change during episode
         resampling_time_range=(5, 5),
         debug_vis=True,
         ranges=mdp.UniformTargetCommandCfg.Ranges(
             # pos_x=(-1, 1),
             # pos_y=(-1, 1),
-            pos_x=(0, 0),
-            pos_y=(0, 0),
+            pos_x=(0, 1),
+            pos_y=(0, 1),
             pos_z=(0.4, 0.6),
             # TODO: change orientation
             roll=(-np.pi / 6, np.pi / 6),
@@ -110,7 +113,7 @@ class CommandsCfg:
 @configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
-    joint_pos = mdp.BezierCurveActionCfg(asset_name="robot", joint_names=[".*"], debug_vis=False)
+    jump_traj = mdp.BezierCurveActionCfg(asset_name="robot", joint_names=[".*"], debug_vis=False)
 
 
 @configclass
@@ -126,7 +129,7 @@ class ObservationsCfg:
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
 
-        target_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "com_target"})
+        target_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "trunk_target"})
 
         # TODO: add contact state
 
@@ -162,7 +165,10 @@ class EventCfg:
     touchdown = EventTerm(
         func=mdp.touch_down,
         mode="interval",
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "asset_cfg": SceneEntityCfg("robot"), "air_time_threshold": 0.1, "contact_threshold": 20.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
+                "asset_cfg": SceneEntityCfg("robot"),
+                "air_time_threshold": 0.1,
+                "contact_threshold": 20.0},
         interval_range_s=(0., 0.)
     )
 
@@ -219,13 +225,13 @@ class RewardsCfg:
     target_position_error = RewTerm(
         func=mdp.target_position_error,
         weight=-1.0,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "com_target"},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
         weight=-0.1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "com_target"},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
 

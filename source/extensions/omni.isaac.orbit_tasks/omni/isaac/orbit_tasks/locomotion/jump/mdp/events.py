@@ -101,8 +101,8 @@ def move_landing_platform(
     base_lin_vel_w = robot.data.root_state_w[env_ids, 7:10]
 
     root_states = landing_platform.data.default_root_state[env_ids].clone()
-    # Get com_target command
-    com_target = env.command_manager.get_command("com_target")
+    # Get trunk_target command
+    trunk_target = env.command_manager.get_command("trunk_target")
 
     # Obtain env ids of robot with foots heigher than the threshold
     foot_lifted_off_env_ids = torch.nonzero(torch.all(foots_z_pos_w > foot_z_threshold, dim=1)).reshape(1, -1)[0]
@@ -122,9 +122,9 @@ def move_landing_platform(
     # Move the landing platform of env_ids where apex is reached
     if len(apex_env_ids):
         # Transform landing platform position and orientation accordingly to the com_targert command
-        positions[apex_env_ids] += com_target[apex_env_ids, 0:3]
+        positions[apex_env_ids] += trunk_target[apex_env_ids, 0:3]
         positions[apex_env_ids, 2] -= base_heigth
-        orientations[apex_env_ids] = com_target[apex_env_ids, 3:7]
+        orientations[apex_env_ids] = trunk_target[apex_env_ids, 3:7]
 
         # Write the changes to the simulator
         landing_platform.write_root_pose_to_sim(torch.cat([positions[apex_env_ids], orientations[apex_env_ids]], dim=-1), env_ids=apex_env_ids)
