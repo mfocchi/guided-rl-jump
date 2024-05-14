@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import torch
+import numpy as np
 from typing import TYPE_CHECKING
 
 import carb
@@ -9,10 +10,13 @@ import carb
 import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.utils.assets import ISAAC_NUCLEUS_DIR, ISAAC_ORBIT_NUCLEUS_DIR
 from omni.isaac.orbit.markers import VisualizationMarkers, VisualizationMarkersCfg
-from omni.isaac.orbit.utils.math import euler_xyz_from_quat, quat_from_euler_xyz
+from omni.isaac.orbit.utils.math import subtract_frame_transforms, euler_xyz_from_quat, quat_from_euler_xyz
 import omni.isaac.orbit.utils.string as string_utils
 from omni.isaac.orbit.assets.articulation import Articulation
 from omni.isaac.orbit.managers.action_manager import ActionTerm
+from omni.isaac.orbit.managers import SceneEntityCfg
+from omni.isaac.orbit.controllers import DifferentialIKController, DifferentialIKControllerCfg
+
 
 if TYPE_CHECKING:
     from omni.isaac.orbit.envs import RLTaskEnv
@@ -34,59 +38,73 @@ class BezierCurveAction(ActionTerm):
         # resolve the joints over which the action term is applied
         self._joint_ids, self._joint_names = self._asset.find_joints(self.cfg.joint_names)
 
-        # TODO: set these in the config
-        # T_th --
-        self.t_th_min = 0.2
-        self.t_th_max = 1
-        # Lift-off position --
-        # X_theta
-        self.x_theta_min = torch.pi / 4
-        self.x_theta_max = torch.pi / 2
-        # X_r
-        self.x_r_min = 0.15
-        self.x_r_max = 0.4
-        # Lift-off linear velocity --
-        # Xd_theta
-        self.xd_theta_min = torch.pi / 6
-        self.xd_theta_max = torch.pi / 2
-        # Xd_r
-        self.xd_r_min = 0.1
-        self.xd_r_max = 4
-        # Lift-off pose --
-        # Psi
-        self.psi_min = -2 * torch.pi
-        self.psi_max = 2 * torch.pi
-        # Theta
-        self.theta_min = - 2 * torch.pi
-        self.theta_max = 2 * torch.pi
-        # Phi
-        self.phi_min = - 2 * torch.pi
-        self.phi_max = 2 * torch.pi
+        self.fl_entity_cfg = SceneEntityCfg(self.cfg.asset_name, joint_names=self.cfg.fl_joint_names, body_names=self.cfg.fl_body_names)
+        self.fl_entity_cfg.resolve(self._env.scene)
+        self.fl_jacobi_idx = self.fl_entity_cfg.body_ids[0]
 
-        # Lift-off angular velocity --
-        # Psi
-        self.psid_min = -4
-        self.psid_max = 4
-        # Theta
-        self.thetad_min = -4
-        self.thetad_max = 4
-        # Phi
-        self.phid_min = -4
-        self.phid_max = 4
+        self.fr_entity_cfg = SceneEntityCfg(self.cfg.asset_name, joint_names=self.cfg.fr_joint_names, body_names=self.cfg.fr_body_names)
+        self.fr_entity_cfg.resolve(self._env.scene)
+        self.fr_jacobi_idx = self.fr_entity_cfg.body_ids[0]
+
+        self.rl_entity_cfg = SceneEntityCfg(self.cfg.asset_name, joint_names=self.cfg.rl_joint_names, body_names=self.cfg.rl_body_names)
+        self.rl_entity_cfg.resolve(self._env.scene)
+        self.rl_jacobi_idx = self.rl_entity_cfg.body_ids[0]
+
+        self.rr_entity_cfg = SceneEntityCfg(self.cfg.asset_name, joint_names=self.cfg.rr_joint_names, body_names=self.cfg.rr_body_names)
+        self.rr_entity_cfg.resolve(self._env.scene)
+        self.rr_jacobi_idx = self.rr_entity_cfg.body_ids[0]
+
+        self.t_th_min = self.cfg.t_th_min
+        self.t_th_max = self.cfg.t_th_max
+
+        self.x_theta_min = self.cfg.x_theta_min
+        self.x_theta_max = self.cfg.x_theta_max
+
+        self.x_r_min = self.cfg.x_r_min
+        self.x_r_max = self.cfg.x_r_max
+
+        self.xd_theta_min = self.cfg.xd_theta_min
+        self.xd_theta_max = self.cfg.xd_theta_max
+
+        self.xd_r_min = self.cfg.xd_r_min
+        self.xd_r_max = self.cfg.xd_r_max
+
+        self.psi_min = self.cfg.psi_min
+        self.psi_max = self.cfg.psi_max
+
+        self.theta_min = self.cfg.theta_min
+        self.theta_max = self.cfg.theta_max
+
+        self.phi_min = self.cfg.phi_min
+        self.phi_max = self.cfg.phi_max
+
+        self.psid_min = self.cfg.psid_min
+        self.psid_max = self.cfg.psid_max
+
+        self.thetad_min = self.cfg.thetad_min
+        self.thetad_max = self.cfg.thetad_max
+
+        self.phid_min = self.cfg.phid_min
+        self.phid_max = self.cfg.phid_max
 
         self.q_0 = self._asset.data.default_joint_pos.clone()
+
+        diff_ik_cfg = DifferentialIKControllerCfg(command_type="position", use_relative_mode=False, ik_method="dls")
+
+        self.fl_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self._env.device)
+        self.fr_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self._env.device)
+        self.rl_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self._env.device)
+        self.rr_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self._env.device)
+
+        # time passed from the start of the action
         self.dt = 0
-        # log the resolved joint names for debugging
-        # carb.log_info(
-        #     f"Resolved joint names for the action term {self.__class__.__name__}:"
-        #     f" {self._joint_names} [{self._joint_ids}]"
-        # )
+
         # create tensors for raw and processed actions
         self._raw_actions = torch.zeros(self.num_envs, self.action_dim, device=self.device)
         self._processed_actions = torch.zeros_like(self.raw_actions)
 
         if self.cfg.debug_vis:
-            self.com_lo_vis = VisualizationMarkers(
+            self.trunk_traj_vis = VisualizationMarkers(
                 VisualizationMarkersCfg(
                     prim_path="/Visuals/trajectory",
                     markers={
@@ -102,8 +120,8 @@ class BezierCurveAction(ActionTerm):
 
     @property
     def action_dim(self) -> int:
-        # x_lo(sph), xd_lo(sph), o_lo, od_lo, T_th
-        return 2 + 2 + 3 + 3 + 1
+        # t_th, x_lo(sph), xd_lo(sph), o_lo, od_lo
+        return 1 + 2 + 2 + 3 + 3
 
     @property
     def raw_actions(self) -> torch.Tensor:
@@ -196,6 +214,58 @@ class BezierCurveAction(ActionTerm):
 
         return cartesian
 
+    def ik(self, x, xd, o, od):
+
+        # Add the origin to get the position for each robot environment
+        x += self._env.scene.env_origins
+        o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
+
+        if self.cfg.debug_vis:
+            self.trunk_traj_vis.visualize(x, o_quat)
+
+        q_des = torch.zeros_like(self._asset.data.default_joint_pos)
+
+        root_pose_w = self._asset.data.root_state_w[:, 0:7]
+
+        fl_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.fl_jacobi_idx, :, np.array(self.fl_entity_cfg.joint_ids) + 6]
+        fl_pose_w = self._asset.data.body_state_w[:, self.fl_entity_cfg.body_ids[0], 0:7]
+        fl_joint_pos = self._asset.data.joint_pos[:, self.fl_entity_cfg.joint_ids]
+        fl_foot_pos_b, fl_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], fl_pose_w[:, 0:3], fl_pose_w[:, 3:7])
+        fl_foot_pos_des_b, fl_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.fl_foot_pos_w_0)
+
+        fr_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.fr_jacobi_idx, :, np.array(self.fr_entity_cfg.joint_ids) + 6]
+        fr_pose_w = self._asset.data.body_state_w[:, self.fr_entity_cfg.body_ids[0], 0:7]
+        fr_joint_pos = self._asset.data.joint_pos[:, self.fr_entity_cfg.joint_ids]
+        fr_foot_pos_b, fr_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], fr_pose_w[:, 0:3], fr_pose_w[:, 3:7])
+        fr_foot_pos_des_b, fr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.fr_foot_pos_w_0)
+
+        rl_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.rl_jacobi_idx, :, np.array(self.rl_entity_cfg.joint_ids) + 6]
+        rl_pose_w = self._asset.data.body_state_w[:, self.rl_entity_cfg.body_ids[0], 0:7]
+        rl_joint_pos = self._asset.data.joint_pos[:, self.rl_entity_cfg.joint_ids]
+        rl_foot_pos_b, rl_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rl_pose_w[:, 0:3], rl_pose_w[:, 3:7])
+        rl_foot_pos_des_b, rl_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.rl_foot_pos_w_0)
+
+        rr_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.rr_jacobi_idx, :, np.array(self.rr_entity_cfg.joint_ids) + 6]
+        rr_pose_w = self._asset.data.body_state_w[:, self.rr_entity_cfg.body_ids[0], 0:7]
+        rr_joint_pos = self._asset.data.joint_pos[:, self.rr_entity_cfg.joint_ids]
+        rr_foot_pos_b, rr_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rr_pose_w[:, 0:3], rr_pose_w[:, 3:7])
+        rr_foot_pos_des_b, rr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.rr_foot_pos_w_0)
+
+        # Orientation is just for visualization (ignore)
+        self.fl_diff_ik_controller.set_command(fl_foot_pos_des_b, ee_quat=fl_foot_orient_des_b)
+        self.fr_diff_ik_controller.set_command(fr_foot_pos_des_b, ee_quat=fr_foot_orient_des_b)
+        self.rl_diff_ik_controller.set_command(rl_foot_pos_des_b, ee_quat=rl_foot_orient_des_b)
+        self.rr_diff_ik_controller.set_command(rr_foot_pos_des_b, ee_quat=rr_foot_orient_des_b)
+
+        q_des[:, self.fl_entity_cfg.joint_ids] = self.fl_diff_ik_controller.compute(fl_foot_pos_b, fl_foot_orient_b, fl_jacobian, fl_joint_pos)
+        q_des[:, self.fr_entity_cfg.joint_ids] = self.fr_diff_ik_controller.compute(fr_foot_pos_b, fr_foot_orient_b, fr_jacobian, fr_joint_pos)
+        q_des[:, self.rl_entity_cfg.joint_ids] = self.rl_diff_ik_controller.compute(rl_foot_pos_b, rl_foot_orient_b, rl_jacobian, rl_joint_pos)
+        q_des[:, self.rr_entity_cfg.joint_ids] = self.rr_diff_ik_controller.compute(rr_foot_pos_b, rr_foot_orient_b, rr_jacobian, rr_joint_pos)
+
+        qd_des = (q_des - self._asset.data.joint_pos) / self.cfg.time_step
+
+        return q_des, qd_des
+
     def process_actions(self, actions: torch.Tensor):
 
         # store the raw actions
@@ -203,8 +273,22 @@ class BezierCurveAction(ActionTerm):
         # WARNING: !!!!!!!!!!!!!!!!!!!!!!!
         # TODO: discuss this part, could destroy the learning algorithm
         self.actions = torch.clip(actions, -1, 1)
+        # reset time counter
         self.dt = 0
 
+        # Reset IK controller
+        self.fl_diff_ik_controller.reset()
+        self.fr_diff_ik_controller.reset()
+        self.rl_diff_ik_controller.reset()
+        self.rr_diff_ik_controller.reset()
+
+        # Save foot position at the start of the episode
+        self.fl_foot_pos_w_0 = self._asset.data.body_state_w[:, self.fl_jacobi_idx, 0:3].clone()
+        self.fr_foot_pos_w_0 = self._asset.data.body_state_w[:, self.fr_jacobi_idx, 0:3].clone()
+        self.rl_foot_pos_w_0 = self._asset.data.body_state_w[:, self.rl_jacobi_idx, 0:3].clone()
+        self.rr_foot_pos_w_0 = self._asset.data.body_state_w[:, self.rr_jacobi_idx, 0:3].clone()
+
+        # TODO: this hold for a robot that is in real world withoud capture sys?
         trunk_x_0 = self._asset.data.root_state_w[:, 0:3] - self._env.scene.env_origins
         trunk_xd_0 = self._asset.data.root_lin_vel_b.clone()
         trunk_o_0 = torch.stack(euler_xyz_from_quat(self._asset.data.root_state_w[:, 3:7]), dim=1)
@@ -259,13 +343,9 @@ class BezierCurveAction(ActionTerm):
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
         o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th)
 
-        traj = torch.cat((x, quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])), dim=-1)
+        q_des, qd_des = self.ik(x, xd, o, od)
 
-        if self.cfg.debug_vis:
-            self.com_lo_vis.visualize(self._env.scene.env_origins + traj[..., 0:3], traj[..., 3:7])
+        self._asset.set_joint_position_target(q_des)
+        self._asset.set_joint_velocity_target(qd_des)
 
-        # set position targets
-        self._asset.set_joint_position_target(self.q_0)
-        # TODO: send velocity
-
-        self.dt += 0.005
+        self.dt += self.cfg.time_step

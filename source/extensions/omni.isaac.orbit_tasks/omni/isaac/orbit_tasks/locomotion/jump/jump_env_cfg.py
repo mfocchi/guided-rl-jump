@@ -27,6 +27,7 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 
 # friction (which one?)
 mu = 0.8
+time_step = 0.005
 
 ##
 # Scene definition
@@ -113,7 +114,40 @@ class CommandsCfg:
 @configclass
 class ActionsCfg:
     """Action specifications for the MDP."""
-    jump_traj = mdp.BezierCurveActionCfg(asset_name="robot", joint_names=[".*"], debug_vis=False)
+    jump_traj = mdp.BezierCurveActionCfg(asset_name="robot",
+                                         time_step=time_step,
+                                         joint_names=[".*"],
+                                         fl_joint_names=["FL.*"],
+                                         fl_body_names=["FL_foot"],
+                                         fr_joint_names=["FR.*"],
+                                         fr_body_names=["FR_foot"],
+                                         rl_joint_names=["RL.*"],
+                                         rl_body_names=["RL_foot"],
+                                         rr_joint_names=["RR.*"],
+                                         rr_body_names=["RR_foot"],
+                                         t_th_min=0.2,
+                                         t_th_max=1,
+                                         x_theta_min=np.pi / 4,
+                                         x_theta_max=np.pi / 2,
+                                         x_r_min=0.15,
+                                         x_r_max=0.4,
+                                         xd_theta_min=np.pi / 6,
+                                         xd_theta_max=np.pi / 2,
+                                         xd_r_min=0.1,
+                                         xd_r_max=4,
+                                         psi_min=-2 * np.pi,
+                                         psi_max=2 * np.pi,
+                                         theta_min=- 2 * np.pi,
+                                         theta_max=2 * np.pi,
+                                         phi_min=- 2 * np.pi,
+                                         phi_max=2 * np.pi,
+                                         psid_min=-4,
+                                         psid_max=4,
+                                         thetad_min=-4,
+                                         thetad_max=4,
+                                         phid_min=-4,
+                                         phid_max=4,
+                                         debug_vis=True)
 
 
 @configclass
@@ -270,7 +304,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
         """Post initialization."""
         # general settings
         self.episode_length_s = 2.0
-        self.sim.dt = 0.005
+        self.sim.dt = time_step
         self.decimation = 1
         # simulation settings
         self.sim.disable_contact_processing = True
