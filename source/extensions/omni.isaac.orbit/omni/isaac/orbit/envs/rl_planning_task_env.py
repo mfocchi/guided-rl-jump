@@ -36,6 +36,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
         self.action_manager.process_action(action)
         self.reward_buf = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
 
+        print(f"Simulating robot {'-'*15}")
         # perform physics stepping until the timeout
         for i in range(self.max_episode_length):
             # set actions into buffers

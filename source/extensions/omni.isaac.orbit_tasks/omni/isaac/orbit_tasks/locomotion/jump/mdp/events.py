@@ -26,6 +26,7 @@ def reset_robot_state(
     asset: Articulation = env.scene[asset_cfg.name]
     # get default root state
     root_states = asset.data.default_root_state[env_ids].clone()
+    asset.reset()
 
     # poses
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids]
@@ -35,8 +36,8 @@ def reset_robot_state(
     velocities = root_states[:, 7:13]
 
     # set into the physics simulation
-    asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1), env_ids=env_ids)
-    asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
+    asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1))
+    asset.write_root_velocity_to_sim(velocities)
 
     asset.set_joint_position_target(asset.data.default_joint_pos)
     asset.set_joint_velocity_target(asset.data.default_joint_vel)

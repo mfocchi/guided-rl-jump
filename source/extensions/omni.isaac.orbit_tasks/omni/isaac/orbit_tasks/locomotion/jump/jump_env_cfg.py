@@ -129,7 +129,7 @@ class ActionsCfg:
                                          t_th_max=1,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
-                                         x_r_min=0.15,
+                                         x_r_min=0.2,
                                          x_r_max=0.4,
                                          xd_theta_min=np.pi / 6,
                                          xd_theta_max=np.pi / 2,
