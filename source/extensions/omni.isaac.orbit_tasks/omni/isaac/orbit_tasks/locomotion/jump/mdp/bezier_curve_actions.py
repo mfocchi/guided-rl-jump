@@ -292,7 +292,14 @@ class BezierCurveAction(ActionTerm):
             self.desired_trajectory.append(x[0].cpu().numpy())
             self.actual_trajectory.append(self._asset.data.root_state_w[0, 0:3].cpu().numpy())
 
+        after_t_th = torch.where(self.dt > self.t_th)[0]
+
+        q_des[after_t_th] = self._asset.data.default_joint_pos
+
+        # TODO: fix computation of joint velocity targets
         qd_des = (q_des - self._asset.data.joint_pos) / self.cfg.time_step
+
+        qd_des[after_t_th] = self._asset.data.default_joint_vel
 
         return q_des, qd_des
 
