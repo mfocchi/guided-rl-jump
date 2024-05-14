@@ -240,8 +240,8 @@ class BezierCurveAction(ActionTerm):
     def ik(self, x, xd, o, od):
 
         # Add the origin to get the position for each robot environment
-        # x += self._env.scene.env_origins
-        x = self._asset.data.default_root_state[:, 0:3] + self._env.scene.env_origins
+        x += self._env.scene.env_origins
+        # x = self._asset.data.default_root_state[:, 0:3] + self._env.scene.env_origins
         # TODO: fix and enable orientation
         # o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
         o_quat = self._asset.data.default_root_state[:, 3:7]
@@ -317,10 +317,10 @@ class BezierCurveAction(ActionTerm):
         self.rr_diff_ik_controller.reset()
 
         # Fixed foot positions in wf
-        self.fl_foot_pos_w_0 = torch.stack([torch.tensor([0.176, 0.178, 0.0]) for i in range(self.num_envs)]).to(self.device)
-        self.fr_foot_pos_w_0 = torch.stack([torch.tensor([0.176, -0.178, 0.0]) for i in range(self.num_envs)]).to(self.device)
-        self.rl_foot_pos_w_0 = torch.stack([torch.tensor([-0.260, 0.178, 0.0]) for i in range(self.num_envs)]).to(self.device)
-        self.rr_foot_pos_w_0 = torch.stack([torch.tensor([-0.260, -0.178, 0.0]) for i in range(self.num_envs)]).to(self.device)
+        self.fl_foot_pos_w_0 = torch.stack([torch.tensor([0.176, 0.178, 0.0]) for i in range(self.num_envs)]).to(self.device) + self._env.scene.env_origins
+        self.fr_foot_pos_w_0 = torch.stack([torch.tensor([0.176, -0.178, 0.0]) for i in range(self.num_envs)]).to(self.device) + self._env.scene.env_origins
+        self.rl_foot_pos_w_0 = torch.stack([torch.tensor([-0.260, 0.178, 0.0]) for i in range(self.num_envs)]).to(self.device) + self._env.scene.env_origins
+        self.rr_foot_pos_w_0 = torch.stack([torch.tensor([-0.260, -0.178, 0.0]) for i in range(self.num_envs)]).to(self.device) + self._env.scene.env_origins
 
         # TODO: this hold for a robot that is in real world withoud capture sys?
         trunk_x_0 = self._asset.data.root_state_w[:, 0:3] - self._env.scene.env_origins
@@ -404,10 +404,9 @@ class BezierCurveAction(ActionTerm):
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
         o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th)
 
-        q_des, qd_des = self.ik(x, xd, o, od)   
+        q_des, qd_des = self.ik(x, xd, o, od)
 
         # self._asset.set_joint_position_target(self._asset.data.default_joint_pos)
-
         self._asset.set_joint_position_target(q_des)
         # self._asset.set_joint_velocity_target(qd_des)
 
