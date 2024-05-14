@@ -5,6 +5,8 @@ import torch
 import numpy as np
 from typing import TYPE_CHECKING
 
+import matplotlib.pyplot as plt
+
 import carb
 
 import omni.isaac.orbit.sim as sim_utils
@@ -104,6 +106,17 @@ class BezierCurveAction(ActionTerm):
         self._processed_actions = torch.zeros_like(self.raw_actions)
 
         if self.cfg.debug_vis:
+            self.figure = plt.figure(figsize=(10, 5))
+
+            # Initialize lists to store trajectories
+            self.desired_trajectory = []
+            self.actual_trajectory = []
+
+            # Initialize plot
+            plt.ion()
+            self.fig, self.ax = plt.subplots(3, 1, figsize=(8, 6))
+            self.lines = []
+
             self.trunk_traj_vis = VisualizationMarkers(
                 VisualizationMarkersCfg(
                     prim_path="/Visuals/trajectory",
@@ -218,7 +231,10 @@ class BezierCurveAction(ActionTerm):
 
         # Add the origin to get the position for each robot environment
         x += self._env.scene.env_origins
-        o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
+
+        # TODO: fix and enable orientation
+        # o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
+        o_quat = self._asset.data.default_root_state[:, 3:7]
 
         if self.cfg.debug_vis:
             self.trunk_traj_vis.visualize(x, o_quat)
@@ -262,11 +278,19 @@ class BezierCurveAction(ActionTerm):
         q_des[:, self.rl_entity_cfg.joint_ids] = self.rl_diff_ik_controller.compute(rl_foot_pos_b, rl_foot_orient_b, rl_jacobian, rl_joint_pos)
         q_des[:, self.rr_entity_cfg.joint_ids] = self.rr_diff_ik_controller.compute(rr_foot_pos_b, rr_foot_orient_b, rr_jacobian, rr_joint_pos)
 
+        if self.cfg.debug_vis:
+            self.desired_trajectory.append(x.cpu().numpy())
+            self.actual_trajectory.append(self._asset.data.root_state_w[:, 0:3].cpu().numpy())
+
         qd_des = (q_des - self._asset.data.joint_pos) / self.cfg.time_step
 
         return q_des, qd_des
 
     def process_actions(self, actions: torch.Tensor):
+
+        if self.cfg.debug_vis:
+            self.desired_trajectory = []
+            self.actual_trajectory = []
 
         # store the raw actions
         self._raw_actions[:] = actions
@@ -338,6 +362,31 @@ class BezierCurveAction(ActionTerm):
         # apply the affine transformations
         self._processed_actions = self.actions
 
+    def plot_trajectory(self, x_desired, x_actual):
+        time = np.arange(0, len(x_desired[..., 0])) * self.cfg.time_step
+        if not self.lines:
+            self.lines.append(self.ax[0].plot(time, x_desired[..., 0], color='red')[0])
+            self.lines.append(self.ax[0].plot(time, x_actual[..., 0], color='blue')[0])
+            self.lines.append(self.ax[1].plot(time, x_desired[..., 1], color='red')[0])
+            self.lines.append(self.ax[1].plot(time, x_actual[..., 1], color='blue')[0])
+            self.lines.append(self.ax[2].plot(time, x_desired[..., 2], color='red')[0])
+            self.lines.append(self.ax[2].plot(time, x_actual[..., 2], color='blue')[0])
+        else:
+            self.lines[0].set_data(time, x_desired[..., 0])
+            self.lines[1].set_data(time, x_actual[..., 0])
+            self.lines[2].set_data(time, x_desired[..., 1])
+            self.lines[3].set_data(time, x_actual[..., 1])
+            self.lines[4].set_data(time, x_desired[..., 2])
+            self.lines[5].set_data(time, x_actual[..., 2])
+            self.ax[0].relim()
+            self.ax[0].autoscale_view()
+            self.ax[1].relim()
+            self.ax[1].autoscale_view()
+            self.ax[2].relim()
+            self.ax[2].autoscale_view()
+            self.fig.canvas.draw()
+            self.fig.canvas.flush_events()
+
     def apply_actions(self):
 
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
@@ -347,5 +396,13 @@ class BezierCurveAction(ActionTerm):
 
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
+
+        if self.cfg.debug_vis:
+            # Draw until end of t_th
+            if self.dt <= self.t_th[..., 0]:
+                self.plot_trajectory(
+                    np.stack(self.desired_trajectory),
+                    np.stack(self.actual_trajectory)
+                )
 
         self.dt += self.cfg.time_step

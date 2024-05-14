@@ -23,7 +23,7 @@ def reset_robot_state(
     This function reset the root position and velocity of the asset.
     """
     # extract the used quantities (to enable type-hinting)
-    asset: RigidObject | Articulation = env.scene[asset_cfg.name]
+    asset: Articulation = env.scene[asset_cfg.name]
     # get default root state
     root_states = asset.data.default_root_state[env_ids].clone()
 
@@ -37,6 +37,9 @@ def reset_robot_state(
     # set into the physics simulation
     asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1), env_ids=env_ids)
     asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
+
+    asset.set_joint_position_target(asset.data.default_joint_pos)
+    asset.set_joint_velocity_target(asset.data.default_joint_vel)
 
     # reset touchdown info
     env.extras['touchdown'] = {}
@@ -52,7 +55,7 @@ def reset_landing_platform(
     This function reset the root position and velocity of the asset.
     """
     # extract the used quantities (to enable type-hinting)
-    landing_pltform: RigidObject | Articulation = env.scene[landing_pltform_cfg.name]
+    landing_pltform: RigidObject = env.scene[landing_pltform_cfg.name]
 
     root_states = landing_pltform.data.default_root_state[env_ids].clone()
 
