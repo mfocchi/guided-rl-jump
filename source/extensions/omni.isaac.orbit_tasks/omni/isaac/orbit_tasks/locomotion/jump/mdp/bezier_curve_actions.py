@@ -110,8 +110,18 @@ class BezierCurveAction(ActionTerm):
                 prim_path="/Visuals/trajectory",
                 markers={
                     "sphere": sim_utils.SphereCfg(
-                        radius=0.025,
-                        visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.2, 0.6, 0.66)),
+                        radius=0.05,
+                        visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.2, 0.6, 0.66), opacity=0.3),
+                    ),
+                }))
+
+        self.trunk_tg_vis = VisualizationMarkers(
+            VisualizationMarkersCfg(
+                prim_path="/Visuals/trajectory",
+                markers={
+                    "frame": sim_utils.UsdFileCfg(
+                        usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/UIElements/frame_prim.usd",
+                        scale=(0.1, 0.1, 0.1),
                     ),
                 }))
 
@@ -242,39 +252,39 @@ class BezierCurveAction(ActionTerm):
 
         # Add the origin to get the position for each robot environment
         x += self._env.scene.env_origins
-        # x = self._asset.data.default_root_state[:, 0:3] + self._env.scene.env_origins
+        # x = self._asset.data.default_root_state[:, 0:3].clone() + self._env.scene.env_origins
         # TODO: fix and enable orientation
         # o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
-        o_quat = self._asset.data.default_root_state[:, 3:7]
+        o_quat = self._asset.data.default_root_state[:, 3:7].clone()
 
         if self.cfg.debug_vis:
             self.trunk_traj_vis.visualize(x, o_quat)
 
         q_des = torch.zeros_like(self._asset.data.default_joint_pos)
 
-        root_pose_w = self._asset.data.root_state_w[:, 0:7]
+        root_pose_w = self._asset.data.root_state_w[:, 0:7].clone()
 
-        fl_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.fl_body_idx, :, np.array(self.fl_entity_cfg.joint_ids) + 6]
-        fl_pose_w = self._asset.data.body_state_w[:, self.fl_entity_cfg.body_ids[0], 0:7]
-        fl_joint_pos = self._asset.data.joint_pos[:, self.fl_entity_cfg.joint_ids]
+        fl_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.fl_body_idx, :, np.array(self.fl_entity_cfg.joint_ids) + 6].clone()
+        fl_pose_w = self._asset.data.body_state_w[:, self.fl_entity_cfg.body_ids[0], 0:7].clone()
+        fl_joint_pos = self._asset.data.joint_pos[:, self.fl_entity_cfg.joint_ids].clone()
         fl_foot_pos_b, fl_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], fl_pose_w[:, 0:3], fl_pose_w[:, 3:7])
         fl_foot_pos_des_b, fl_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.fl_foot_pos_w_0)
 
-        fr_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.fr_body_idx, :, np.array(self.fr_entity_cfg.joint_ids) + 6]
-        fr_pose_w = self._asset.data.body_state_w[:, self.fr_entity_cfg.body_ids[0], 0:7]
-        fr_joint_pos = self._asset.data.joint_pos[:, self.fr_entity_cfg.joint_ids]
+        fr_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.fr_body_idx, :, np.array(self.fr_entity_cfg.joint_ids) + 6].clone()
+        fr_pose_w = self._asset.data.body_state_w[:, self.fr_entity_cfg.body_ids[0], 0:7].clone()
+        fr_joint_pos = self._asset.data.joint_pos[:, self.fr_entity_cfg.joint_ids].clone()
         fr_foot_pos_b, fr_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], fr_pose_w[:, 0:3], fr_pose_w[:, 3:7])
         fr_foot_pos_des_b, fr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.fr_foot_pos_w_0)
 
-        rl_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.rl_body_idx, :, np.array(self.rl_entity_cfg.joint_ids) + 6]
-        rl_pose_w = self._asset.data.body_state_w[:, self.rl_entity_cfg.body_ids[0], 0:7]
-        rl_joint_pos = self._asset.data.joint_pos[:, self.rl_entity_cfg.joint_ids]
+        rl_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.rl_body_idx, :, np.array(self.rl_entity_cfg.joint_ids) + 6].clone()
+        rl_pose_w = self._asset.data.body_state_w[:, self.rl_entity_cfg.body_ids[0], 0:7].clone()
+        rl_joint_pos = self._asset.data.joint_pos[:, self.rl_entity_cfg.joint_ids].clone()
         rl_foot_pos_b, rl_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rl_pose_w[:, 0:3], rl_pose_w[:, 3:7])
         rl_foot_pos_des_b, rl_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.rl_foot_pos_w_0)
 
-        rr_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.rr_body_idx, :, np.array(self.rr_entity_cfg.joint_ids) + 6]
-        rr_pose_w = self._asset.data.body_state_w[:, self.rr_entity_cfg.body_ids[0], 0:7]
-        rr_joint_pos = self._asset.data.joint_pos[:, self.rr_entity_cfg.joint_ids]
+        rr_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.rr_body_idx, :, np.array(self.rr_entity_cfg.joint_ids) + 6].clone()
+        rr_pose_w = self._asset.data.body_state_w[:, self.rr_entity_cfg.body_ids[0], 0:7].clone()
+        rr_joint_pos = self._asset.data.joint_pos[:, self.rr_entity_cfg.joint_ids].clone()
         rr_foot_pos_b, rr_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rr_pose_w[:, 0:3], rr_pose_w[:, 3:7])
         rr_foot_pos_des_b, rr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.rr_foot_pos_w_0)
 
@@ -294,13 +304,13 @@ class BezierCurveAction(ActionTerm):
             self.actual_trajectory.append(self._asset.data.root_state_w[0, 0:3].cpu().numpy())
 
         # TODO: fix computation of joint velocity targets
-        qd_des = (q_des - self._asset.data.joint_pos) / self.cfg.time_step
+        qd_des = (q_des - self._asset.data.joint_pos.clone()) / self.cfg.time_step
 
         after_t_th = torch.where(self.dt > self.t_th)[0]
 
         if after_t_th.numel() > 0:
-            q_des[after_t_th] = self._asset.data.default_joint_pos[0]
-            qd_des[after_t_th] = self._asset.data.default_joint_vel[0]
+            q_des[after_t_th] = self._asset.data.default_joint_pos[0].clone()
+            qd_des[after_t_th] = self._asset.data.default_joint_vel[0].clone()
 
         return q_des, qd_des
 
@@ -332,19 +342,22 @@ class BezierCurveAction(ActionTerm):
         self.rr_foot_pos_w_0 = torch.stack([torch.tensor([-0.260, -0.178, 0.0]) for i in range(self.num_envs)]).to(self.device) + self._env.scene.env_origins
 
         # TODO: this hold for a robot that is in real world withoud capture sys?
-        trunk_x_0 = self._asset.data.root_state_w[:, 0:3] - self._env.scene.env_origins
+        trunk_x_0 = self._asset.data.root_state_w[:, 0:3].clone() - self._env.scene.env_origins
         trunk_xd_0 = self._asset.data.root_lin_vel_b.clone()
-        trunk_o_0 = torch.stack(euler_xyz_from_quat(self._asset.data.root_state_w[:, 3:7]), dim=1)
+        trunk_o_0 = torch.stack(euler_xyz_from_quat(self._asset.data.root_state_w[:, 3:7].clone()), dim=1)
         trunk_od_0 = self._asset.data.root_ang_vel_b.clone()
 
-        trunk_tg = self._env.command_manager.get_command("trunk_target")[:, 0:3]
+        trunk_tg = trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3]
+
+        self._env.extras["trunk_tg"] = trunk_tg
 
         self.t_th = (self.t_th_max - self.t_th_min) * 0.5 * (actions[..., 0] + 1) + self.t_th_min
         self.t_th = self.t_th.reshape(-1, 1)
 
         # Phi is the same for x and xd
         # TODO: check this!
-        x_xd_phi = self.torch_cart2sph(trunk_tg)[..., 0]
+        x_xd_phi = self.torch_cart2sph(trunk_tg)[..., 0].clone()
+
         # Calculate X_lo
         x_theta = (self.x_theta_max - self.x_theta_min) * 0.5 * (actions[..., 1] + 1) + self.x_theta_min
         x_r = (self.x_r_max - self.x_r_min) * 0.5 * (actions[..., 2] + 1) + self.x_r_min
@@ -374,8 +387,9 @@ class BezierCurveAction(ActionTerm):
 
         trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
 
-        # self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins)
-        print(trunk_x_lo.shape)
+        self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins)
+        self.trunk_tg_vis.visualize(trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3] + self._env.scene.env_origins,
+                                    self._env.command_manager.get_command("trunk_target")[:, 3:7])
 
         # Compute the weights of bezier curve for position and orientation
         self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
@@ -383,6 +397,9 @@ class BezierCurveAction(ActionTerm):
 
         # apply the affine transformations
         self._processed_actions = actions
+
+        if self.cfg.debug_vis:
+            print(actions)
 
     def plot_trajectory(self, x_desired, x_actual):
         time = np.arange(0, len(x_desired[..., 0])) * self.cfg.time_step
@@ -419,7 +436,6 @@ class BezierCurveAction(ActionTerm):
         # self._asset.set_joint_position_target(self._asset.data.default_joint_pos)
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
-        # print(q_des)
 
         if self.cfg.debug_plot:
             # Draw until end of t_th

@@ -96,13 +96,12 @@ class CommandsCfg:
         # command is sampled on a new episodejoint_pos
         # resampling_time > episode_length_s = no target change during episode
         resampling_time_range=(5, 5),
-        debug_vis=True,
+        debug_vis=False,
+        # Position relative to the current one
         ranges=mdp.UniformTargetCommandCfg.Ranges(
-            # pos_x=(-1, 1),
-            # pos_y=(-1, 1),
-            pos_x=(-0.5, 0.5),
-            pos_y=(-0.5, 0.5),
-            pos_z=(0.4, 0.6),
+            pos_x=(-1, 1),
+            pos_y=(-1, 1),
+            pos_z=(0.0, 0.0),
             # TODO: change orientation
             roll=(0, 0),
             pitch=(0, 0),  # depends on end-effector axis
@@ -267,6 +266,11 @@ class RewardsCfg:
         func=mdp.target_orientation_error,
         weight=-0.1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
+    )
+
+    no_touchdown = RewTerm(
+        func=mdp.no_touchdown,
+        weight= -10,
     )
 
 

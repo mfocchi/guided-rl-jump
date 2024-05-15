@@ -35,10 +35,9 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     """
     # extract the asset (to enable type hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
-    command = env.command_manager.get_command(command_name)
     # obtain the desired and current positions
-    des_pos_b = command[:, :3]
-    des_pos_w, _ = combine_frame_transforms(asset.data.root_state_w[:, :3], asset.data.root_state_w[:, 3:7], des_pos_b)
+    # TODO: check this
+    des_pos_w = env.extras["trunk_tg"] + env.scene.env_origins
     curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
 
     # TODO:experiment with this function
@@ -122,3 +121,16 @@ def air_time(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     reward = torch.sum(contact_sensor.data.current_air_time[:, sensor_cfg.body_ids], dim=1)
 
     return reward
+
+
+def no_touchdown(env: RLTaskEnv) -> torch.Tensor:
+    """
+    Penalize env where no touchdown is reached
+    """
+
+    no_touchdown_penalty = torch.ones(env.num_envs, device=env.device)
+
+    touchdown_end_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+    no_touchdown_penalty[touchdown_end_ids] = 0
+
+    return no_touchdown_penalty
