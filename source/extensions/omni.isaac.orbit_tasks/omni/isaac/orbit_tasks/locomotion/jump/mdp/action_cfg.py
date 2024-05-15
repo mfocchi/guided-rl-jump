@@ -71,3 +71,4 @@ class BezierCurveActionCfg(ActionTermCfg):
     phid_max: float = MISSING
 
     debug_vis: bool = False
+    debug_plot: bool = False

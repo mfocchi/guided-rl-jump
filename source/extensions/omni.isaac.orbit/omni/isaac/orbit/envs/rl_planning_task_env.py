@@ -90,6 +90,8 @@ class RLPlanningTaskEnv(RLTaskEnv):
         # value = term_cfg.func(self._env, **term_cfg.params) * term_cfg.weight * dt
         self.reward_buf += self.reward_manager.compute(dt=1)
 
+        self.reward_buf = torch.clip(self.reward_buf, 0)
+
         # -- reset envs that terminated/timed-out and log the episode information
         # ATTENTION: for us it will always be timeout
         reset_env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)

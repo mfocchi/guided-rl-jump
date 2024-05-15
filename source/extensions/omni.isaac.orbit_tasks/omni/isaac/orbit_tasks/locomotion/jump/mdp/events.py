@@ -42,7 +42,8 @@ def reset_robot_state(
     asset.set_joint_position_target(asset.data.default_joint_pos)
     asset.set_joint_velocity_target(asset.data.default_joint_vel)
 
-    # reset touchdown info
+    # reset apex, touchdown info
+    env.extras['apex'] = {}
     env.extras['touchdown'] = {}
 
 
@@ -123,6 +124,13 @@ def move_landing_platform(
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids]
     orientations = root_states[:, 3:7]
 
+    existing_apex_ids = env.extras.get('apex', {})
+    for apex_env in apex_env_ids:
+        apex_env = apex_env.item()
+        if apex_env not in existing_apex_ids:
+            # adding the touchdown state
+            env.extras['apex'][apex_env] = True
+
     # Move the landing platform of env_ids where apex is reached
     if len(apex_env_ids):
         # Transform landing platform position and orientation accordingly to the com_targert command
@@ -132,6 +140,8 @@ def move_landing_platform(
 
         # Write the changes to the simulator
         landing_platform.write_root_pose_to_sim(torch.cat([positions[apex_env_ids], orientations[apex_env_ids]], dim=-1), env_ids=apex_env_ids)
+
+    # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
 
 
 def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, air_time_threshold: float, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg):
@@ -148,11 +158,14 @@ def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, air_time_threshold: float,
 
     touchdown_env_ids = torch.nonzero(flew_env_ids & in_contact_env_ids).reshape(1, -1)[0]
 
+    apex_env_ids = torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int)
+
     # Save touchdown pose
     existing_touchdown_ids = env.extras.get('touchdown', {})
     for touchdown_env in touchdown_env_ids:
         touchdown_env = touchdown_env.item()
-        if touchdown_env not in existing_touchdown_ids:
+        # Check if the env is in the apex and not have done touchdown
+        if touchdown_env not in existing_touchdown_ids and touchdown_env in apex_env_ids:
             # adding the touchdown state
             env.extras['touchdown'][touchdown_env] = asset.data.root_state_w[touchdown_env][:7].clone()
 
@@ -161,3 +174,5 @@ def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, air_time_threshold: float,
         existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
         asset.write_root_pose_to_sim(torch.stack(list(env.extras['touchdown'].values())).to(env.device), env_ids=existing_touchdown_ids)
         asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
+
+    # print('touchdown', torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int))
