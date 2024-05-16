@@ -4,7 +4,10 @@ from __future__ import annotations
 import torch
 import numpy as np
 from typing import TYPE_CHECKING
+import time as tm
 
+import multiprocessing
+from multiprocessing import Process, Queue
 import matplotlib.pyplot as plt
 
 import carb
@@ -126,16 +129,10 @@ class BezierCurveAction(ActionTerm):
                 }))
 
         if self.cfg.debug_plot:
-            self.figure = plt.figure(figsize=(10, 5))
-
-            # Initialize lists to store trajectories
-            self.desired_trajectory = []
-            self.actual_trajectory = []
-
-            # Initialize plot
-            plt.ion()
-            self.fig, self.ax = plt.subplots(3, 1, figsize=(8, 6))
-            self.lines = []
+            self.queue = Queue()
+            self.plot_process = Process(target=self.plot_trajectory, args=(self.queue,))
+            self.plot_process.start()
+            print("Plotting process has started")
 
         if self.cfg.debug_vis:
             self.trunk_traj_vis = VisualizationMarkers(
@@ -299,10 +296,6 @@ class BezierCurveAction(ActionTerm):
         q_des[:, self.rl_entity_cfg.joint_ids] = self.rl_diff_ik_controller.compute(rl_foot_pos_b, rl_foot_orient_b, rl_jacobian, rl_joint_pos)
         q_des[:, self.rr_entity_cfg.joint_ids] = self.rr_diff_ik_controller.compute(rr_foot_pos_b, rr_foot_orient_b, rr_jacobian, rr_joint_pos)
 
-        if self.cfg.debug_plot:
-            self.desired_trajectory.append(x[0].cpu().numpy())
-            self.actual_trajectory.append(self._asset.data.root_state_w[0, 0:3].cpu().numpy())
-
         # TODO: fix computation of joint velocity targets
         qd_des = (q_des - self._asset.data.joint_pos.clone()) / self.cfg.time_step
 
@@ -314,16 +307,73 @@ class BezierCurveAction(ActionTerm):
 
         return q_des, qd_des
 
+    def plot_trajectory(self, queue):
+
+        plt.ion()
+        fig, ax = plt.subplots(3, 1, figsize=(10, 8))
+
+        x_desired = []
+        x_actual = []
+
+        while True:
+            if not queue.empty():
+                data = queue.get()
+
+                if data == "reset":
+                    print("Resetting plot")
+                    ax[0].cla()
+                    ax[1].cla()
+                    ax[2].cla()
+                    x_desired = []
+                    x_actual = []
+                else:
+                    x_d, x_a = data
+
+                    x_desired.append(x_d)
+                    x_actual.append(x_a)
+
+                    x_desired_np = np.stack(x_desired)
+                    x_actual_np = np.stack(x_actual)
+
+                    time = np.arange(0, len(x_desired_np)) * 0.005
+
+                    ax[0].plot(time, x_actual_np[..., 0], color='red', label='Actual')
+                    ax[0].plot(time, x_desired_np[..., 0], color='blue', label='Desired')
+                    ax[0].set_ylabel("X")
+                    ax[0].legend()
+
+                    ax[1].plot(time, x_actual_np[..., 1], color='red')
+                    ax[1].plot(time, x_desired_np[..., 1], color='blue')
+                    ax[1].set_ylabel("Y")
+
+                    ax[2].plot(time, x_actual_np[..., 2], color='red')
+                    ax[2].plot(time, x_desired_np[..., 2], color='blue')
+                    ax[2].set_ylabel("Z")
+
+                    ax[2].set_xlabel("Time [s]")
+
+                    plt.show()
+                    plt.pause(0.01)
+
+            # Check if the plot window is closed
+            if not plt.get_fignums():
+                print("Plot window closed. Terminating subprocess.")
+                break
+
+        # Add a small sleep to avoid busy waiting
+        tm.sleep(0.1)
+
+        # Close the plot window before terminating
+        plt.close()
+
     def process_actions(self, actions: torch.Tensor):
 
         if self.cfg.debug_plot:
-            self.desired_trajectory = []
-            self.actual_trajectory = []
+            # Reset data
+            self.queue.put("reset")
 
         # store the raw actions
         self._raw_actions[:] = actions
-        # WARNING: !!!!!!!!!!!!!!!!!!!!!!!
-        # TODO: discuss this part, could destroy the learning algorithm
         actions = torch.clip(actions, -1, 1)
 
         # reset time counter
@@ -349,7 +399,6 @@ class BezierCurveAction(ActionTerm):
         self.t_th = self.t_th.reshape(-1, 1)
 
         # Phi is the same for x and xd
-        # TODO: check this!
         x_xd_phi = self.torch_cart2sph(trunk_tg)[..., 0].clone()
 
         # Calculate X_lo
@@ -395,31 +444,6 @@ class BezierCurveAction(ActionTerm):
         if self.cfg.debug_vis:
             print(actions)
 
-    def plot_trajectory(self, x_desired, x_actual):
-        time = np.arange(0, len(x_desired[..., 0])) * self.cfg.time_step
-        if not self.lines:
-            self.lines.append(self.ax[0].plot(time, x_desired[..., 0], color='red')[0])
-            self.lines.append(self.ax[0].plot(time, x_actual[..., 0], color='blue')[0])
-            self.lines.append(self.ax[1].plot(time, x_desired[..., 1], color='red')[0])
-            self.lines.append(self.ax[1].plot(time, x_actual[..., 1], color='blue')[0])
-            self.lines.append(self.ax[2].plot(time, x_desired[..., 2], color='red')[0])
-            self.lines.append(self.ax[2].plot(time, x_actual[..., 2], color='blue')[0])
-        else:
-            self.lines[0].set_data(time, x_desired[..., 0])
-            self.lines[1].set_data(time, x_actual[..., 0])
-            self.lines[2].set_data(time, x_desired[..., 1])
-            self.lines[3].set_data(time, x_actual[..., 1])
-            self.lines[4].set_data(time, x_desired[..., 2])
-            self.lines[5].set_data(time, x_actual[..., 2])
-            self.ax[0].relim()
-            self.ax[0].autoscale_view()
-            self.ax[1].relim()
-            self.ax[1].autoscale_view()
-            self.ax[2].relim()
-            self.ax[2].autoscale_view()
-            self.fig.canvas.draw()
-            self.fig.canvas.flush_events()
-
     def apply_actions(self):
 
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
@@ -427,16 +451,23 @@ class BezierCurveAction(ActionTerm):
 
         q_des, qd_des = self.ik(x, xd, o, od)
 
-        # self._asset.set_joint_position_target(self._asset.data.default_joint_pos)
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
 
         if self.cfg.debug_plot:
-            # Draw until end of t_th
-            if self.dt <= self.t_th[..., 0]:
-                self.plot_trajectory(
-                    np.stack(self.desired_trajectory),
-                    np.stack(self.actual_trajectory)
-                )
+
+            if self.dt < self.t_th[0]:
+                # Collect the current desired and actual positions for plotting
+                desired_pos = x[0].cpu().numpy()
+                actual_pos = self._asset.data.root_state_w[0, 0:3].cpu().numpy()
+
+                # Send the positions to the plotting process
+                self.queue.put((desired_pos, actual_pos))
 
         self.dt += self.cfg.time_step
+
+    def __del__(self):
+        if self.cfg.debug_plot:
+            if self.plot_process.is_alive():
+                self.plot_process.terminate()
+                self.plot_process.join()
