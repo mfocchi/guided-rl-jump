@@ -35,15 +35,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
 
         print("#" * 25)
         print("New episode")
-
-        print("Resetting the robot...")
-        # This is quite long since PID manage the joint position
-        for i in range(150):
-            self._reset_idx(torch.arange(self.num_envs, device=self.device))
-            self.scene.write_data_to_sim()
-            self.sim.step()
-            self.scene.update(dt=self.physics_dt)
-
+        
         # process actions
         self.action_manager.process_action(action)
         self.reward_buf = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)

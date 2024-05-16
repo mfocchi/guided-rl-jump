@@ -270,7 +270,7 @@ class RewardsCfg:
 
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight= -10,
+        weight=-10,
     )
 
 

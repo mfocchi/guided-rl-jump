@@ -268,25 +268,25 @@ class BezierCurveAction(ActionTerm):
         fl_pose_w = self._asset.data.body_state_w[:, self.fl_entity_cfg.body_ids[0], 0:7].clone()
         fl_joint_pos = self._asset.data.joint_pos[:, self.fl_entity_cfg.joint_ids].clone()
         fl_foot_pos_b, fl_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], fl_pose_w[:, 0:3], fl_pose_w[:, 3:7])
-        fl_foot_pos_des_b, fl_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.fl_foot_pos_w_0)
+        fl_foot_pos_des_b, fl_foot_orient_des_b = subtract_frame_transforms(x, o_quat, fl_pose_w[:, 0:3])
 
         fr_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.fr_body_idx, :, np.array(self.fr_entity_cfg.joint_ids) + 6].clone()
         fr_pose_w = self._asset.data.body_state_w[:, self.fr_entity_cfg.body_ids[0], 0:7].clone()
         fr_joint_pos = self._asset.data.joint_pos[:, self.fr_entity_cfg.joint_ids].clone()
         fr_foot_pos_b, fr_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], fr_pose_w[:, 0:3], fr_pose_w[:, 3:7])
-        fr_foot_pos_des_b, fr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.fr_foot_pos_w_0)
+        fr_foot_pos_des_b, fr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, fr_pose_w[:, 0:3])
 
         rl_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.rl_body_idx, :, np.array(self.rl_entity_cfg.joint_ids) + 6].clone()
         rl_pose_w = self._asset.data.body_state_w[:, self.rl_entity_cfg.body_ids[0], 0:7].clone()
         rl_joint_pos = self._asset.data.joint_pos[:, self.rl_entity_cfg.joint_ids].clone()
         rl_foot_pos_b, rl_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rl_pose_w[:, 0:3], rl_pose_w[:, 3:7])
-        rl_foot_pos_des_b, rl_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.rl_foot_pos_w_0)
+        rl_foot_pos_des_b, rl_foot_orient_des_b = subtract_frame_transforms(x, o_quat, rl_pose_w[:, 0:3])
 
         rr_jacobian = self._asset.root_physx_view.get_jacobians()[:, self.rr_body_idx, :, np.array(self.rr_entity_cfg.joint_ids) + 6].clone()
         rr_pose_w = self._asset.data.body_state_w[:, self.rr_entity_cfg.body_ids[0], 0:7].clone()
         rr_joint_pos = self._asset.data.joint_pos[:, self.rr_entity_cfg.joint_ids].clone()
         rr_foot_pos_b, rr_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rr_pose_w[:, 0:3], rr_pose_w[:, 3:7])
-        rr_foot_pos_des_b, rr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, self.rr_foot_pos_w_0)
+        rr_foot_pos_des_b, rr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, rr_pose_w[:, 0:3])
 
         # Orientation is just for visualization (ignore)
         self.fl_diff_ik_controller.set_command(fl_foot_pos_des_b, ee_quat=fl_foot_orient_des_b)
@@ -334,12 +334,6 @@ class BezierCurveAction(ActionTerm):
         self.fr_diff_ik_controller.reset()
         self.rl_diff_ik_controller.reset()
         self.rr_diff_ik_controller.reset()
-
-        # Fixed foot positions in wf
-        self.fl_foot_pos_w_0 = torch.stack([torch.tensor([0.176, 0.178, 0.0]) for i in range(self.num_envs)]).to(self.device) + self._env.scene.env_origins
-        self.fr_foot_pos_w_0 = torch.stack([torch.tensor([0.176, -0.178, 0.0]) for i in range(self.num_envs)]).to(self.device) + self._env.scene.env_origins
-        self.rl_foot_pos_w_0 = torch.stack([torch.tensor([-0.260, 0.178, 0.0]) for i in range(self.num_envs)]).to(self.device) + self._env.scene.env_origins
-        self.rr_foot_pos_w_0 = torch.stack([torch.tensor([-0.260, -0.178, 0.0]) for i in range(self.num_envs)]).to(self.device) + self._env.scene.env_origins
 
         # TODO: this hold for a robot that is in real world withoud capture sys?
         trunk_x_0 = self._asset.data.root_state_w[:, 0:3].clone() - self._env.scene.env_origins

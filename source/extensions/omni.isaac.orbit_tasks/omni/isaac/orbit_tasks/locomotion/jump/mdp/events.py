@@ -39,8 +39,7 @@ def reset_robot_state(
     asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1))
     asset.write_root_velocity_to_sim(velocities)
 
-    asset.set_joint_position_target(asset.data.default_joint_pos)
-    asset.set_joint_velocity_target(asset.data.default_joint_vel)
+    asset.write_joint_state_to_sim(asset.data.default_joint_pos, asset.data.default_joint_vel)
 
     # reset apex, touchdown info
     env.extras['apex'] = {}
