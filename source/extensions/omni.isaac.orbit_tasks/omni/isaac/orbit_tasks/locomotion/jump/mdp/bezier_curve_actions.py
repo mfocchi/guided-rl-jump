@@ -6,7 +6,6 @@ import numpy as np
 from typing import TYPE_CHECKING
 import time as tm
 
-import multiprocessing
 from multiprocessing import Process, Queue
 import matplotlib.pyplot as plt
 
@@ -336,6 +335,10 @@ class BezierCurveAction(ActionTerm):
                     x_actual_np = np.stack(x_actual)
 
                     time = np.arange(0, len(x_desired_np)) * 0.005
+
+                    ax[0].clear()
+                    ax[1].clear()
+                    ax[2].clear()
 
                     ax[0].plot(time, x_actual_np[..., 0], color='red', label='Actual')
                     ax[0].plot(time, x_desired_np[..., 0], color='blue', label='Desired')
