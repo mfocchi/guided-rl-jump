@@ -14,10 +14,10 @@ from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG
 from omni.isaac.orbit.controllers import DifferentialIKController, DifferentialIKControllerCfg
 
 
-class Env():
+class EnvPos():
 
     def __init__(self, simulation_app, sim: sim_utils.SimulationContext, scene: InteractiveScene) -> None:
-        super(Env, self).__init__()
+        super(EnvPos, self).__init__()
 
         self.simulation_app = simulation_app
         self.sim = sim
@@ -111,6 +111,27 @@ class Env():
         self.rl_diff_ik_controller.reset()
         self.rr_diff_ik_controller.reset()
 
+    def plot_trunk_traj(self, actual_traj, des_traj, title=""):
+        fig, ax = plt.subplots(3, 1, figsize=(10, 8))
+        fig.suptitle(title)
+
+        actual_traj = torch.stack(actual_traj, dim=1)[0]
+        des_traj = torch.stack(des_traj, dim=1)[0]
+
+        time = np.arange(0, len(des_traj)) * 0.005
+
+        ax[0].plot(time, actual_traj[..., 0], color="blue", label="actual")
+        ax[0].plot(time, des_traj[..., 0], color="red", label="desired")
+
+        ax[1].plot(time, actual_traj[..., 1], color="blue")
+        ax[1].plot(time, des_traj[..., 1], color="red")
+
+        ax[2].plot(time, actual_traj[..., 2], color="blue")
+        ax[2].plot(time, des_traj[..., 2], color="red")
+
+        ax[0].legend()
+        plt.show()
+
     def plot_traj(self, actual_traj, des_traj, title=""):
         fig, ax = plt.subplots(3, 4, figsize=(10, 8))
         fig.suptitle(title)
@@ -122,49 +143,49 @@ class Env():
 
         # FL
         ax[0, 0].set_title("FL")
-        ax[0, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[0]], color="red", label="actual")
-        ax[0, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[0]], color="blue", label="desired")
+        ax[0, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[0]], color="blue", label="actual")
+        ax[0, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[0]], color="red", label="desired")
 
-        ax[1, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[1]], color="red")
-        ax[1, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[1]], color="red")
 
-        ax[2, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[2]], color="red")
-        ax[2, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[2]], color="red")
 
         ax[0, 0].legend()
 
         # FR
         ax[0, 1].set_title("FR")
-        ax[0, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[0]], color="red")
-        ax[0, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[0]], color="red")
 
-        ax[1, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[1]], color="red")
-        ax[1, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[1]], color="red")
 
-        ax[2, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[2]], color="red")
-        ax[2, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[2]], color="red")
 
         # RL
         ax[0, 2].set_title("RL")
-        ax[0, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[0]], color="red")
-        ax[0, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[0]], color="red")
 
-        ax[1, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[1]], color="red")
-        ax[1, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[1]], color="red")
 
-        ax[2, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[2]], color="red")
-        ax[2, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[2]], color="red")
 
         # RR
         ax[0, 3].set_title("RR")
-        ax[0, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[0]], color="red")
-        ax[0, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[0]], color="red")
 
-        ax[1, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[1]], color="red")
-        ax[1, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[1]], color="red")
 
-        ax[2, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[2]], color="red")
-        ax[2, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[2]], color="red")
 
     def run_simulator(self):
         """Runs the simulation loop."""
@@ -180,9 +201,14 @@ class Env():
         qd_actual_traj = []
         qd_des_traj = []
 
+        trunk_actual_traj = []
+        trunk_des_traj = []
+
         sim_time = 0.0
         max_episode_time = 2
         count = 0
+
+        initial__trunk = robot.data.root_state_w[..., 0:7].clone()
 
         while True:
             # Simulate physics
@@ -192,6 +218,7 @@ class Env():
 
                     self.plot_traj(q_actual_traj, q_des_traj, "q")
                     self.plot_traj(qd_actual_traj, qd_des_traj, "qd")
+                    self.plot_trunk_traj(trunk_actual_traj, trunk_des_traj, "trunk")
 
                     plt.show()
 
@@ -204,26 +231,24 @@ class Env():
                     qd_actual_traj = []
                     qd_des_traj = []
 
+                    trunk_actual_traj = []
+                    trunk_des_traj = []
+
                     # reset the robot
                     self.reset(robot)
 
-                # set the robot trunk in air
-                trunk_air_state = robot.data.default_root_state.clone()
-                trunk_air_state[..., 2] += 0.5
+                trunk_des = initial__trunk.clone()
+                trunk_des[:, 2] += (0.05 * torch.sin(torch.tensor(0.5 * 2 * np.pi * sim_time)))
 
-                robot.write_root_pose_to_sim(trunk_air_state[..., 0:7])
-                robot.write_root_velocity_to_sim(trunk_air_state[..., 7:14])
+                # print(robot.data.root_state_w[..., 0:3])
 
-                q_des = robot.data.default_joint_pos.clone()
-                q_des = q_des + 0.1 * torch.sin(torch.tensor(4.4 * sim_time))
-
-                # TODO: q_des - q_des(-1)
-                if len(qd_des_traj):
-                    qd_des = (q_des - qd_des_traj[-1].to('cuda')) / self.sim_dt
-                else:
-                    qd_des = torch.zeros_like(q_des)
-
+                q_des, qd_des = self.ik(robot, trunk_des)
                 # write data to sim
+                robot.set_joint_position_target(robot.data.default_joint_pos)
+                tau = torch.tensor([-4.09311, - 0.76027 , 4.72874 , 4.05537 , - 0.7478 , 4.68944 , - 2.81452 , - 0.43158 , 3.47637 , 2.77926 , - 0.41959  , 3.43591], device="cuda:0")
+                # robot.set_joint_effort_target(tau)
+                print(robot.data.applied_torque)
+
                 # robot.set_joint_position_target(q_des)
                 # robot.set_joint_velocity_target(qd_des)
 
@@ -236,15 +261,18 @@ class Env():
                 count += 1
                 # update buffers
                 self.scene.update(self.sim_dt)
-                
-                robot.write_joint_state_to_sim(q_des, robot.data.default_joint_vel)
 
+                # robot.write_joint_state_to_sim(q_des, robot.data.default_joint_vel)
+                # robot.write_root_velocity_to_sim( robot.data.default_root_state.clone()[...,7:14])
 
                 q_actual_traj.append(robot.data.joint_pos.clone().detach().cpu())
                 q_des_traj.append(q_des.detach().cpu())
 
                 qd_actual_traj.append(robot.data.joint_vel.clone().detach().cpu())
                 qd_des_traj.append(qd_des.detach().cpu())
+
+                trunk_actual_traj.append(robot.data.root_state_w[..., 0:3].clone().detach().cpu())
+                trunk_des_traj.append(trunk_des[..., 0:3].detach().cpu())
 
             print("Simulation concluded :)")
             break

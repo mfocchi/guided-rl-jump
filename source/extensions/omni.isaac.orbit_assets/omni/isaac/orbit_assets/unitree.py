@@ -25,30 +25,30 @@ from omni.isaac.orbit.utils.assets import ISAAC_ORBIT_NUCLEUS_DIR
 
 # MLP Actuatr configuration
 
-GO1_ACTUATOR_CFG = ActuatorNetMLPCfg(
-    joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
-    network_file=f"{ISAAC_ORBIT_NUCLEUS_DIR}/ActuatorNets/Unitree/unitree_go1.pt",
-    pos_scale=-1.0,
-    vel_scale=1.0,
-    torque_scale=1.0,
-    input_order="pos_vel",
-    input_idx=[0, 1, 2],
-    effort_limit=23.7,  # taken from spec sheet
-    velocity_limit=30.0,  # taken from spec sheet
-    saturation_effort=23.7,  # same as effort limit
-)
-
-# DCMotor Actuatr configuration
-
-# GO1_ACTUATOR_CFG = DCMotorCfg(
+# GO1_ACTUATOR_CFG = ActuatorNetMLPCfg(
 #     joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
+#     network_file=f"{ISAAC_ORBIT_NUCLEUS_DIR}/ActuatorNets/Unitree/unitree_go1.pt",
+#     pos_scale=-1.0,
+#     vel_scale=1.0,
+#     torque_scale=1.0,
+#     input_order="pos_vel",
+#     input_idx=[0, 1, 2],
 #     effort_limit=23.7,  # taken from spec sheet
 #     velocity_limit=30.0,  # taken from spec sheet
 #     saturation_effort=23.7,  # same as effort limit
-#     stiffness=25.0,
-#     damping=0.5,
-#     friction=0.0,
 # )
+
+# DCMotor Actuatr configuration
+
+GO1_ACTUATOR_CFG = DCMotorCfg(
+    joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
+    effort_limit=23.7,  # taken from spec sheet
+    velocity_limit=30.0,  # taken from spec sheet
+    saturation_effort=23.7,  # same as effort limit
+    stiffness=25.0,
+    damping=0.5,
+    friction=0.0,
+)
 
 
 """Configuration of Go1 actuators using MLP model.
@@ -130,12 +130,19 @@ UNITREE_GO1_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         pos=(0.0, 0.0, 0.3),
+        # joint_pos={
+        #     ".*L_hip_joint": 0.1,
+        #     ".*R_hip_joint": -0.1,
+        #     "F[L,R]_thigh_joint": 0.8,
+        #     "R[L,R]_thigh_joint": 1.0,
+        #     ".*_calf_joint": -1.5,
+        # },
         joint_pos={
-            ".*L_hip_joint": 0.1,
-            ".*R_hip_joint": -0.1,
-            "F[L,R]_thigh_joint": 0.8,
-            "R[L,R]_thigh_joint": 1.0,
-            ".*_calf_joint": -1.5,
+            ".*L_hip_joint": 0.2,
+            ".*R_hip_joint": -0.2,
+            "F[L,R]_thigh_joint": 0.935,
+            "R[L,R]_thigh_joint": 0.935,
+            ".*_calf_joint": -1.624,
         },
         joint_vel={".*": 0.0},
     ),

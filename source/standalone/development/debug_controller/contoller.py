@@ -29,6 +29,7 @@ from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG
 
 from SceneCfg import SceneCfg
 from Env import *
+from EnvPos import *
 
 
 def main():
@@ -37,7 +38,7 @@ def main():
         torch.set_printoptions(threshold=float('inf'), precision=5, linewidth=10000, sci_mode=False)
 
     # Initialize the simulation context
-    sim = sim_utils.SimulationContext(sim_utils.SimulationCfg(dt=0.01, substeps=1))
+    sim = sim_utils.SimulationContext(sim_utils.SimulationCfg(dt=0.005, substeps=1))
     sim.set_camera_view(eye=(2.5, 2.5, 2.5), target=(0.0, 0.0, 0.0))
 
     # Design the scene
@@ -48,7 +49,8 @@ def main():
     sim.reset()
     print("[INFO]: Setup complete...")
 
-    env = Env(simulation_app, sim, scene)
+    # env = Env(simulation_app, sim, scene)
+    env = EnvPos(simulation_app, sim, scene)
 
     # Run the simulator
     env.run_simulator()
