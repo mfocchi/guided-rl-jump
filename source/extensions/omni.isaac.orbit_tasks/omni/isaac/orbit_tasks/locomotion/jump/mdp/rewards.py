@@ -86,6 +86,23 @@ def friction_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, mu: float = 
     return costs
 
 
+def unilateral_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+    """Penalize contact forces out of the friction cone
+
+    Args:
+        sensor_cfg: The contact sensor configuration
+        mu: the friction coefficient
+    """
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    net_contact_forces = contact_sensor.data.net_forces_w
+
+    # sum along each robot to get the total violation cost
+    costs = torch.sum(computeActivationFunction('linear', net_contact_forces[:, sensor_cfg.body_ids, 2], 0.0, torch.inf), dim=1)
+
+    return costs
+
+
 def feet_contact_time(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
     """Reward long steps taken by the feet using L2-kernel.
 

@@ -239,13 +239,19 @@ class RunningRewardsCfg:
         }
     )
 
+    unilateral_constraint = RewTerm(
+        func=mdp.unilateral_constraint,
+        weight=-0.1,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")
+        }
+    )
+
     undesired_contacts = RewTerm(
         func=mdp.undesired_contacts,
         weight=-0.1,
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="^(?!.*foot).*$"), "threshold": 1.0},
     )
-
-    # TODO: unilaterality, treshold
 
     # TODO: singularity
 
@@ -293,7 +299,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     """Configuration for the locomotion jump environment."""
 
     # Scene settings
-    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=5)
+    scene: MySceneCfg = MySceneCfg(num_envs=8192, env_spacing=3)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
