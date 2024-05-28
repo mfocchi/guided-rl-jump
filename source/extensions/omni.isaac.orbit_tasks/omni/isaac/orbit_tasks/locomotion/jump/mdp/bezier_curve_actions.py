@@ -244,12 +244,12 @@ class BezierCurveAction(ActionTerm):
 
         return cartesian
 
-    def ik(self, x, xd, o, od):
+    def ik(self, x, xd, o, od, old_q_des):
 
         # Add the origin to get the position for each robot environment
         x += self._env.scene.env_origins
         # x = self._asset.data.default_root_state[:, 0:3].clone() + self._env.scene.env_origins
-        # TODO: fix and enable orientation
+        # TODO: enable orientation
         # o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
         o_quat = self._asset.data.default_root_state[:, 3:7].clone()
 
@@ -295,8 +295,7 @@ class BezierCurveAction(ActionTerm):
         q_des[:, self.rl_entity_cfg.joint_ids] = self.rl_diff_ik_controller.compute(rl_foot_pos_b, rl_foot_orient_b, rl_jacobian, rl_joint_pos)
         q_des[:, self.rr_entity_cfg.joint_ids] = self.rr_diff_ik_controller.compute(rr_foot_pos_b, rr_foot_orient_b, rr_jacobian, rr_joint_pos)
 
-        # TODO: fix computation of joint velocity targets
-        qd_des = (q_des - self._asset.data.joint_pos.clone()) / self.cfg.time_step
+        qd_des = (q_des - old_q_des) / self.cfg.time_step
 
         after_t_th = torch.where(self.dt > self.t_th)[0]
 
@@ -388,6 +387,9 @@ class BezierCurveAction(ActionTerm):
         self.rl_diff_ik_controller.reset()
         self.rr_diff_ik_controller.reset()
 
+        # Reset qd computation
+        self.old_q_des = self._asset.data.default_joint_pos
+
         # TODO: this hold for a robot that is in real world withoud capture sys?
         trunk_x_0 = self._asset.data.root_state_w[:, 0:3].clone() - self._env.scene.env_origins
         trunk_xd_0 = self._asset.data.root_lin_vel_b.clone()
@@ -452,7 +454,8 @@ class BezierCurveAction(ActionTerm):
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
         o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th)
 
-        q_des, qd_des = self.ik(x, xd, o, od)
+        q_des, qd_des = self.ik(x, xd, o, od, self.old_q_des)
+        self.old_q_des = q_des.clone()
 
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)

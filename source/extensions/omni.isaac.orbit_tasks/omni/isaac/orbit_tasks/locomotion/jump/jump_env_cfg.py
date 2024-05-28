@@ -124,7 +124,7 @@ class ActionsCfg:
                                          rl_body_names=["RL_foot"],
                                          rr_joint_names=["RR.*"],
                                          rr_body_names=["RR_foot"],
-                                         t_th_min=0.2,
+                                         t_th_min=0.1,
                                          t_th_max=1,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
@@ -133,7 +133,7 @@ class ActionsCfg:
                                          xd_theta_min=np.pi / 6,
                                          xd_theta_max=np.pi / 2,
                                          xd_r_min=0.1,
-                                         xd_r_max=4,
+                                         xd_r_max=5,
                                          psi_min=-2 * np.pi,
                                          psi_max=2 * np.pi,
                                          theta_min=- 2 * np.pi,
@@ -146,8 +146,8 @@ class ActionsCfg:
                                          thetad_max=4,
                                          phid_min=-4,
                                          phid_max=4,
-                                         debug_vis=True,
-                                         debug_plot=True)
+                                         debug_vis=False,
+                                         debug_plot=False)
 
 
 @configclass
