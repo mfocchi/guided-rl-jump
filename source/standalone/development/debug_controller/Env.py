@@ -48,53 +48,6 @@ class Env():
         self.rr_entity_cfg.resolve(self.scene)
         self.rr_body_idx = self.rr_entity_cfg.body_ids[0]
 
-    def ik(self, robot, pose):
-        x = pose[..., 0:3]
-        o_quat = pose[..., 3:7]
-
-        q_des = torch.zeros_like(robot.data.default_joint_pos)
-
-        root_pose_w = robot.data.root_state_w[:, 0:7].clone()
-
-        fl_jacobian = robot.root_physx_view.get_jacobians()[:, self.fl_body_idx, :, np.array(self.fl_entity_cfg.joint_ids) + 6].clone()
-        fl_pose_w = robot.data.body_state_w[:, self.fl_entity_cfg.body_ids[0], 0:7].clone()
-        fl_joint_pos = robot.data.joint_pos[:, self.fl_entity_cfg.joint_ids].clone()
-        fl_foot_pos_b, fl_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], fl_pose_w[:, 0:3], fl_pose_w[:, 3:7])
-        fl_foot_pos_des_b, fl_foot_orient_des_b = subtract_frame_transforms(x, o_quat, fl_pose_w[:, 0:3])
-
-        fr_jacobian = robot.root_physx_view.get_jacobians()[:, self.fr_body_idx, :, np.array(self.fr_entity_cfg.joint_ids) + 6].clone()
-        fr_pose_w = robot.data.body_state_w[:, self.fr_entity_cfg.body_ids[0], 0:7].clone()
-        fr_joint_pos = robot.data.joint_pos[:, self.fr_entity_cfg.joint_ids].clone()
-        fr_foot_pos_b, fr_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], fr_pose_w[:, 0:3], fr_pose_w[:, 3:7])
-        fr_foot_pos_des_b, fr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, fr_pose_w[:, 0:3])
-
-        rl_jacobian = robot.root_physx_view.get_jacobians()[:, self.rl_body_idx, :, np.array(self.rl_entity_cfg.joint_ids) + 6].clone()
-        rl_pose_w = robot.data.body_state_w[:, self.rl_entity_cfg.body_ids[0], 0:7].clone()
-        rl_joint_pos = robot.data.joint_pos[:, self.rl_entity_cfg.joint_ids].clone()
-        rl_foot_pos_b, rl_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rl_pose_w[:, 0:3], rl_pose_w[:, 3:7])
-        rl_foot_pos_des_b, rl_foot_orient_des_b = subtract_frame_transforms(x, o_quat, rl_pose_w[:, 0:3])
-
-        rr_jacobian = robot.root_physx_view.get_jacobians()[:, self.rr_body_idx, :, np.array(self.rr_entity_cfg.joint_ids) + 6].clone()
-        rr_pose_w = robot.data.body_state_w[:, self.rr_entity_cfg.body_ids[0], 0:7].clone()
-        rr_joint_pos = robot.data.joint_pos[:, self.rr_entity_cfg.joint_ids].clone()
-        rr_foot_pos_b, rr_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rr_pose_w[:, 0:3], rr_pose_w[:, 3:7])
-        rr_foot_pos_des_b, rr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, rr_pose_w[:, 0:3])
-
-        # Orientation is just for visualization (ignore)
-        self.fl_diff_ik_controller.set_command(fl_foot_pos_des_b, ee_quat=fl_foot_orient_des_b)
-        self.fr_diff_ik_controller.set_command(fr_foot_pos_des_b, ee_quat=fr_foot_orient_des_b)
-        self.rl_diff_ik_controller.set_command(rl_foot_pos_des_b, ee_quat=rl_foot_orient_des_b)
-        self.rr_diff_ik_controller.set_command(rr_foot_pos_des_b, ee_quat=rr_foot_orient_des_b)
-
-        q_des[:, self.fl_entity_cfg.joint_ids] = self.fl_diff_ik_controller.compute(fl_foot_pos_b, fl_foot_orient_b, fl_jacobian, fl_joint_pos)
-        q_des[:, self.fr_entity_cfg.joint_ids] = self.fr_diff_ik_controller.compute(fr_foot_pos_b, fr_foot_orient_b, fr_jacobian, fr_joint_pos)
-        q_des[:, self.rl_entity_cfg.joint_ids] = self.rl_diff_ik_controller.compute(rl_foot_pos_b, rl_foot_orient_b, rl_jacobian, rl_joint_pos)
-        q_des[:, self.rr_entity_cfg.joint_ids] = self.rr_diff_ik_controller.compute(rr_foot_pos_b, rr_foot_orient_b, rr_jacobian, rr_joint_pos)
-
-        qd_des = (q_des - robot.data.joint_pos.clone()) / self.sim_dt
-
-        return q_des, qd_des
-
     def reset(self, robot):
         print("-" * 10)
         print("Resetting the base")
@@ -122,49 +75,49 @@ class Env():
 
         # FL
         ax[0, 0].set_title("FL")
-        ax[0, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[0]], color="red", label="actual")
-        ax[0, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[0]], color="blue", label="desired")
+        ax[0, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[0]], color="blue", label="actual")
+        ax[0, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[0]], color="red", label="desired")
 
-        ax[1, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[1]], color="red")
-        ax[1, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[1]], color="red")
 
-        ax[2, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[2]], color="red")
-        ax[2, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[2]], color="red")
 
         ax[0, 0].legend()
 
         # FR
         ax[0, 1].set_title("FR")
-        ax[0, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[0]], color="red")
-        ax[0, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[0]], color="red")
 
-        ax[1, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[1]], color="red")
-        ax[1, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[1]], color="red")
 
-        ax[2, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[2]], color="red")
-        ax[2, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[2]], color="red")
 
         # RL
         ax[0, 2].set_title("RL")
-        ax[0, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[0]], color="red")
-        ax[0, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[0]], color="red")
 
-        ax[1, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[1]], color="red")
-        ax[1, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[1]], color="red")
 
-        ax[2, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[2]], color="red")
-        ax[2, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[2]], color="red")
 
         # RR
         ax[0, 3].set_title("RR")
-        ax[0, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[0]], color="red")
-        ax[0, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[0]], color="blue")
+        ax[0, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[0]], color="red")
 
-        ax[1, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[1]], color="red")
-        ax[1, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[1]], color="blue")
+        ax[1, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[1]], color="red")
 
-        ax[2, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[2]], color="red")
-        ax[2, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[2]], color="blue")
+        ax[2, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[2]], color="red")
 
     def run_simulator(self):
         """Runs the simulation loop."""
@@ -173,6 +126,8 @@ class Env():
         self.reset(robot)
 
         # Define simulation stepping
+
+        old_q_des = robot.data.default_joint_pos.clone()
 
         q_actual_traj = []
         q_des_traj = []
@@ -197,6 +152,9 @@ class Env():
 
                     # Reset sim time
                     sim_time = 0.0
+
+                    old_q_des = robot.data.default_joint_pos.clone()
+
                     # reset traj logger
                     q_actual_traj = []
                     q_des_traj = []
@@ -215,17 +173,14 @@ class Env():
                 robot.write_root_velocity_to_sim(trunk_air_state[..., 7:14])
 
                 q_des = robot.data.default_joint_pos.clone()
-                q_des = q_des + 0.1 * torch.sin(torch.tensor(4.4 * sim_time))
+                q_des = q_des.clone() + 0.1 * torch.sin(torch.tensor(3 * 2 * np.pi * sim_time))
 
-                # TODO: q_des - q_des(-1)
-                if len(qd_des_traj):
-                    qd_des = (q_des - qd_des_traj[-1].to('cuda')) / self.sim_dt
-                else:
-                    qd_des = torch.zeros_like(q_des)
+                qd_des = (q_des.clone() - old_q_des) / self.sim_dt
+                old_q_des = q_des.clone()
 
                 # write data to sim
-                # robot.set_joint_position_target(q_des)
-                # robot.set_joint_velocity_target(qd_des)
+                robot.set_joint_position_target(q_des)
+                robot.set_joint_velocity_target(qd_des)
 
                 robot.write_data_to_sim()
 
@@ -236,9 +191,6 @@ class Env():
                 count += 1
                 # update buffers
                 self.scene.update(self.sim_dt)
-                
-                robot.write_joint_state_to_sim(q_des, robot.data.default_joint_vel)
-
 
                 q_actual_traj.append(robot.data.joint_pos.clone().detach().cpu())
                 q_des_traj.append(q_des.detach().cpu())

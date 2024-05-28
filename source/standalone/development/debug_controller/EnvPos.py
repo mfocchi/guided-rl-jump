@@ -48,7 +48,7 @@ class EnvPos():
         self.rr_entity_cfg.resolve(self.scene)
         self.rr_body_idx = self.rr_entity_cfg.body_ids[0]
 
-    def ik(self, robot, pose):
+    def ik(self, robot, pose, old_q_des):
         x = pose[..., 0:3]
         o_quat = pose[..., 3:7]
 
@@ -91,7 +91,8 @@ class EnvPos():
         q_des[:, self.rl_entity_cfg.joint_ids] = self.rl_diff_ik_controller.compute(rl_foot_pos_b, rl_foot_orient_b, rl_jacobian, rl_joint_pos)
         q_des[:, self.rr_entity_cfg.joint_ids] = self.rr_diff_ik_controller.compute(rr_foot_pos_b, rr_foot_orient_b, rr_jacobian, rr_joint_pos)
 
-        qd_des = (q_des - robot.data.joint_pos.clone()) / self.sim_dt
+        qd_des = (q_des - old_q_des) / self.sim_dt
+        print(qd_des)
 
         return q_des, qd_des
 
@@ -195,6 +196,8 @@ class EnvPos():
 
         # Define simulation stepping
 
+        old_q_des = robot.data.default_joint_pos.clone()
+
         q_actual_traj = []
         q_des_traj = []
 
@@ -205,7 +208,8 @@ class EnvPos():
         trunk_des_traj = []
 
         sim_time = 0.0
-        max_episode_time = 2
+        max_episode_time = 5
+        start_time = 1
         count = 0
 
         initial__trunk = robot.data.root_state_w[..., 0:7].clone()
@@ -224,6 +228,9 @@ class EnvPos():
 
                     # Reset sim time
                     sim_time = 0.0
+
+                    old_q_des = robot.data.default_joint_pos.clone()
+
                     # reset traj logger
                     q_actual_traj = []
                     q_des_traj = []
@@ -238,20 +245,19 @@ class EnvPos():
                     self.reset(robot)
 
                 trunk_des = initial__trunk.clone()
-                trunk_des[:, 2] += (0.05 * torch.sin(torch.tensor(0.5 * 2 * np.pi * sim_time)))
+
+                if sim_time > start_time:
+                    trunk_des[:, 2] += (0.02 * torch.sin(torch.tensor(2 * np.pi * (sim_time - start_time))))
 
                 # print(robot.data.root_state_w[..., 0:3])
 
-                q_des, qd_des = self.ik(robot, trunk_des)
+                q_des, qd_des = self.ik(robot, trunk_des, old_q_des)
+                old_q_des = q_des.clone()
+
+                robot.set_joint_position_target(q_des)
+                robot.set_joint_velocity_target(qd_des)
+
                 # write data to sim
-                robot.set_joint_position_target(robot.data.default_joint_pos)
-                tau = torch.tensor([-4.09311, - 0.76027 , 4.72874 , 4.05537 , - 0.7478 , 4.68944 , - 2.81452 , - 0.43158 , 3.47637 , 2.77926 , - 0.41959  , 3.43591], device="cuda:0")
-                # robot.set_joint_effort_target(tau)
-                print(robot.data.applied_torque)
-
-                # robot.set_joint_position_target(q_des)
-                # robot.set_joint_velocity_target(qd_des)
-
                 robot.write_data_to_sim()
 
                 # perform step
@@ -262,17 +268,16 @@ class EnvPos():
                 # update buffers
                 self.scene.update(self.sim_dt)
 
-                # robot.write_joint_state_to_sim(q_des, robot.data.default_joint_vel)
-                # robot.write_root_velocity_to_sim( robot.data.default_root_state.clone()[...,7:14])
+                if sim_time > start_time:
 
-                q_actual_traj.append(robot.data.joint_pos.clone().detach().cpu())
-                q_des_traj.append(q_des.detach().cpu())
+                    q_actual_traj.append(robot.data.joint_pos.clone().detach().cpu())
+                    q_des_traj.append(q_des.detach().cpu())
 
-                qd_actual_traj.append(robot.data.joint_vel.clone().detach().cpu())
-                qd_des_traj.append(qd_des.detach().cpu())
+                    qd_actual_traj.append(robot.data.joint_vel.clone().detach().cpu())
+                    qd_des_traj.append(qd_des.detach().cpu())
 
-                trunk_actual_traj.append(robot.data.root_state_w[..., 0:3].clone().detach().cpu())
-                trunk_des_traj.append(trunk_des[..., 0:3].detach().cpu())
+                    trunk_actual_traj.append(robot.data.root_state_w[..., 0:3].clone().detach().cpu())
+                    trunk_des_traj.append(trunk_des[..., 0:3].detach().cpu())
 
             print("Simulation concluded :)")
             break
