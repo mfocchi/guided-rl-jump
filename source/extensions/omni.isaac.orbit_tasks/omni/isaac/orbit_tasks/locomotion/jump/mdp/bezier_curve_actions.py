@@ -151,7 +151,8 @@ class BezierCurveAction(ActionTerm):
     @property
     def action_dim(self) -> int:
         # t_th, x_lo(sph), xd_lo(sph), o_lo, od_lo
-        return 1 + 2 + 2 + 3 + 3
+        # return 1 + 2 + 2 + 3 + 3
+        return 1 + 2 + 2
 
     @property
     def raw_actions(self) -> torch.Tensor:
@@ -248,8 +249,6 @@ class BezierCurveAction(ActionTerm):
 
         # Add the origin to get the position for each robot environment
         x += self._env.scene.env_origins
-        # x = self._asset.data.default_root_state[:, 0:3].clone() + self._env.scene.env_origins
-        # TODO: enable orientation
         # o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
         o_quat = self._asset.data.default_root_state[:, 3:7].clone()
 
@@ -374,9 +373,12 @@ class BezierCurveAction(ActionTerm):
             # Reset data
             self.queue.put("reset")
 
+        # clip current action
+        actions = torch.clip(actions, -1, 1)
         # store the raw actions
         self._raw_actions[:] = actions
-        actions = torch.clip(actions, -1, 1)
+
+        print(actions)
 
         # reset time counter
         self.dt = 0
@@ -419,21 +421,21 @@ class BezierCurveAction(ActionTerm):
 
         trunk_xd_lo = self.torch_sph2cart(torch.stack((x_xd_phi, xd_theta, xd_r), dim=1))
 
-        # Calculate Phi_lo
+        # # Calculate Phi_lo
 
-        psi = (self.psi_max - self.psi_min) * 0.5 * (actions[..., 5] + 1) + self.psi_min
-        theta = (self.theta_max - self.theta_min) * 0.5 * (actions[..., 6] + 1) + self.theta_min
-        phi = (self.phi_max - self.phi_min) * 0.5 * (actions[..., 7] + 1) + self.phi_min
+        # psi = (self.psi_max - self.psi_min) * 0.5 * (actions[..., 5] + 1) + self.psi_min
+        # theta = (self.theta_max - self.theta_min) * 0.5 * (actions[..., 6] + 1) + self.theta_min
+        # phi = (self.phi_max - self.phi_min) * 0.5 * (actions[..., 7] + 1) + self.phi_min
 
-        trunk_o_lo = torch.stack((psi, theta, phi), dim=1)
+        # trunk_o_lo = torch.stack((psi, theta, phi), dim=1)
 
-        # Calculate Phid_lo
+        # # Calculate Phid_lo
 
-        psid = (self.psid_max - self.psid_min) * 0.5 * (actions[..., 8] + 1) + self.psid_min
-        thetad = (self.thetad_max - self.thetad_min) * 0.5 * (actions[..., 9] + 1) + self.thetad_min
-        phid = (self.phid_max - self.phid_min) * 0.5 * (actions[..., 10] + 1) + self.phid_min
+        # psid = (self.psid_max - self.psid_min) * 0.5 * (actions[..., 8] + 1) + self.psid_min
+        # thetad = (self.thetad_max - self.thetad_min) * 0.5 * (actions[..., 9] + 1) + self.thetad_min
+        # phid = (self.phid_max - self.phid_min) * 0.5 * (actions[..., 10] + 1) + self.phid_min
 
-        trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
+        # trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
 
         self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins)
         self.trunk_tg_vis.visualize(trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3] + self._env.scene.env_origins,
@@ -441,7 +443,7 @@ class BezierCurveAction(ActionTerm):
 
         # Compute the weights of bezier curve for position and orientation
         self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
-        self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
+        # self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
 
         # apply the affine transformations
         self._processed_actions = actions
@@ -452,7 +454,9 @@ class BezierCurveAction(ActionTerm):
     def apply_actions(self):
 
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
-        o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th)
+        # o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th)
+        o = None
+        od = None
 
         q_des, qd_des = self.ik(x, xd, o, od, self.old_q_des)
         self.old_q_des = q_des.clone()

@@ -174,7 +174,6 @@ def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, air_time_threshold: float,
     if len(env.extras['touchdown']):
         existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
         values = torch.stack(list(env.extras['touchdown'].values())).to(env.device)
-        print(values.shape)
         asset.write_root_pose_to_sim(values[..., 0:7], env_ids=existing_touchdown_ids)
         asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
         asset.write_joint_state_to_sim(values[..., 7:19], torch.zeros((len(existing_touchdown_ids), 12), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)

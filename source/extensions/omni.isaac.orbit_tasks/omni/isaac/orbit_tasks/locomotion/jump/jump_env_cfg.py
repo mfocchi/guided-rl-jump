@@ -99,13 +99,16 @@ class CommandsCfg:
         debug_vis=False,
         # Position relative to the current one
         ranges=mdp.UniformTargetCommandCfg.Ranges(
-            pos_x=(-1, 1),
-            pos_y=(-1, 1),
-            pos_z=(0.0, 0.0),
+            pos_x=(-0.5, 0.5),
+            pos_y=(-0.5, 0.5),
+            pos_z=(0.0, 0.5),
             # TODO: change orientation
-            roll=(0, 0),
-            pitch=(0, 0),  # depends on end-effector axis
-            yaw=(0, 0)
+            roll=(0.0, 0.0),
+            pitch=(0.0, 0.0),  # depends on end-effector axis
+            yaw=(0.0, 0.0)
+            # roll=(-np.pi / 6, np.pi / 6),
+            # pitch=(-np.pi / 6, np.pi / 6),  # depends on end-effector axis
+            # yaw=(-np.pi / 6, np.pi / 6)
         )
     )
 
@@ -146,7 +149,7 @@ class ActionsCfg:
                                          thetad_max=4,
                                          phid_min=-4,
                                          phid_max=4,
-                                         debug_vis=False,
+                                         debug_vis=True,
                                          debug_plot=False)
 
 
@@ -264,7 +267,7 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=1.0,
+        weight=10.0,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
