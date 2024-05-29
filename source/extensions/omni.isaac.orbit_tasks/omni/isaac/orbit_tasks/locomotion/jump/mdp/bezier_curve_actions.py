@@ -378,8 +378,6 @@ class BezierCurveAction(ActionTerm):
         # store the raw actions
         self._raw_actions[:] = actions
 
-        print(actions)
-
         # reset time counter
         self.dt = 0
 
@@ -455,6 +453,7 @@ class BezierCurveAction(ActionTerm):
 
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
         # o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th)
+        # TODO: debug orientation and enable it
         o = None
         od = None
 

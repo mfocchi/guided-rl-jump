@@ -29,6 +29,13 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 mu = 0.8
 time_step = 0.005
 
+pos_x = (-0.5, 0.5)
+pos_y = (-0.5, 0.5)
+pos_z = (0.0, 0.5)
+roll = (0.0, 0.0)
+pitch = (0.0, 0.0)
+yaw = (0.0, 0.0)
+
 ##
 # Scene definition
 ##
@@ -99,16 +106,12 @@ class CommandsCfg:
         debug_vis=False,
         # Position relative to the current one
         ranges=mdp.UniformTargetCommandCfg.Ranges(
-            pos_x=(-0.5, 0.5),
-            pos_y=(-0.5, 0.5),
-            pos_z=(0.0, 0.5),
-            # TODO: change orientation
-            roll=(0.0, 0.0),
-            pitch=(0.0, 0.0),  # depends on end-effector axis
-            yaw=(0.0, 0.0)
-            # roll=(-np.pi / 6, np.pi / 6),
-            # pitch=(-np.pi / 6, np.pi / 6),  # depends on end-effector axis
-            # yaw=(-np.pi / 6, np.pi / 6)
+            pos_x=pos_x,
+            pos_y=pos_y,
+            pos_z=pos_z,
+            roll=roll,
+            pitch=pitch,
+            yaw=yaw
         )
     )
 
@@ -293,8 +296,17 @@ class TerminationsCfg:
 @ configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
-    pass
-    # TODO: aumentare difficolta
+
+    action_rate = CurrTerm(
+        func=mdp.modify_maximum_distance, params={"term_name": "trunk_target",
+                                                  "num_steps": 500,
+                                                  "pos_x": pos_x,
+                                                  "pos_y": pos_y,
+                                                  "pos_z": pos_z,
+                                                  "roll": roll,
+                                                  "pitch": pitch,
+                                                  "yaw": yaw}
+    )
 
 
 @ configclass
