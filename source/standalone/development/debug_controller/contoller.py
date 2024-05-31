@@ -30,6 +30,7 @@ from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG
 from SceneCfg import SceneCfg
 from Env import *
 from EnvPos import *
+from EnvBezier import *
 
 
 def main():
@@ -50,7 +51,8 @@ def main():
     print("[INFO]: Setup complete...")
 
     # env = Env(simulation_app, sim, scene)
-    env = EnvPos(simulation_app, sim, scene)
+    # env = EnvPos(simulation_app, sim, scene)
+    env = EnvBezier(simulation_app, sim, scene)
 
     # Run the simulator
     env.run_simulator()

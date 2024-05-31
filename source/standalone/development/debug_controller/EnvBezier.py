@@ -14,10 +14,182 @@ from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG
 from omni.isaac.orbit.controllers import DifferentialIKController, DifferentialIKControllerCfg
 
 
-class EnvPos():
+class BezierCurveAction():
+
+    def __init__(self,
+                 t_th_min,
+                 t_th_max,
+                 x_theta_min,
+                 x_theta_max,
+                 x_r_min,
+                 x_r_max,
+                 xd_theta_min,
+                 xd_theta_max,
+                 xd_r_min,
+                 xd_r_max,
+                 psi_min,
+                 psi_max,
+                 theta_min,
+                 theta_max,
+                 phi_min,
+                 phi_max,
+                 psid_min,
+                 psid_max,
+                 thetad_min,
+                 thetad_max,
+                 phid_min,
+                 phid_max) -> None:
+
+        self.t_th_min = t_th_min
+        self.t_th_max = t_th_max
+
+        self.x_theta_min = x_theta_min
+        self.x_theta_max = x_theta_max
+
+        self.x_r_min = x_r_min
+        self.x_r_max = x_r_max
+
+        self.xd_theta_min = xd_theta_min
+        self.xd_theta_max = xd_theta_max
+
+        self.xd_r_min = xd_r_min
+        self.xd_r_max = xd_r_max
+
+        self.psi_min = psi_min
+        self.psi_max = psi_max
+
+        self.theta_min = theta_min
+        self.theta_max = theta_max
+
+        self.phi_min = phi_min
+        self.phi_max = phi_max
+
+        self.psid_min = psid_min
+        self.psid_max = psid_max
+
+        self.thetad_min = thetad_min
+        self.thetad_max = thetad_max
+
+        self.phid_min = phid_min
+        self.phid_max = phid_max
+
+    def torch_cart2sph(self, pos: torch.Tensor):
+        # Extract x, y, z components
+        x = pos[:, 0]
+        y = pos[:, 1]
+        z = pos[:, 2]
+
+        # Compute spherical coordinates
+        hxy = torch.hypot(x, y)
+        r = torch.hypot(hxy, z)
+        el = torch.atan2(z, hxy)
+        az = torch.atan2(y, x)
+
+        # Concatenate azimuth, elevation, and radius
+        spherical = torch.stack((az, el, r), dim=1)
+
+        return spherical
+
+    def torch_sph2cart(self, pos: torch.Tensor):
+        # Extract az, el, r components
+        az = pos[:, 0]
+        el = pos[:, 1]
+        r = pos[:, 2]
+
+        rcos_theta = r * torch.cos(el)
+        x = rcos_theta * torch.cos(az)
+        y = rcos_theta * torch.sin(az)
+        z = r * torch.sin(el)
+
+        # Concatenate x, y, and z
+        cartesian = torch.stack((x, y, z), dim=1)
+
+        return cartesian
+
+    def compute_bezier_w(self, start: torch.Tensor, start_v: torch.Tensor, end: torch.Tensor, end_v: torch.Tensor, t_th: torch.Tensor):
+
+        w = torch.stack((
+            start.unsqueeze(1),
+            (((t_th / 3) * start_v) + start).unsqueeze(1),
+            ((-(t_th / 3) * end_v) + end).unsqueeze(1),
+            end.unsqueeze(1)), dim=2).squeeze()
+
+        w = w.reshape(-1, 4, 3)
+
+        w_d = torch.stack((
+            ((3 / t_th) * (w[:, 1] - w[:, 0])).unsqueeze(1),
+            ((3 / t_th) * (w[:, 2] - w[:, 1])).unsqueeze(1),
+            ((3 / t_th) * (w[:, 3] - w[:, 2])).unsqueeze(1)), dim=2).squeeze()
+
+        return w, w_d
+
+    def bezier_trajectory(self, w: torch.Tensor, w_d: torch.Tensor, t_ex: float, t_th: torch.Tensor):
+
+        t = t_ex / t_th
+
+        bezier_curve_3 = torch.cat((
+            (1.0) * (t**0) * (1 - t)**(3 - 0),
+            (3.0) * (t**1) * (1 - t)**(3 - 1),
+            (3.0) * (t**2) * (1 - t)**(3 - 2),
+            (1.0) * (t**3) * (1 - t)**(3 - 3),
+        ), dim=-1)
+
+        bezier_curve_2 = torch.cat((
+            (1.0) * (t**0) * (1 - t)**(2 - 0),
+            (2.0) * (t**1) * (1 - t)**(2 - 1),
+            (1.0) * (t**2) * (1 - t)**(2 - 2),
+        ), dim=-1)
+
+        bezier_position = torch.cat((
+            (w[..., 0] * bezier_curve_3).sum(dim=-1).reshape(-1, 1),
+            (w[..., 1] * bezier_curve_3).sum(dim=-1).reshape(-1, 1),
+            (w[..., 2] * bezier_curve_3).sum(dim=-1).reshape(-1, 1)), dim=1)
+
+        bezier_velocity = torch.cat((
+            (w_d[..., 0] * bezier_curve_2).sum(dim=-1).reshape(-1, 1),
+            (w_d[..., 1] * bezier_curve_2).sum(dim=-1).reshape(-1, 1),
+            (w_d[..., 2] * bezier_curve_2).sum(dim=-1).reshape(-1, 1)), dim=1)
+
+        return bezier_position, bezier_velocity
+
+    def process_actions(self, trunk_x_0, trunk_xd_0, actions: torch.Tensor, target: torch.Tensor):
+
+        trunk_tg = trunk_x_0 + target
+
+        self.t_th = (self.t_th_max - self.t_th_min) * 0.5 * (actions[..., 0] + 1) + self.t_th_min
+        self.t_th = self.t_th.reshape(-1, 1)
+
+        # Phi is the same for x and xd
+        x_xd_phi = self.torch_cart2sph(trunk_tg)[..., 0].clone()
+
+        # Calculate X_lo
+        x_theta = (self.x_theta_max - self.x_theta_min) * 0.5 * (actions[..., 1] + 1) + self.x_theta_min
+        x_r = (self.x_r_max - self.x_r_min) * 0.5 * (actions[..., 2] + 1) + self.x_r_min
+
+        trunk_x_lo = self.torch_sph2cart(torch.stack((x_xd_phi, x_theta, x_r), dim=1))
+
+        # Calculate Xd_lo
+
+        xd_theta = (self.xd_theta_max - self.xd_theta_min) * 0.5 * (actions[..., 3] + 1) + self.xd_theta_min
+        xd_r = (self.xd_r_max - self.xd_r_min) * 0.5 * (actions[..., 4] + 1) + self.xd_r_min
+
+        trunk_xd_lo = self.torch_sph2cart(torch.stack((x_xd_phi, xd_theta, xd_r), dim=1))
+
+        self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
+
+        print(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
+
+    def eval_bezier(self, dt):
+
+        x, xd = self.bezier_trajectory(self.w_x, self.w_xd, dt, self.t_th)
+
+        return x, xd
+
+
+class EnvBezier():
 
     def __init__(self, simulation_app, sim: sim_utils.SimulationContext, scene: InteractiveScene) -> None:
-        super(EnvPos, self).__init__()
+        super(EnvBezier, self).__init__()
 
         self.simulation_app = simulation_app
         self.sim = sim
@@ -47,6 +219,29 @@ class EnvPos():
         self.rr_entity_cfg = SceneEntityCfg("robot", joint_names=["RR.*"], body_names=["RR_foot"])
         self.rr_entity_cfg.resolve(self.scene)
         self.rr_body_idx = self.rr_entity_cfg.body_ids[0]
+
+        self.bezierAction = BezierCurveAction(t_th_min=0.1,
+                                              t_th_max=1,
+                                              x_theta_min=np.pi / 4,
+                                              x_theta_max=np.pi / 2,
+                                              x_r_min=0.2,
+                                              x_r_max=0.4,
+                                              xd_theta_min=np.pi / 6,
+                                              xd_theta_max=np.pi / 2,
+                                              xd_r_min=0.1,
+                                              xd_r_max=5,
+                                              psi_min=-2 * np.pi,
+                                              psi_max=2 * np.pi,
+                                              theta_min=- 2 * np.pi,
+                                              theta_max=2 * np.pi,
+                                              phi_min=- 2 * np.pi,
+                                              phi_max=2 * np.pi,
+                                              psid_min=-4,
+                                              psid_max=4,
+                                              thetad_min=-4,
+                                              thetad_max=4,
+                                              phid_min=-4,
+                                              phid_max=4,)
 
     def ik(self, robot, pose, old_q_des):
         x = pose[..., 0:3]
@@ -207,11 +402,19 @@ class EnvPos():
         trunk_des_traj = []
 
         sim_time = 0.0
-        max_episode_time = 5
         start_time = 1
+        max_episode_time = 2 + start_time
         count = 0
 
         initial__trunk = robot.data.root_state_w[..., 0:7].clone()
+
+        trunk_x_0 = initial__trunk[..., 0:3]
+        trunk_xd_0 = robot.data.root_state_w[..., 7:10].clone()
+
+        action = torch.tensor([[0.5, 0, 1, -0.2, -0.2]], device=self.sim.device)
+        target = torch.tensor([[0.5, 0, 0]], device=self.sim.device)
+
+        self.bezierAction.process_actions(trunk_x_0, trunk_xd_0, action, target)
 
         while True:
             # Simulate physics
@@ -244,14 +447,20 @@ class EnvPos():
                     self.reset(robot)
 
                 trunk_des = initial__trunk.clone()
+                dt = 0
 
                 if sim_time > start_time:
-                    trunk_des[:, 2] += (0.02 * torch.sin(torch.tensor(2 * np.pi * (sim_time - start_time))))
+                    dt = sim_time - start_time
 
-                # print(robot.data.root_state_w[..., 0:3])
+                x, xd = self.bezierAction.eval_bezier(dt)
+                trunk_des[..., 0:3] = x
 
-                q_des, qd_des = self.ik(robot, trunk_des, old_q_des)
-                old_q_des = q_des.clone()
+                if dt < self.bezierAction.t_th:
+                    q_des, qd_des = self.ik(robot, trunk_des, old_q_des)
+                    old_q_des = q_des.clone()
+                else:
+                    q_des = robot.data.default_joint_pos.clone()
+                    qd_des = robot.data.default_joint_vel.clone()
 
                 robot.set_joint_position_target(q_des)
                 robot.set_joint_velocity_target(qd_des)
@@ -267,7 +476,7 @@ class EnvPos():
                 # update buffers
                 self.scene.update(self.sim_dt)
 
-                if sim_time > start_time:
+                if sim_time > start_time and dt < self.bezierAction.t_th:
 
                     q_actual_traj.append(robot.data.joint_pos.clone().detach().cpu())
                     q_des_traj.append(q_des.detach().cpu())
