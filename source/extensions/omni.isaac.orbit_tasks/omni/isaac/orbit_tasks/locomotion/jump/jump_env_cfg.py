@@ -29,9 +29,12 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 mu = 0.8
 time_step = 0.005
 
-pos_x = (-0.5, 0.5)
-pos_y = (-0.5, 0.5)
-pos_z = (0.0, 0.5)
+# pos_x = (-0.5, 0.5)
+# pos_y = (-0.5, 0.5)
+# pos_z = (0.0, 0.5)
+pos_x = (0.5, 0.5)
+pos_y = (0.0, 0.0)
+pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
 pitch = (0.0, 0.0)
 yaw = (0.0, 0.0)
@@ -164,6 +167,8 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
 
+        base_pos_z = ObsTerm(func=mdp.base_pos_z, noise=Unoise(n_min=-0.1, n_max=0.1))
+
         # TODO: add foot bosition in base f
 
         base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
@@ -282,7 +287,7 @@ class RewardsCfg:
 
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight=-10,
+        weight=-1,
     )
 
 
@@ -296,17 +301,18 @@ class TerminationsCfg:
 @ configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
+    pass
 
-    action_rate = CurrTerm(
-        func=mdp.modify_maximum_distance, params={"term_name": "trunk_target",
-                                                  "num_steps": 500,
-                                                  "pos_x": pos_x,
-                                                  "pos_y": pos_y,
-                                                  "pos_z": pos_z,
-                                                  "roll": roll,
-                                                  "pitch": pitch,
-                                                  "yaw": yaw}
-    )
+    # action_rate = CurrTerm(
+    #     func=mdp.modify_maximum_distance, params={"term_name": "trunk_target",
+    #                                               "num_steps": 500,
+    #                                               "pos_x": pos_x,
+    #                                               "pos_y": pos_y,
+    #                                               "pos_z": pos_z,
+    #                                               "roll": roll,
+    #                                               "pitch": pitch,
+    #                                               "yaw": yaw}
+    # )
 
 
 @ configclass

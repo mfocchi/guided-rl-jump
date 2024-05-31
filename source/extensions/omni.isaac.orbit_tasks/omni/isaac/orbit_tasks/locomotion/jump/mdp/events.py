@@ -39,7 +39,9 @@ def reset_robot_state(
     asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1))
     asset.write_root_velocity_to_sim(velocities)
 
-    asset.write_joint_state_to_sim(asset.data.default_joint_pos, asset.data.default_joint_vel)
+    asset.write_joint_state_to_sim(asset.data.default_joint_pos.clone(), asset.data.default_joint_vel.clone())
+    asset.set_joint_position_target(asset.data.default_joint_pos.clone())
+    asset.set_joint_velocity_target(asset.data.default_joint_vel.clone())
 
     # reset apex, touchdown info
     env.extras['apex'] = {}
@@ -134,6 +136,7 @@ def move_landing_platform(
     if len(apex_env_ids):
         # Transform landing platform position and orientation accordingly to the com_targert command
         positions[apex_env_ids] += trunk_target[apex_env_ids, 0:3]
+        positions[apex_env_ids, 2] += robot.data.default_root_state[apex_env_ids, 2]
         positions[apex_env_ids, 2] -= base_heigth
         orientations[apex_env_ids] = trunk_target[apex_env_ids, 3:7]
 

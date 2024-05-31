@@ -91,7 +91,8 @@ class BezierCurveAction(ActionTerm):
         self.phid_min = self.cfg.phid_min
         self.phid_max = self.cfg.phid_max
 
-        self.q_0 = self._asset.data.default_joint_pos.clone()
+        self.q_0 = self._asset.data.default_joint_pos.clone()[0]
+        self.q_0_lo = torch.tensor([0.2187, -0.2191, 0.2343, -0.2364, 1.3717, 1.3716, 1.6770, 1.6784, -2.4063, -2.4061, -2.2808, -2.2778], device=self.device)
 
         diff_ik_cfg = DifferentialIKControllerCfg(command_type="position", use_relative_mode=False, ik_method="dls")
 
@@ -170,8 +171,8 @@ class BezierCurveAction(ActionTerm):
 
         w = torch.stack((
             start.unsqueeze(1),
-            (start - (1. / 3.) * t_th * start_v).unsqueeze(1),
-            (end - (1. / 3.) * t_th * end_v).unsqueeze(1),
+            (((t_th / 3) * start_v) + start).unsqueeze(1),
+            ((-(t_th / 3) * end_v) + end).unsqueeze(1),
             end.unsqueeze(1)), dim=2).squeeze()
 
         w = w.reshape(-1, 4, 3)
@@ -299,8 +300,12 @@ class BezierCurveAction(ActionTerm):
         after_t_th = torch.where(self.dt > self.t_th)[0]
 
         if after_t_th.numel() > 0:
-            q_des[after_t_th] = self._asset.data.default_joint_pos[0].clone()
-            qd_des[after_t_th] = self._asset.data.default_joint_vel[0].clone()
+            q_des[after_t_th] = self.q_0_lo
+            qd_des[after_t_th] = torch.zeros_like(self._asset.data.default_joint_vel)
+
+        apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self._env.device, dtype=torch.int)
+        if len(apex_env_ids) > 0:
+            q_des[after_t_th] = self.q_0
 
         return q_des, qd_des
 
@@ -378,6 +383,8 @@ class BezierCurveAction(ActionTerm):
         # store the raw actions
         self._raw_actions[:] = actions
 
+        actions = torch.tensor([[0.5, 0.2, 0.5, -0.2, -0.2]], device=self.device)
+
         # reset time counter
         self.dt = 0
 
@@ -388,7 +395,7 @@ class BezierCurveAction(ActionTerm):
         self.rr_diff_ik_controller.reset()
 
         # Reset qd computation
-        self.old_q_des = self._asset.data.default_joint_pos
+        self.old_q_des = self._asset.data.default_joint_pos.clone()
 
         # TODO: this hold for a robot that is in real world withoud capture sys?
         trunk_x_0 = self._asset.data.root_state_w[:, 0:3].clone() - self._env.scene.env_origins
@@ -467,8 +474,8 @@ class BezierCurveAction(ActionTerm):
 
             if self.dt < self.t_th[0]:
                 # Collect the current desired and actual positions for plotting
-                desired_pos = x[0].cpu().numpy()
-                actual_pos = self._asset.data.root_state_w[0, 0:3].cpu().numpy()
+                desired_pos = x[0].clone().cpu().numpy()
+                actual_pos = self._asset.data.root_state_w[0, 0:3].clone().cpu().numpy()
 
                 # Send the positions to the plotting process
                 self.queue.put((desired_pos, actual_pos))

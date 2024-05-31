@@ -92,7 +92,6 @@ class EnvPos():
         q_des[:, self.rr_entity_cfg.joint_ids] = self.rr_diff_ik_controller.compute(rr_foot_pos_b, rr_foot_orient_b, rr_jacobian, rr_joint_pos)
 
         qd_des = (q_des - old_q_des) / self.sim_dt
-        print(qd_des)
 
         return q_des, qd_des
 
@@ -213,6 +212,7 @@ class EnvPos():
         count = 0
 
         initial__trunk = robot.data.root_state_w[..., 0:7].clone()
+        trunk_des = initial__trunk.clone()
 
         while True:
             # Simulate physics
@@ -243,11 +243,16 @@ class EnvPos():
 
                     # reset the robot
                     self.reset(robot)
+                    trunk_des = initial__trunk.clone()
 
-                trunk_des = initial__trunk.clone()
+                # trunk_des = initial__trunk.clone()
 
                 if sim_time > start_time:
-                    trunk_des[:, 2] += (0.02 * torch.sin(torch.tensor(2 * np.pi * (sim_time - start_time))))
+                    if trunk_des[:, 2] > 0.15:
+                        trunk_des[:, 2] -= 0.001
+                    else:
+                        trunk_des[:, 2] = 0.15
+                    # trunk_des[:, 2] += (0.02 * torch.sin(torch.tensor(2 * np.pi * (sim_time - start_time))))
 
                 # print(robot.data.root_state_w[..., 0:3])
 

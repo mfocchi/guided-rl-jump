@@ -21,12 +21,12 @@ gym.register(
     },
 )
 
-# gym.register(
-#     id="Isaac-Jump-Unitree-Go1-Play-v0",
-#     entry_point="omni.isaac.orbit.envs:RLTaskEnv",
-#     disable_env_checker=True,
-#     kwargs={
-#         "env_cfg_entry_point": jump_platform_env_cfg.UnitreeGo1JumpEnvCfg_PLAY,
-#         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.UnitreeGo1PPORunnerCfg,
-#     },
-# )
+gym.register(
+    id="Isaac-Jump-Unitree-Go1-Play-v0",
+    entry_point="omni.isaac.orbit.envs:RLPlanningTaskEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": jump_platform_env_cfg.UnitreeGo1JumpEnvCfg_PLAY,
+        "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.UnitreeGo1PPORunnerCfg,
+    },
+)

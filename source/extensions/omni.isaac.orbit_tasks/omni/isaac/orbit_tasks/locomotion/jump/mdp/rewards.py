@@ -41,7 +41,7 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
 
     # TODO:experiment with this function
-    return 1.0 / ((50 * torch.norm(curr_pos_w - des_pos_w, dim=1)) + 1e-10)
+    return 1.0 / ((20 * torch.norm(curr_pos_w - des_pos_w, dim=1)) + 1e-10)
     # return torch.norm(curr_pos_w - des_pos_w, dim=1)
 
 

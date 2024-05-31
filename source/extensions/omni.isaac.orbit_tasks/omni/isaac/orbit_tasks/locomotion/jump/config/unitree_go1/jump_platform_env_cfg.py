@@ -27,6 +27,6 @@ class UnitreeGo1JumpEnvCfg_PLAY(UnitreeGo1JumpEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
-        
+
         # disable randomization for play
         self.observations.policy.enable_corruption = False
