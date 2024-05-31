@@ -455,7 +455,7 @@ class EnvBezier():
                 x, xd = self.bezierAction.eval_bezier(dt)
                 trunk_des[..., 0:3] = x
 
-                if dt < self.bezierAction.t_th:
+                if dt <= self.bezierAction.t_th:
                     q_des, qd_des = self.ik(robot, trunk_des, old_q_des)
                     old_q_des = q_des.clone()
                 else:
@@ -476,7 +476,7 @@ class EnvBezier():
                 # update buffers
                 self.scene.update(self.sim_dt)
 
-                if sim_time > start_time and dt < self.bezierAction.t_th:
+                if sim_time > start_time and dt <= self.bezierAction.t_th:
 
                     q_actual_traj.append(robot.data.joint_pos.clone().detach().cpu())
                     q_des_traj.append(q_des.detach().cpu())

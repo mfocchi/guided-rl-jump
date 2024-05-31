@@ -383,8 +383,6 @@ class BezierCurveAction(ActionTerm):
         # store the raw actions
         self._raw_actions[:] = actions
 
-        actions = torch.tensor([[0.5, 0.2, 0.5, -0.2, -0.2]], device=self.device)
-
         # reset time counter
         self.dt = 0
 

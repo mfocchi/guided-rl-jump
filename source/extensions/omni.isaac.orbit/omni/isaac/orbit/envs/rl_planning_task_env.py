@@ -35,7 +35,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
 
         print("#" * 25)
         print("New episode")
-        
+
         # process actions
         self.action_manager.process_action(action)
         self.reward_buf = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
@@ -82,7 +82,8 @@ class RLPlanningTaskEnv(RLTaskEnv):
         # value = term_cfg.func(self._env, **term_cfg.params) * term_cfg.weight * dt
         self.reward_buf += self.reward_manager.compute(dt=1)
 
-        self.reward_buf = torch.clip(self.reward_buf, 0)
+        # TODO: test if leaving the reward like that allow you to have better results
+        # self.reward_buf = torch.clip(self.reward_buf, 0)
 
         # -- reset envs that terminated/timed-out and log the episode information
         # ATTENTION: for us it will always be timeout
@@ -95,6 +96,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
         # -- compute observations
         # note: done after reset to get the correct observations for reset envs
         # TODO: check if it's needed before the reset in our case
+        # THERE IS A PROBELMMMMM!!!! SYSTEM IS NOT RESET CORRECTLY!!!!!
         self.obs_buf = self.observation_manager.compute()
 
         # return observations, rewards, resets and extras

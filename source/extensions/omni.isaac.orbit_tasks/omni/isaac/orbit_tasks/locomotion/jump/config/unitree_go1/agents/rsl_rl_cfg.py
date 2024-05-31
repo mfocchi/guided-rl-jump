@@ -14,9 +14,9 @@ from omni.isaac.orbit_tasks.utils.wrappers.rsl_rl import (
 
 @configclass
 class UnitreeGo1PPORunnerCfg(RslRlOnPolicyRunnerCfg):
-    num_steps_per_env = 10
+    num_steps_per_env = 5
     max_iterations = 1000
-    save_interval = 50
+    save_interval = 10
     experiment_name = "unitree_go1_jump"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
@@ -29,7 +29,9 @@ class UnitreeGo1PPORunnerCfg(RslRlOnPolicyRunnerCfg):
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.2,
-        entropy_coef=0.01,
+        # Play with entropy coef to force exploration
+        # entropy_coef=0.01,
+        entropy_coef=0.1,
         num_learning_epochs=5,
         num_mini_batches=4,
         learning_rate=1.0e-3,

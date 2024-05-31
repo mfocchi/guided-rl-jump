@@ -167,12 +167,13 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
 
-        base_pos_z = ObsTerm(func=mdp.base_pos_z, noise=Unoise(n_min=-0.1, n_max=0.1))
+        # THOSE ARE WRONG!!!! THE SIMULATOR DOES NOT RESET PROPELLY THE STATE
+        # base_pos_z = ObsTerm(func=mdp.base_pos_z, noise=Unoise(n_min=-0.1, n_max=0.1))
 
-        # TODO: add foot bosition in base f
+        # # TODO: add foot bosition in base f
 
-        base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
-        base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
+        # base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
+        # base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
 
         target_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "trunk_target"})
 
@@ -281,7 +282,7 @@ class RewardsCfg:
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=-0.1,
+        weight=-1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
