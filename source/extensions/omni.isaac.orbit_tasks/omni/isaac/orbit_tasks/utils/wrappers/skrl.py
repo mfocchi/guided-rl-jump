@@ -74,6 +74,7 @@ def process_skrl_cfg(cfg: dict) -> dict:
                 update_dict(value)
             else:
                 if key in _direct_eval:
+                    print("Key:",key,"Eval:",value)
                     d[key] = eval(value)
                 elif key.endswith("_kwargs"):
                     d[key] = value if value is not None else {}

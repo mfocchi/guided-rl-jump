@@ -228,18 +228,18 @@ class RunningRewardsCfg:
 
     joint_pos_limits = RewTerm(
         func=mdp.joint_pos_limits,
-        weight=-0.1
+        weight=-0.01
     )
 
     joint_vel_limits = RewTerm(
         func=mdp.joint_vel_limits,
-        weight=-0.1,
+        weight=-0.01,
         params={"soft_ratio": 1.0}
     )
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-0.1
+        weight=-10
     )
 
     friction_constraint = RewTerm(
@@ -270,7 +270,7 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=10.0,
+        weight=100.0,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 

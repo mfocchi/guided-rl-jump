@@ -18,6 +18,7 @@ gym.register(
     kwargs={
         "env_cfg_entry_point": jump_platform_env_cfg.UnitreeGo1JumpEnvCfg,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.UnitreeGo1PPORunnerCfg,
+        "skrl_cfg_entry_point": f"{agents.__name__}:skrl_td3_cfg.yaml",
     },
 )
 
@@ -28,5 +29,6 @@ gym.register(
     kwargs={
         "env_cfg_entry_point": jump_platform_env_cfg.UnitreeGo1JumpEnvCfg_PLAY,
         "rsl_rl_cfg_entry_point": agents.rsl_rl_cfg.UnitreeGo1PPORunnerCfg,
+        "skrl_cfg_entry_point": f"{agents.__name__}:skrl_td3_cfg.yaml",
     },
 )
