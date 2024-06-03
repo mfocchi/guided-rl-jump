@@ -301,9 +301,10 @@ class BezierCurveAction(ActionTerm):
 
         if after_t_th.numel() > 0:
             q_des[after_t_th] = self.q_0_lo
-            qd_des[after_t_th] = torch.zeros_like(self._asset.data.default_joint_vel)
+            qd_des[after_t_th] = torch.zeros_like(self._asset.data.default_joint_vel.clone())[0]
 
         apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self._env.device, dtype=torch.int)
+
         if len(apex_env_ids) > 0:
             q_des[after_t_th] = self.q_0
 
