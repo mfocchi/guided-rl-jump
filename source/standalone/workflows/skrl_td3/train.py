@@ -152,7 +152,7 @@ def main():
 
     # instantiate a RandomMemory as rollout buffer (any memory can be used for this)
     # https://skrl.readthedocs.io/en/latest/modules/skrl.memories.random.html
-    memory = RandomMemory(memory_size=15625, num_envs=env.num_envs, device=env.device)
+    memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=env.device)
 
     # configure and instantiate PPO agent
     # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html
@@ -161,7 +161,7 @@ def main():
     agent_cfg.update(process_skrl_cfg(experiment_cfg["agent"]))
 
     agent_cfg["state_preprocessor_kwargs"].update({"size": env.observation_space, "device": env.device})
-    
+
     agent = TD3(
         models=models,
         memory=memory,

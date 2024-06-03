@@ -315,7 +315,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     """Configuration for the locomotion jump environment."""
 
     # Scene settings
-    scene: MySceneCfg = MySceneCfg(num_envs=8192, env_spacing=3)
+    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=3)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
