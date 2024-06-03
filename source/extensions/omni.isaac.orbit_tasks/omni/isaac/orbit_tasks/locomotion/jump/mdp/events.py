@@ -46,6 +46,7 @@ def reset_robot_state(
     # reset apex, touchdown info
     env.extras['apex'] = {}
     env.extras['touchdown'] = {}
+    env.extras['after_t_th'] = torch.tensor([], device=env.device)
 
 
 def reset_landing_platform(

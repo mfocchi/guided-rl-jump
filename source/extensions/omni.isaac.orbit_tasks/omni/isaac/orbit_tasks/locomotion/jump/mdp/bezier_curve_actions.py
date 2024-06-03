@@ -300,6 +300,7 @@ class BezierCurveAction(ActionTerm):
         after_t_th = torch.where(self.dt > self.t_th)[0]
 
         if after_t_th.numel() > 0:
+            self._env.extras['after_t_th'] = after_t_th
             q_des[after_t_th] = self.q_0_lo
             qd_des[after_t_th] = torch.zeros_like(self._asset.data.default_joint_vel.clone())[0]
 

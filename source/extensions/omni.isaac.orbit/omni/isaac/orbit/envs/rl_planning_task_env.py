@@ -56,7 +56,13 @@ class RLPlanningTaskEnv(RLTaskEnv):
 
             self.episode_length_buf += 1  # sim step in current episode (per env)
             # -- final reward computation
-            self.reward_buf += self.running_reward_manager.compute(dt=1)
+            running_reward = self.running_reward_manager.compute(dt=1).clone()
+            # Ignore running reward after t_th
+            after_t_th_ids = self.extras.get('after_t_th')
+            if len(after_t_th_ids) > 0:
+                running_reward[after_t_th_ids] = 0
+
+            self.reward_buf += running_reward
 
             # -- step interval events
             # dt = self.cfg.sim.dt

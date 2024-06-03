@@ -323,6 +323,7 @@ class EnvBezier():
 
         ax[2].plot(time, actual_traj[..., 2], color="blue")
         ax[2].plot(time, des_traj[..., 2], color="red")
+        ax[2].axhline(0.15, color='purple')
 
         ax[0].legend()
         plt.show()
@@ -398,6 +399,9 @@ class EnvBezier():
         qd_actual_traj = []
         qd_des_traj = []
 
+        tau_actual_traj = []
+        tau_des_traj = []
+
         trunk_actual_traj = []
         trunk_des_traj = []
 
@@ -422,8 +426,11 @@ class EnvBezier():
 
                 if sim_time > max_episode_time:
 
+                    print(robot.data.root_state_w[..., :7])
+
                     self.plot_traj(q_actual_traj, q_des_traj, "q")
                     self.plot_traj(qd_actual_traj, qd_des_traj, "qd")
+                    self.plot_traj(tau_actual_traj, tau_des_traj, "tau")
                     self.plot_trunk_traj(trunk_actual_traj, trunk_des_traj, "trunk")
 
                     plt.show()
@@ -439,6 +446,9 @@ class EnvBezier():
 
                     qd_actual_traj = []
                     qd_des_traj = []
+
+                    tau_actual_traj = []
+                    tau_des_traj = []
 
                     trunk_actual_traj = []
                     trunk_des_traj = []
@@ -483,6 +493,9 @@ class EnvBezier():
 
                     qd_actual_traj.append(robot.data.joint_vel.clone().detach().cpu())
                     qd_des_traj.append(qd_des.detach().cpu())
+
+                    tau_actual_traj.append(robot.data.applied_torque.clone().detach().cpu())
+                    tau_des_traj.append(robot.data.computed_torque.clone().detach().cpu())
 
                     trunk_actual_traj.append(robot.data.root_state_w[..., 0:3].clone().detach().cpu())
                     trunk_des_traj.append(trunk_des[..., 0:3].detach().cpu())

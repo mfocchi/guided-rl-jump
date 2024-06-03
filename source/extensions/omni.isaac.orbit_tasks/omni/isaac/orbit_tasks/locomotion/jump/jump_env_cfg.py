@@ -259,12 +259,6 @@ class RunningRewardsCfg:
         }
     )
 
-    undesired_contacts = RewTerm(
-        func=mdp.undesired_contacts,
-        weight=-0.1,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="^(?!.*foot).*$"), "threshold": 1.0},
-    )
-
     # TODO: singularity
 
 
