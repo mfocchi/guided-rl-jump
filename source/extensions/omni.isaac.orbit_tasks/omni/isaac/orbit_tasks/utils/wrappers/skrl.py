@@ -35,6 +35,7 @@ from skrl.envs.wrappers.torch import Wrapper, wrap_env
 from skrl.resources.preprocessors.torch import RunningStandardScaler  # noqa: F401
 from skrl.resources.schedulers.torch import KLAdaptiveLR  # noqa: F401
 from skrl.trainers.torch import Trainer
+from skrl.resources.noises.torch import GaussianNoise
 from skrl.trainers.torch.sequential import SEQUENTIAL_TRAINER_DEFAULT_CONFIG
 from skrl.utils.model_instantiators.torch import Shape  # noqa: F401
 
@@ -60,6 +61,8 @@ def process_skrl_cfg(cfg: dict) -> dict:
         "value_preprocessor",
         "input_shape",
         "output_shape",
+        "noise",
+        "smooth_regularization_noise"
     ]
 
     def reward_shaper_function(scale):
@@ -74,7 +77,6 @@ def process_skrl_cfg(cfg: dict) -> dict:
                 update_dict(value)
             else:
                 if key in _direct_eval:
-                    print("Key:",key,"Eval:",value)
                     d[key] = eval(value)
                 elif key.endswith("_kwargs"):
                     d[key] = value if value is not None else {}

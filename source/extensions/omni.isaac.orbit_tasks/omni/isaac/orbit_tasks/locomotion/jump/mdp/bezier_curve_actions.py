@@ -380,6 +380,7 @@ class BezierCurveAction(ActionTerm):
             # Reset data
             self.queue.put("reset")
 
+        print(actions)
         # clip current action
         actions = torch.clip(actions, -1, 1)
         # store the raw actions
