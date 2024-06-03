@@ -167,16 +167,16 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
 
-        # THOSE ARE WRONG!!!! THE SIMULATOR DOES NOT RESET PROPELLY THE STATE
-        # base_pos_z = ObsTerm(func=mdp.base_pos_z, noise=Unoise(n_min=-0.1, n_max=0.1))
-
-        # # TODO: add foot bosition in base f
-
+        # base_pos_z = ObsTerm(func=mdp.base_pos_z, noise=Unoise(n_min=-0.01, n_max=0.01))
         # base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
-        # base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2))
+        # base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
+        base_pos_z = ObsTerm(func=mdp.base_pos_z)
+        base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
+        base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
 
         target_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "trunk_target"})
 
+        # TODO: add foot bosition in base f
         # TODO: add contact state
 
         def __post_init__(self):

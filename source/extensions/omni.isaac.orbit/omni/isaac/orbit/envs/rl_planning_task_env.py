@@ -96,13 +96,13 @@ class RLPlanningTaskEnv(RLTaskEnv):
         reset_env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
         if len(reset_env_ids) > 0:
             self._reset_idx(reset_env_ids)
+            self.scene.write_data_to_sim()
+            self.scene.update(dt=0)
         # -- update command
         # dt = self.cfg.sim.dt, this is the time pased
         self.command_manager.compute(dt=self.cfg.sim.dt)
         # -- compute observations
         # note: done after reset to get the correct observations for reset envs
-        # TODO: check if it's needed before the reset in our case
-        # THERE IS A PROBELMMMMM!!!! SYSTEM IS NOT RESET CORRECTLY!!!!!
         self.obs_buf = self.observation_manager.compute()
 
         # return observations, rewards, resets and extras

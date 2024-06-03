@@ -24,22 +24,17 @@ def reset_robot_state(
     """
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
+    asset.reset()
     # get default root state
     root_states = asset.data.default_root_state[env_ids].clone()
-    asset.reset()
-
-    # poses
-    positions = root_states[:, 0:3] + env.scene.env_origins[env_ids]
-    orientations = root_states[:, 3:7]
-
-    # velocities
-    velocities = root_states[:, 7:13]
+    root_states[..., 0:3] += env.scene.env_origins[env_ids]
 
     # set into the physics simulation
-    asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1))
-    asset.write_root_velocity_to_sim(velocities)
+    asset.write_root_pose_to_sim(root_states[..., 0:7])
+    asset.write_root_velocity_to_sim(root_states[..., 7:])
 
     asset.write_joint_state_to_sim(asset.data.default_joint_pos.clone(), asset.data.default_joint_vel.clone())
+    asset.reset()
     asset.set_joint_position_target(asset.data.default_joint_pos.clone())
     asset.set_joint_velocity_target(asset.data.default_joint_vel.clone())
 
@@ -53,6 +48,8 @@ def reset_landing_platform(
     env: RLTaskEnv,
     env_ids: torch.Tensor,
     landing_pltform_cfg: SceneEntityCfg = SceneEntityCfg("landing_platform"),
+
+
 ):
     """Reset the asset root state to the default position and velocity.
 
