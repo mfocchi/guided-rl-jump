@@ -32,6 +32,8 @@ class BezierCurveActionCfg(ActionTermCfg):
 
     class_type: type[ActionTerm] = bezier_curve_actions.BezierCurveAction
 
+    q_lo_threshold: float = MISSING
+
     # T_th --
     t_th_min: float = MISSING
     t_th_max: float = MISSING

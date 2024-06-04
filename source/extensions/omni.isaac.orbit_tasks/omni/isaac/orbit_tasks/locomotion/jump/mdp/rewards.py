@@ -36,12 +36,23 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     # extract the asset (to enable type hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
     # obtain the desired and current positions
-    # TODO: check this
+
     des_pos_w = env.extras["trunk_tg"] + env.scene.env_origins
     curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
 
+    # Calculate percentual_error to normalize jump performance
+    target_error = torch.norm(des_pos_w - curr_pos_w, dim=1)
+    # the norm of the target becaus is alredy relative
+    target_distance = torch.norm(env.command_manager.get_command("trunk_target")[:, 0:3], dim=1)
+
+    percentual_error = target_error / target_distance
+
+    print(percentual_error)
+
+    cost = 1.0 / ((50 * percentual_error) + 1e-15)
+
     # TODO:experiment with this function
-    return 1.0 / ((20 * torch.norm(curr_pos_w - des_pos_w, dim=1)) + 1e-10)
+    return torch.log(1 + cost)
     # return torch.norm(curr_pos_w - des_pos_w, dim=1)
 
 

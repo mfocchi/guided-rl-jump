@@ -58,6 +58,8 @@ class BezierCurveAction(ActionTerm):
         self.rr_entity_cfg.resolve(self._env.scene)
         self.rr_body_idx = self.rr_entity_cfg.body_ids[0]
 
+        self.q_lo_threshold = self.cfg.q_lo_threshold
+
         self.t_th_min = self.cfg.t_th_min
         self.t_th_max = self.cfg.t_th_max
 
@@ -301,7 +303,10 @@ class BezierCurveAction(ActionTerm):
 
         if after_t_th.numel() > 0:
             self._env.extras['after_t_th'] = after_t_th
-            q_des[after_t_th] = self.q_0_lo
+            target_distance = torch.norm(self._env.command_manager.get_command("trunk_target")[:, 0:3], dim=1)
+            # enable retraction only if jump is grather than threshold
+            q_des[torch.where(target_distance[after_t_th] >= self.q_lo_threshold)] = self.q_0_lo
+            q_des[torch.where(target_distance[after_t_th] < self.q_lo_threshold)] = self.q_0
             qd_des[after_t_th] = torch.zeros_like(self._asset.data.default_joint_vel.clone())[0]
 
         apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self._env.device, dtype=torch.int)
@@ -380,7 +385,6 @@ class BezierCurveAction(ActionTerm):
             # Reset data
             self.queue.put("reset")
 
-        print(actions)
         # clip current action
         actions = torch.clip(actions, -1, 1)
         # store the raw actions

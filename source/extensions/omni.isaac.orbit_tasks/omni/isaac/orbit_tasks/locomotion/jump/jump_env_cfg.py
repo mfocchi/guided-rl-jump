@@ -29,16 +29,14 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 mu = 0.8
 time_step = 0.005
 
-# pos_x = (-0.5, 0.5)
-# pos_y = (-0.5, 0.5)
-# pos_z = (0.0, 0.5)
-pos_x = (0.5, 0.5)
-pos_y = (0.0, 0.0)
+pos_x = (-0.5, 0.5)
+pos_y = (-0.5, 0.5)
 pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
 pitch = (0.0, 0.0)
 yaw = (0.0, 0.0)
 
+activate_curriculum = False
 ##
 # Scene definition
 ##
@@ -133,6 +131,7 @@ class ActionsCfg:
                                          rl_body_names=["RL_foot"],
                                          rr_joint_names=["RR.*"],
                                          rr_body_names=["RR_foot"],
+                                         q_lo_threshold=0.2,
                                          t_th_min=0.1,
                                          t_th_max=1,
                                          x_theta_min=np.pi / 4,
@@ -270,7 +269,7 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=100.0,
+        weight=1000.0,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
@@ -298,16 +297,17 @@ class CurriculumCfg:
     """Curriculum terms for the MDP."""
     pass
 
-    # action_rate = CurrTerm(
-    #     func=mdp.modify_maximum_distance, params={"term_name": "trunk_target",
-    #                                               "num_steps": 500,
-    #                                               "pos_x": pos_x,
-    #                                               "pos_y": pos_y,
-    #                                               "pos_z": pos_z,
-    #                                               "roll": roll,
-    #                                               "pitch": pitch,
-    #                                               "yaw": yaw}
-    # )
+    action_rate = CurrTerm(
+        func=mdp.modify_maximum_distance, params={"term_name": "trunk_target",
+                                                  "num_steps": 5000,
+                                                  "pos_x": pos_x,
+                                                  "pos_y": pos_y,
+                                                  "pos_z": pos_z,
+                                                  "roll": roll,
+                                                  "pitch": pitch,
+                                                  "yaw": yaw,
+                                                  "activate": activate_curriculum}
+    )
 
 
 @ configclass
@@ -315,7 +315,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     """Configuration for the locomotion jump environment."""
 
     # Scene settings
-    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=3)
+    scene: MySceneCfg = MySceneCfg(num_envs=8192, env_spacing=3)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
