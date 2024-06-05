@@ -295,7 +295,6 @@ class TerminationsCfg:
 @ configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
-    pass
 
     action_rate = CurrTerm(
         func=mdp.modify_maximum_distance, params={"term_name": "trunk_target",

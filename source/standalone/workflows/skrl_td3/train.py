@@ -147,9 +147,6 @@ def main():
         **process_skrl_cfg(experiment_cfg["models"]["target_critic_2"]),
     )
 
-    print(models["policy"])
-    print(models["target_critic_2"])
-
     # instantiate a RandomMemory as rollout buffer (any memory can be used for this)
     # https://skrl.readthedocs.io/en/latest/modules/skrl.memories.random.html
     memory = RandomMemory(memory_size=1000, num_envs=env.num_envs, device=env.device)

@@ -27,7 +27,8 @@ if TYPE_CHECKING:
 def modify_maximum_distance(env: RLTaskEnv, env_ids: Sequence[int], term_name: str, num_steps: int, pos_x, pos_y, pos_z, roll, pitch, yaw, activate: bool = False):
 
     if activate:
-        coeff = float(env.common_step_counter / num_steps)
+        if env.common_step_counter <= num_steps:
+            coeff = float(env.common_step_counter / num_steps)
 
         curr_pos_x = coeff * np.array(pos_x)
         curr_pos_y = coeff * np.array(pos_y)
