@@ -21,16 +21,16 @@ class UnitreeGo1PPORunnerCfg(RslRlOnPolicyRunnerCfg):
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
-        actor_hidden_dims=[512, 256, 128],
-        critic_hidden_dims=[512, 256, 128],
-        activation="elu",
+        actor_hidden_dims=[64, 64],
+        critic_hidden_dims=[64, 64],
+        activation="tanh",
     )
     algorithm = RslRlPpoAlgorithmCfg(
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.2,
         entropy_coef=0.01,
-        num_learning_epochs=5,
+        num_learning_epochs=10,
         num_mini_batches=4,
         learning_rate=1.0e-3,
         schedule="adaptive",

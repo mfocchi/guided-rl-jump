@@ -302,6 +302,13 @@ class BezierCurveAction(ActionTerm):
         after_t_th = torch.where(self.dt > self.t_th)[0]
 
         if after_t_th.numel() > 0:
+            # save the lo config of new env after_t_th
+            for after_t_th_env in after_t_th:
+                after_t_th_env = after_t_th_env.item()
+                if after_t_th_env not in self._env.extras['after_t_th']:
+                    self._env.extras['actual_lo_config'][after_t_th_env] = self._asset.data.root_state_w[after_t_th_env].clone()
+
+            # update the list of env after_t_th
             self._env.extras['after_t_th'] = after_t_th
             target_distance = torch.norm(self._env.command_manager.get_command("trunk_target")[:, 0:3], dim=1)
             # enable retraction only if jump is grather than threshold
@@ -423,6 +430,7 @@ class BezierCurveAction(ActionTerm):
         x_r = (self.x_r_max - self.x_r_min) * 0.5 * (actions[..., 2] + 1) + self.x_r_min
 
         trunk_x_lo = self.torch_sph2cart(torch.stack((x_xd_phi, x_theta, x_r), dim=1))
+        self._env.extras["trunk_x_lo"] = trunk_x_lo
 
         # Calculate Xd_lo
 
@@ -430,6 +438,7 @@ class BezierCurveAction(ActionTerm):
         xd_r = (self.xd_r_max - self.xd_r_min) * 0.5 * (actions[..., 4] + 1) + self.xd_r_min
 
         trunk_xd_lo = self.torch_sph2cart(torch.stack((x_xd_phi, xd_theta, xd_r), dim=1))
+        self._env.extras["trunk_xd_lo"] = trunk_xd_lo
 
         # # Calculate Phi_lo
 

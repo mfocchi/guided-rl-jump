@@ -43,17 +43,35 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     # Calculate percentual_error to normalize jump performance
     target_error = torch.norm(des_pos_w - curr_pos_w, dim=1)
     # the norm of the target becaus is alredy relative
-    target_distance = torch.norm(env.command_manager.get_command("trunk_target")[:, 0:3], dim=1)
+    target_distance = torch.norm(env.command_manager.get_command(command_name)[:, 0:3], dim=1) + 1e-12
 
     percentual_error = target_error / target_distance
 
-    print(percentual_error)
+    print(percentual_error.mean())
 
     cost = 1.0 / ((50 * percentual_error) + 1e-15)
 
     # TODO:experiment with this function
     return torch.log(1 + cost)
     # return torch.norm(curr_pos_w - des_pos_w, dim=1)
+
+
+def liftoff_position_error(env: RLTaskEnv) -> torch.Tensor:
+    # obtain the desired and current positions
+
+    des_lo_pos_w = env.extras["trunk_x_lo"] + env.scene.env_origins
+    curr_lo_pos_w = env.extras["actual_lo_config"][..., 0:3]
+
+    return torch.norm(des_lo_pos_w - curr_lo_pos_w, dim=1)
+
+
+def liftoff_velocity_error(env: RLTaskEnv) -> torch.Tensor:
+    # obtain the desired and current positions
+
+    des_lo_vel_w = env.extras["trunk_xd_lo"]
+    curr_lo_vel_w = env.extras["actual_lo_config"][..., 7:10]
+
+    return torch.norm(des_lo_vel_w - curr_lo_vel_w, dim=1)
 
 
 def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
@@ -112,40 +130,6 @@ def unilateral_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.T
     costs = torch.sum(computeActivationFunction('linear', net_contact_forces[:, sensor_cfg.body_ids, 2], 0.0, torch.inf), dim=1)
 
     return costs
-
-
-def feet_contact_time(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
-    """Reward long steps taken by the feet using L2-kernel.
-
-    This function rewards the agent for taking steps that are longer than a threshold. This helps ensure
-    that the robot lifts its feet off the ground and takes steps. The reward is computed as the sum of
-    the time for which the feet are in the air.
-
-    If the commands are small (i.e. the agent is not supposed to take a step), then the reward is zero.
-    """
-    # extract the used quantities (to enable type-hinting)
-    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    # compute the reward
-    reward = torch.sum(contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids], dim=1)
-
-    return reward
-
-
-def air_time(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
-    """Reward long steps taken by the feet using L2-kernel.
-
-    This function rewards the agent for taking steps that are longer than a threshold. This helps ensure
-    that the robot lifts its feet off the ground and takes steps. The reward is computed as the sum of
-    the time for which the feet are in the air.
-
-    If the commands are small (i.e. the agent is not supposed to take a step), then the reward is zero.
-    """
-    # extract the used quantities (to enable type-hinting)
-    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    # compute the reward
-    reward = torch.sum(contact_sensor.data.current_air_time[:, sensor_cfg.body_ids], dim=1)
-
-    return reward
 
 
 def no_touchdown(env: RLTaskEnv) -> torch.Tensor:

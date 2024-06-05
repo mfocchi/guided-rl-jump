@@ -42,13 +42,13 @@ def reset_robot_state(
     env.extras['apex'] = {}
     env.extras['touchdown'] = {}
     env.extras['after_t_th'] = torch.tensor([], device=env.device)
+    env.extras['actual_lo_config'] = torch.zeros_like(asset.data.root_state_w)
 
 
 def reset_landing_platform(
     env: RLTaskEnv,
     env_ids: torch.Tensor,
     landing_pltform_cfg: SceneEntityCfg = SceneEntityCfg("landing_platform"),
-
 
 ):
     """Reset the asset root state to the default position and velocity.

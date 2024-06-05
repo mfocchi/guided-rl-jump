@@ -24,9 +24,7 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 
 
 # External variables definition
-
-# friction (which one?)
-mu = 0.8
+mu = 1.0
 time_step = 0.005
 
 pos_x = (-0.5, 0.5)
@@ -37,6 +35,7 @@ pitch = (0.0, 0.0)
 yaw = (0.0, 0.0)
 
 activate_curriculum = False
+
 ##
 # Scene definition
 ##
@@ -50,7 +49,7 @@ class MySceneCfg(InteractiveSceneCfg):
     ground = AssetBaseCfg(
         prim_path="/World/ground",
         spawn=sim_utils.GroundPlaneCfg(
-            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu)
+            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu, dynamic_friction=mu)
         ),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
     )
@@ -190,6 +189,12 @@ class ObservationsCfg:
 class EventCfg:
     """Configuration for events."""
 
+    add_base_mass = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        mode="startup",
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "mass_range": (-5.0, 5.0), "operation": "add"},
+    )
+
     reset_robot = EventTerm(
         func=mdp.reset_robot_state,
         mode="reset"
@@ -238,7 +243,7 @@ class RunningRewardsCfg:
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-10
+        weight=-1
     )
 
     friction_constraint = RewTerm(
@@ -273,6 +278,16 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
+    liftoff_position_error = RewTerm(
+        func=mdp.liftoff_position_error,
+        weight=-10,
+    )
+
+    liftoff_velocity_error = RewTerm(
+        func=mdp.liftoff_velocity_error,
+        weight=-10,
+    )
+
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
         weight=-1,
@@ -281,7 +296,7 @@ class RewardsCfg:
 
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight=-1,
+        weight=-10,
     )
 
 
@@ -334,8 +349,6 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
         self.decimation = 1
         # simulation settings
         self.sim.disable_contact_processing = True
-        # TODO: verify and improve this initialization
-        self.sim.physics_material = sim_utils.RigidBodyMaterialCfg(static_friction=mu)
 
         # update sensor update periods
         # we tick all the sensors based on the smallest update period (physics update period)
