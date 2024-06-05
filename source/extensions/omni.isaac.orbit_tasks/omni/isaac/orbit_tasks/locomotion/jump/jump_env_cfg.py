@@ -280,12 +280,12 @@ class RewardsCfg:
 
     liftoff_position_error = RewTerm(
         func=mdp.liftoff_position_error,
-        weight=-10,
+        weight=-100,
     )
 
     liftoff_velocity_error = RewTerm(
         func=mdp.liftoff_velocity_error,
-        weight=-10,
+        weight=-1,
     )
 
     target_orientation_error = RewTerm(

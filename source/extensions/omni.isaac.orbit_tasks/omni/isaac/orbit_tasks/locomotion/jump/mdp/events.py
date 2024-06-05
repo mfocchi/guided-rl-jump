@@ -73,7 +73,7 @@ def move_landing_platform(
     landing_platform_cfg: SceneEntityCfg = SceneEntityCfg("landing_platform"),
     base_lin_vel_threshold: float = 0,
     foot_z_threshold: float = 0.02,
-    base_z_threshold: float = 0.35,
+    base_z_threshold: float = 0.15,
     base_heigth: float = 0.3
 
 ):
@@ -118,6 +118,7 @@ def move_landing_platform(
     # Get the apex apex_env_ids from intersections of all conditions
     apex_env_ids = foot_lifted_off_env_ids[(foot_lifted_off_env_ids.view(1, -1) == base_lifted_off_env_ids.view(-1, 1)).any(dim=0)]
     apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == base_negative_lin_vel_env_ids.view(-1, 1)).any(dim=0)]
+    apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == env.extras['after_t_th'].view(-1, 1)).any(dim=0)]
 
     # Calculate the landing platform default position and orientation
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids]
