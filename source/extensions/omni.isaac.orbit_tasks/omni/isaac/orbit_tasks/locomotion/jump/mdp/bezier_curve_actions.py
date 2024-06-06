@@ -302,11 +302,11 @@ class BezierCurveAction(ActionTerm):
         after_t_th = torch.where(self.dt > self.t_th)[0]
 
         if after_t_th.numel() > 0:
-            # save the lo config of new env after_t_th
-            for after_t_th_env in after_t_th:
-                after_t_th_env = after_t_th_env.item()
-                if after_t_th_env not in self._env.extras['after_t_th']:
-                    self._env.extras['actual_lo_config'][after_t_th_env] = self._asset.data.root_state_w[after_t_th_env].clone()
+            # # save the lo config of new env after_t_th
+            # for after_t_th_env in after_t_th:
+            #     after_t_th_env = after_t_th_env.item()
+            #     if after_t_th_env not in self._env.extras['after_t_th']:
+            #         self._env.extras['actual_lo_config'][after_t_th_env] = self._asset.data.root_state_w[after_t_th_env].clone()
 
             # update the list of env after_t_th
             self._env.extras['after_t_th'] = after_t_th

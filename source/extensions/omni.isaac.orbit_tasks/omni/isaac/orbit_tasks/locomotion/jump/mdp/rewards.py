@@ -50,9 +50,10 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     print(percentual_error.mean())
 
     cost = 1.0 / ((50 * percentual_error) + 1e-15)
+    cost = torch.log(1 + cost)
 
     # TODO:experiment with this function
-    return torch.log(1 + cost)
+    return torch.tanh(cost)
     # return torch.norm(curr_pos_w - des_pos_w, dim=1)
 
 
@@ -143,3 +144,8 @@ def no_touchdown(env: RLTaskEnv) -> torch.Tensor:
     no_touchdown_penalty[touchdown_end_ids] = 0
 
     return no_touchdown_penalty
+
+
+def action_regularization(env: RLTaskEnv) -> torch.Tensor:
+    """Penalize big action to constrain the range"""
+    return torch.sum(torch.square(env.action_manager.action), dim=1)

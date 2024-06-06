@@ -243,12 +243,12 @@ class RunningRewardsCfg:
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-1
+        weight=-0.01
     )
 
     friction_constraint = RewTerm(
         func=mdp.friction_constraint,
-        weight=-0.1,
+        weight=-0.01,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
             "mu": mu
@@ -257,13 +257,11 @@ class RunningRewardsCfg:
 
     unilateral_constraint = RewTerm(
         func=mdp.unilateral_constraint,
-        weight=-0.1,
+        weight=-0.01,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")
         }
     )
-
-    # TODO: singularity
 
 
 @configclass
@@ -274,19 +272,19 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=1000.0,
+        weight=1.0,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
-    liftoff_position_error = RewTerm(
-        func=mdp.liftoff_position_error,
-        weight=-100,
-    )
+    # liftoff_position_error = RewTerm(
+    #     func=mdp.liftoff_position_error,
+    #     weight=-0.1,
+    # )
 
-    liftoff_velocity_error = RewTerm(
-        func=mdp.liftoff_velocity_error,
-        weight=-1,
-    )
+    # liftoff_velocity_error = RewTerm(
+    #     func=mdp.liftoff_velocity_error,
+    #     weight=-0.1,
+    # )
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
@@ -296,7 +294,12 @@ class RewardsCfg:
 
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight=-10,
+        weight=-0.1,
+    )
+
+    action_regularization = RewTerm(
+        func=mdp.action_regularization,
+        weight=-0.01,
     )
 
 
