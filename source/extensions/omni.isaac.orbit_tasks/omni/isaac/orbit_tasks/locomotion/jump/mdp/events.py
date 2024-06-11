@@ -72,8 +72,8 @@ def move_landing_platform(
     robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     landing_platform_cfg: SceneEntityCfg = SceneEntityCfg("landing_platform"),
     base_lin_vel_threshold: float = 0,
-    foot_z_threshold: float = 0.02,
-    base_z_threshold: float = 0.15,
+    foot_z_threshold: float = 0.04,
+    base_z_threshold: float = 0.3,
     base_heigth: float = 0.3
 
 ):
