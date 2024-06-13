@@ -89,7 +89,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
         self.reward_buf += self.reward_manager.compute(dt=1)
 
         # TODO: test if leaving the reward like that allow you to have better results
-        #self.reward_buf = torch.clip(self.reward_buf, 0)
+        self.reward_buf = torch.clip(self.reward_buf, 0)
 
         # -- reset envs that terminated/timed-out and log the episode information
         # ATTENTION: for us it will always be timeout
@@ -104,6 +104,5 @@ class RLPlanningTaskEnv(RLTaskEnv):
         # -- compute observations
         # note: done after reset to get the correct observations for reset envs
         self.obs_buf = self.observation_manager.compute()
-
         # return observations, rewards, resets and extras
         return self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras

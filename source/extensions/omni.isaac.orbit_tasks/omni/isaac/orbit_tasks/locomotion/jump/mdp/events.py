@@ -145,19 +145,20 @@ def move_landing_platform(
     # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
 
 
-def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, air_time_threshold: float, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg):
+def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: float, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg):
     """Terminate when the contact force on the sensor exceeds the force threshold."""
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     asset: Articulation = env.scene[asset_cfg.name]
 
+    foot_idx = asset.find_bodies(".*foot")[0]
+
     net_contact_forces = contact_sensor.data.net_forces_w
-    net_last_air_time = contact_sensor.data.last_air_time
 
-    flew_env_ids = torch.all(net_last_air_time[:, sensor_cfg.body_ids] > air_time_threshold, dim=1)
-    in_contact_env_ids = torch.all(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
+    low_foot_env_ids = torch.all(asset.data.body_state_w[:, foot_idx, 2] <= foot_pos_threshold, dim=1)
+    in_contact_env_ids = torch.any(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
 
-    touchdown_env_ids = torch.nonzero(flew_env_ids & in_contact_env_ids).reshape(1, -1)[0]
+    touchdown_env_ids = torch.nonzero(low_foot_env_ids & in_contact_env_ids).reshape(1, -1)[0]
 
     apex_env_ids = torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int)
 

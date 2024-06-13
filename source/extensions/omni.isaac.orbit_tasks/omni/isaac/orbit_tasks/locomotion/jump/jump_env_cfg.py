@@ -168,9 +168,9 @@ class ObservationsCfg:
         # base_pos_z = ObsTerm(func=mdp.base_pos_z, noise=Unoise(n_min=-0.01, n_max=0.01))
         # base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         # base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
-        base_pos_z = ObsTerm(func=mdp.base_pos_z)
-        base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
-        base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
+        #base_pos_z = ObsTerm(func=mdp.base_pos_z)
+        #base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
+        #base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
 
         target_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "trunk_target"})
 
@@ -189,11 +189,11 @@ class ObservationsCfg:
 class EventCfg:
     """Configuration for events."""
 
-    add_base_mass = EventTerm(
-        func=mdp.randomize_rigid_body_mass,
-        mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "mass_range": (-5.0, 5.0), "operation": "add"},
-    )
+#    add_base_mass = EventTerm(
+#        func=mdp.randomize_rigid_body_mass,
+#        mode="startup",
+#        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "mass_range": (-5.0, 5.0), "operation": "add"},
+#    )
 
     reset_robot = EventTerm(
         func=mdp.reset_robot_state,
@@ -217,8 +217,8 @@ class EventCfg:
         mode="interval",
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
                 "asset_cfg": SceneEntityCfg("robot"),
-                "air_time_threshold": 0.1,
-                "contact_threshold": 20.0},
+                "foot_pos_threshold": 0.03,
+                "contact_threshold": 5.0},
         interval_range_s=(0., 0.)
     )
 
@@ -292,10 +292,10 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
-    no_touchdown = RewTerm(
-        func=mdp.no_touchdown,
-        weight=-0.1,
-    )
+#    no_touchdown = RewTerm(
+#        func=mdp.no_touchdown,
+#        weight=-0.1,
+#    )
 
     action_regularization = RewTerm(
         func=mdp.action_regularization,
