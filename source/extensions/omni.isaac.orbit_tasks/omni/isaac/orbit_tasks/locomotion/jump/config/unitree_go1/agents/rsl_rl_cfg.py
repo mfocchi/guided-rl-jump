@@ -15,14 +15,14 @@ from omni.isaac.orbit_tasks.utils.wrappers.rsl_rl import (
 @configclass
 class UnitreeGo1PPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 5
-    max_iterations = 1000
-    save_interval = 10
+    max_iterations = 2000
+    save_interval = 100
     experiment_name = "unitree_go1_jump"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
-        actor_hidden_dims=[128, 128],
-        critic_hidden_dims=[128, 128],
+        actor_hidden_dims=[256, 256],
+        critic_hidden_dims=[256, 256],
         activation="elu",
     )
     algorithm = RslRlPpoAlgorithmCfg(
