@@ -49,11 +49,11 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
 
     print(percentual_error.mean())
 
-#    cost = 1.0 / ((50 * percentual_error) + 1e-15)
+    cost = 1.0 / ((50 * percentual_error) + 1e-15)
 #    cost = torch.log(1 + cost)
 
     # TODO:experiment with this function
-    cost = (1.0 / ((50 * (percentual_error ** 3)) + 1e-15)) - 0.02
+    #cost = (1.0 / ((50 * (percentual_error ** 3)) + 1e-15)) - 0.02
     return cost
     #return torch.tanh(cost)
     # return torch.norm(curr_pos_w - des_pos_w, dim=1)

@@ -131,7 +131,7 @@ class ActionsCfg:
                                          rr_joint_names=["RR.*"],
                                          rr_body_names=["RR_foot"],
                                          q_lo_threshold=0.2,
-                                         t_th_min=0.1,
+                                         t_th_min=0.3,
                                          t_th_max=1,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
@@ -292,10 +292,10 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
-#    no_touchdown = RewTerm(
-#        func=mdp.no_touchdown,
-#        weight=-0.1,
-#    )
+    no_touchdown = RewTerm(
+        func=mdp.no_touchdown,
+        weight=-0.1,
+    )
 
     action_regularization = RewTerm(
         func=mdp.action_regularization,
@@ -316,7 +316,7 @@ class CurriculumCfg:
 
     action_rate = CurrTerm(
         func=mdp.modify_maximum_distance, params={"term_name": "trunk_target",
-                                                  "num_steps": 5000,
+                                                  "num_steps": 1000,
                                                   "pos_x": pos_x,
                                                   "pos_y": pos_y,
                                                   "pos_z": pos_z,
