@@ -131,7 +131,7 @@ class ActionsCfg:
                                          rr_joint_names=["RR.*"],
                                          rr_body_names=["RR_foot"],
                                          q_lo_threshold=0.2,
-                                         t_th_min=0.25,
+                                         t_th_min=0.3,
                                          t_th_max=1,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
@@ -297,10 +297,10 @@ class RewardsCfg:
         weight=-0.1,
     )
 
-    # action_regularization = RewTerm(
-    #     func=mdp.action_regularization,
-    #     weight=-0.01,
-    # )
+    action_regularization = RewTerm(
+        func=mdp.action_regularization,
+        weight=-0.01,
+    )
 
 
 @ configclass
@@ -332,7 +332,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     """Configuration for the locomotion jump environment."""
 
     # Scene settings
-    scene: MySceneCfg = MySceneCfg(num_envs=8192, env_spacing=3)
+    scene: MySceneCfg = MySceneCfg(num_envs=4096, env_spacing=3)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()

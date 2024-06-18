@@ -149,7 +149,7 @@ def main():
 
     # instantiate a RandomMemory as rollout buffer (any memory can be used for this)
     # https://skrl.readthedocs.io/en/latest/modules/skrl.memories.random.html
-    memory = RandomMemory(memory_size=10000, num_envs=env.num_envs, device=env.device)
+    memory = RandomMemory(memory_size=int(1e6), num_envs=env.num_envs, device=env.device)
 
     # configure and instantiate PPO agent
     # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html

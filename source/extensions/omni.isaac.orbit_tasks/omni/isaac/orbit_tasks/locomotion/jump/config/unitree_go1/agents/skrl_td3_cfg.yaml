@@ -56,7 +56,7 @@ models:
 # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html
 agent:
   gradient_steps: 1            # gradient steps
-  batch_size: 4096               # training batch size
+  batch_size: 256               # training batch size
 
   discount_factor: 0.99        # discount factor (gamma)
   polyak: 0.005                # soft update hyperparameter (tau)
@@ -69,13 +69,13 @@ agent:
   state_preprocessor: "RunningStandardScaler"   # state preprocessor class (see skrl.resources.preprocessors)
   state_preprocessor_kwargs: null      # state preprocessor's kwargs (e.g. {size: env.observation_space})
 
-  random_timesteps: 100          # random exploration steps
-  learning_starts: 10           # learning starts after this many steps
+  random_timesteps: 1000          # random exploration steps
+  learning_starts: 1000           # learning starts after this many steps
 
   grad_norm_clip: 0            # clipping coefficient for the norm of the gradients
 
   exploration:
-      noise: "GaussianNoise(0, 0.1)"    # exploration noise
+      noise: "GaussianNoise(0, 0.4)"    # exploration noise
       initial_scale: 1.0       # initial scale for the noise
       final_scale: 0.001       # final scale for the noise
       timesteps: null          # timesteps for the noise decay
@@ -90,7 +90,7 @@ agent:
       directory: "unitree_go1_jump"           # experiment's parent directory
       experiment_name: ""      # experiment name
       write_interval: 10   # TensorBoard writing interval (timesteps)
-      checkpoint_interval: 50      # interval for checkpoints (timesteps)
+      checkpoint_interval: 1000      # interval for checkpoints (timesteps)
 
 # Sequential trainer
 # https://skrl.readthedocs.io/en/latest/modules/skrl.trainers.sequential.html
