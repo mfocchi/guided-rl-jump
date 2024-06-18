@@ -131,7 +131,7 @@ class ActionsCfg:
                                          rr_joint_names=["RR.*"],
                                          rr_body_names=["RR_foot"],
                                          q_lo_threshold=0.2,
-                                         t_th_min=0.3,
+                                         t_th_min=0.25,
                                          t_th_max=1,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
@@ -168,9 +168,9 @@ class ObservationsCfg:
         # base_pos_z = ObsTerm(func=mdp.base_pos_z, noise=Unoise(n_min=-0.01, n_max=0.01))
         # base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
         # base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
-        #base_pos_z = ObsTerm(func=mdp.base_pos_z)
-        #base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
-        #base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
+        # base_pos_z = ObsTerm(func=mdp.base_pos_z)
+        # base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
+        # base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
 
         target_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "trunk_target"})
 
@@ -272,7 +272,7 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=1.0,
+        weight=10.0,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
@@ -297,10 +297,10 @@ class RewardsCfg:
         weight=-0.1,
     )
 
-    action_regularization = RewTerm(
-        func=mdp.action_regularization,
-        weight=-0.01,
-    )
+    # action_regularization = RewTerm(
+    #     func=mdp.action_regularization,
+    #     weight=-0.01,
+    # )
 
 
 @ configclass

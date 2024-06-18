@@ -69,7 +69,7 @@ agent:
   state_preprocessor: "RunningStandardScaler"   # state preprocessor class (see skrl.resources.preprocessors)
   state_preprocessor_kwargs: null      # state preprocessor's kwargs (e.g. {size: env.observation_space})
 
-  random_timesteps: 0          # random exploration steps
+  random_timesteps: 100          # random exploration steps
   learning_starts: 10           # learning starts after this many steps
 
   grad_norm_clip: 0            # clipping coefficient for the norm of the gradients
@@ -95,5 +95,5 @@ agent:
 # Sequential trainer
 # https://skrl.readthedocs.io/en/latest/modules/skrl.trainers.sequential.html
 trainer:
-  timesteps: 10000
+  timesteps: 100000
   headless: False

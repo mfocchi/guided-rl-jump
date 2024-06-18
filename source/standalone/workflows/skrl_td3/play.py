@@ -106,13 +106,15 @@ def main():
     # configure and instantiate PPO agent
     # https://skrl.readthedocs.io/en/latest/modules/skrl.agents.ppo.html
     agent_cfg = TD3_DEFAULT_CONFIG.copy()
-    experiment_cfg["agent"]["rewards_shaper"] = None  # avoid 'dictionary changed size during iteration'
-    agent_cfg.update(process_skrl_cfg(experiment_cfg["agent"]))
+    # experiment_cfg["agent"]["rewards_shaper"] = None  # avoid 'dictionary changed size during iteration'
+    # agent_cfg.update(process_skrl_cfg(experiment_cfg["agent"]))
 
-    agent_cfg["state_preprocessor_kwargs"].update({"size": env.observation_space, "device": env.device})
-    agent_cfg["exploration"]["noise"] = None
-    agent_cfg["exploration"]["initial_scale"] = 0
-    agent_cfg["exploration"]["final_scale"] = 0
+    # agent_cfg["state_preprocessor_kwargs"].update({"size": env.observation_space, "device": env.device})
+    # agent_cfg["exploration"]["noise"] = None
+    # agent_cfg["exploration"]["initial_scale"] = 0
+    # agent_cfg["exploration"]["final_scale"] = 0
+    # agent_cfg["exploration"]["random_timesteps"] = 0
+    
 
     agent = TD3(
         models=models,
