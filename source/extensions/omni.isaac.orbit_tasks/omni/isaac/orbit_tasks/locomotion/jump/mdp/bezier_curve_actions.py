@@ -60,6 +60,9 @@ class BezierCurveAction(ActionTerm):
 
         self.q_lo_threshold = self.cfg.q_lo_threshold
 
+        self.min_action = -5
+        self.max_action = 5
+
         self.t_th_min = self.cfg.t_th_min
         self.t_th_max = self.cfg.t_th_max
 
@@ -386,6 +389,9 @@ class BezierCurveAction(ActionTerm):
         # Close the plot window before terminating
         plt.close()
 
+    def map_range(self, x, in_min, in_max, out_min, out_max):
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
     def process_actions(self, actions: torch.Tensor):
 
         if self.cfg.debug_plot:
@@ -393,7 +399,7 @@ class BezierCurveAction(ActionTerm):
             self.queue.put("reset")
 
         # clip current action
-        actions = torch.clip(actions, -1, 1)
+        actions = torch.clip(actions, self.min_action, self.max_action)
         # store the raw actions
         self._raw_actions[:] = actions
 
@@ -419,23 +425,30 @@ class BezierCurveAction(ActionTerm):
 
         self._env.extras["trunk_tg"] = trunk_tg
 
-        self.t_th = (self.t_th_max - self.t_th_min) * 0.5 * (actions[..., 0] + 1) + self.t_th_min
+        # self.t_th = (self.t_th_max - self.t_th_min) * 0.5 * (actions[..., 0] + 1) + self.t_th_min
+        self.t_th = self.map_range(actions[..., 0], self.min_action, self.max_action, self.t_th_min, self.t_th_max)
         self.t_th = self.t_th.reshape(-1, 1)
 
         # Phi is the same for x and xd
         x_xd_phi = self.torch_cart2sph(trunk_tg)[..., 0].clone()
 
         # Calculate X_lo
-        x_theta = (self.x_theta_max - self.x_theta_min) * 0.5 * (actions[..., 1] + 1) + self.x_theta_min
-        x_r = (self.x_r_max - self.x_r_min) * 0.5 * (actions[..., 2] + 1) + self.x_r_min
+        # x_theta = (self.x_theta_max - self.x_theta_min) * 0.5 * (actions[..., 1] + 1) + self.x_theta_min
+        x_theta = self.map_range(actions[..., 1], self.min_action, self.max_action, self.x_theta_min, self.x_theta_max)
+
+        # x_r = (self.x_r_max - self.x_r_min) * 0.5 * (actions[..., 2] + 1) + self.x_r_min
+        x_r = self.map_range(actions[..., 2], self.min_action, self.max_action, self.x_r_min, self.x_r_max)
 
         trunk_x_lo = self.torch_sph2cart(torch.stack((x_xd_phi, x_theta, x_r), dim=1))
         self._env.extras["trunk_x_lo"] = trunk_x_lo
 
         # Calculate Xd_lo
 
-        xd_theta = (self.xd_theta_max - self.xd_theta_min) * 0.5 * (actions[..., 3] + 1) + self.xd_theta_min
-        xd_r = (self.xd_r_max - self.xd_r_min) * 0.5 * (actions[..., 4] + 1) + self.xd_r_min
+        # xd_theta = (self.xd_theta_max - self.xd_theta_min) * 0.5 * (actions[..., 3] + 1) + self.xd_theta_min
+        xd_theta = self.map_range(actions[..., 3], self.min_action, self.max_action, self.xd_theta_min, self.xd_theta_max)
+
+        # xd_r = (self.xd_r_max - self.xd_r_min) * 0.5 * (actions[..., 4] + 1) + self.xd_r_min
+        xd_r = self.map_range(actions[..., 4], self.min_action, self.max_action, self.xd_r_min, self.xd_r_max)
 
         trunk_xd_lo = self.torch_sph2cart(torch.stack((x_xd_phi, xd_theta, xd_r), dim=1))
         self._env.extras["trunk_xd_lo"] = trunk_xd_lo
@@ -465,10 +478,10 @@ class BezierCurveAction(ActionTerm):
         # self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
 
         # apply the affine transformations
-        self._processed_actions = actions
+        self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo), dim=1)
 
         if self.cfg.debug_vis:
-            print(actions)
+            print(self._processed_actions)
 
     def apply_actions(self):
 
