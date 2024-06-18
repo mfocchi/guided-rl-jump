@@ -81,8 +81,11 @@ class RLPlanningTaskEnv(RLTaskEnv):
         # -- check terminations (always in timeout)
         self.reset_buf = self.termination_manager.compute()
 
-        self.reset_terminated = self.termination_manager.terminated
+        # WARNINGGGG!!!! RESET IS NOT TERMINATED FOR A BAD BEHAVIOUR BUT IT'S ALWAYS IN TIME OUT
+        # SINCE IN TD3 I NEED ALWAYS TERMINATED ==  1, clone the time_out flag
         self.reset_time_outs = self.termination_manager.time_outs
+        #self.reset_terminated = self.termination_manager.terminated
+        self.reset_terminated = self.reset_time_outs
         # -- final reward computation
         # dt=1, because reward is multiplied dt ->
         # value = term_cfg.func(self._env, **term_cfg.params) * term_cfg.weight * dt
@@ -104,5 +107,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
         # -- compute observations
         # note: done after reset to get the correct observations for reset envs
         self.obs_buf = self.observation_manager.compute()
+
+        print(self.reset_terminated, self.reset_time_outs,)
         # return observations, rewards, resets and extras
         return self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
