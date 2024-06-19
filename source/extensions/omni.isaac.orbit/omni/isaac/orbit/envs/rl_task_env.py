@@ -293,15 +293,15 @@ class RLTaskEnv(BaseEnv, gym.Env):
             # check if group is concatenated or not
             # if not concatenated, then we need to add each term separately as a dictionary
             if has_concatenated_obs:
-                self.single_observation_space[group_name] = gym.spaces.Box(low=-1, high=1, shape=group_dim)
+                self.single_observation_space[group_name] = gym.spaces.Box(low=-np.inf, high=np.inf, shape=group_dim)
             else:
                 self.single_observation_space[group_name] = gym.spaces.Dict({
-                    term_name: gym.spaces.Box(low=-1, high=1, shape=term_dim)
+                    term_name: gym.spaces.Box(low=-np.inf, high=np.inf, shape=term_dim)
                     for term_name, term_dim in zip(group_term_names, group_term_dim)
                 })
         # action space (unbounded since we don't impose any limits)
         action_dim = sum(self.action_manager.action_term_dim)
-        self.single_action_space = gym.spaces.Box(low=-1, high=1, shape=(action_dim,))
+        self.single_action_space = gym.spaces.Box(low=-np.inf, high=np.inf, shape=(action_dim,))
 
         # batch the spaces for vectorized environments
         self.observation_space = gym.vector.utils.batch_space(self.single_observation_space, self.num_envs)

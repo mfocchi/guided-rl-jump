@@ -34,7 +34,7 @@ roll = (0.0, 0.0)
 pitch = (0.0, 0.0)
 yaw = (0.0, 0.0)
 
-activate_curriculum = False
+activate_curriculum = True
 
 ##
 # Scene definition
@@ -276,6 +276,15 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
+
+@configclass
+class NegativeRewardsCfg:
+
+    no_touchdown = RewTerm(
+        func=mdp.no_touchdown,
+        weight=-0.1,
+    )
+
     # liftoff_position_error = RewTerm(
     #     func=mdp.liftoff_position_error,
     #     weight=-0.1,
@@ -286,26 +295,21 @@ class RewardsCfg:
     #     weight=-0.1,
     # )
 
-    target_orientation_error = RewTerm(
-        func=mdp.target_orientation_error,
-        weight=-1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
+    action_regularization = RewTerm(
+        func=mdp.action_regularization,
+        weight=-0.01,
     )
-
-    # no_touchdown = RewTerm(
-    #     func=mdp.no_touchdown,
-    #     weight=-0.1,
-    # )
-
-    # action_regularization = RewTerm(
-    #     func=mdp.action_regularization,
-    #     weight=-0.01,
-    # )
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,
         params={"min_action": -5, "max_action": 5},
         weight=-0.1,
+    )
+
+    target_orientation_error = RewTerm(
+        func=mdp.target_orientation_error,
+        weight=-1,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
 
@@ -322,7 +326,7 @@ class CurriculumCfg:
 
     action_rate = CurrTerm(
         func=mdp.modify_maximum_distance, params={"term_name": "trunk_target",
-                                                  "num_steps": 1000,
+                                                  "num_steps": 500,
                                                   "pos_x": pos_x,
                                                   "pos_y": pos_y,
                                                   "pos_z": pos_z,
@@ -346,6 +350,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     # MDP settings
     running_rewards: RunningRewardsCfg = RunningRewardsCfg()
     rewards: RewardsCfg = RewardsCfg()
+    negative_rewards: NegativeRewardsCfg = NegativeRewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     events: EventCfg = EventCfg()
     curriculum: CurriculumCfg = CurriculumCfg()

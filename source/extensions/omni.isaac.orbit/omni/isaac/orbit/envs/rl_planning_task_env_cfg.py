@@ -15,4 +15,5 @@ class RLPlanningTaskEnvCfg(RLTaskEnvCfg):
     """Configuration for a reinforcement learning environment."""
 
     running_rewards: object = MISSING
+    negative_rewards: object = MISSING
     """Running reward settings."""

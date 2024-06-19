@@ -30,6 +30,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
         super().load_managers()
 
         self.running_reward_manager = RewardManager(self.cfg.running_rewards, self)
+        self.negative_rewards_manager = RewardManager(self.cfg.negative_rewards, self)
 
     def step(self, action: torch.Tensor) -> VecEnvStepReturn:
 
@@ -90,8 +91,9 @@ class RLPlanningTaskEnv(RLTaskEnv):
         # dt=1, because reward is multiplied dt ->
         # value = term_cfg.func(self._env, **term_cfg.params) * term_cfg.weight * dt
         self.reward_buf = self.reward_manager.compute(dt=1)
+        self.negative_reward_buf = self.negative_rewards_manager.compute(dt=1)
 
-        self.final_reward_buff = self.reward_buf * torch.exp(-torch.pow(self.running_reward_buf, 2))
+        self.final_reward_buff = self.reward_buf * torch.exp(-torch.pow(self.running_reward_buf + self.negative_reward_buf, 2))
 
         # TODO: test if leaving the reward like that allow you to have better results
         # self.reward_buf = torch.clip(self.reward_buf, 0)
