@@ -481,7 +481,13 @@ class BezierCurveAction(ActionTerm):
         self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo), dim=1)
 
         if self.cfg.debug_vis:
-            print(self._processed_actions)
+            # print(f"Command: {self._env.command_manager.get_command('trunk_target')}")
+            print(f"Action: {self._raw_actions}")
+            print(f"Processed action: {self._processed_actions}")
+            # print(f"x_theta, x_r: { x_theta} , {x_r}")
+            # print(f"xd_theta, xd_r: { xd_theta} , {xd_r}")
+            # print(f"Pos in jf: {self.torch_sph2cart(torch.stack((torch.zeros_like(x_xd_phi), x_theta, x_r), dim=1))}")
+            # print(f"Vel in jf: {self.torch_sph2cart(torch.stack((torch.zeros_like(x_xd_phi), xd_theta, xd_r), dim=1))}")
 
     def apply_actions(self):
 

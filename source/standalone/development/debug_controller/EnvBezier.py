@@ -40,6 +40,9 @@ class BezierCurveAction():
                  phid_min,
                  phid_max) -> None:
 
+        self.min_action = -5
+        self.max_action = 5
+
         self.t_th_min = t_th_min
         self.t_th_max = t_th_max
 
@@ -152,26 +155,29 @@ class BezierCurveAction():
 
         return bezier_position, bezier_velocity
 
+    def map_range(self, x, in_min, in_max, out_min, out_max):
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
     def process_actions(self, trunk_x_0, trunk_xd_0, actions: torch.Tensor, target: torch.Tensor):
 
         trunk_tg = trunk_x_0 + target
 
-        self.t_th = (self.t_th_max - self.t_th_min) * 0.5 * (actions[..., 0] + 1) + self.t_th_min
+        self.t_th = self.map_range(actions[..., 0], self.min_action, self.max_action, self.t_th_min, self.t_th_max)
         self.t_th = self.t_th.reshape(-1, 1)
 
         # Phi is the same for x and xd
         x_xd_phi = self.torch_cart2sph(trunk_tg)[..., 0].clone()
 
         # Calculate X_lo
-        x_theta = (self.x_theta_max - self.x_theta_min) * 0.5 * (actions[..., 1] + 1) + self.x_theta_min
-        x_r = (self.x_r_max - self.x_r_min) * 0.5 * (actions[..., 2] + 1) + self.x_r_min
+        x_theta = self.map_range(actions[..., 1], self.min_action, self.max_action, self.x_theta_min, self.x_theta_max)
+        x_r = self.map_range(actions[..., 2], self.min_action, self.max_action, self.x_r_min, self.x_r_max)
 
         trunk_x_lo = self.torch_sph2cart(torch.stack((x_xd_phi, x_theta, x_r), dim=1))
 
         # Calculate Xd_lo
 
-        xd_theta = (self.xd_theta_max - self.xd_theta_min) * 0.5 * (actions[..., 3] + 1) + self.xd_theta_min
-        xd_r = (self.xd_r_max - self.xd_r_min) * 0.5 * (actions[..., 4] + 1) + self.xd_r_min
+        xd_theta = self.map_range(actions[..., 3], self.min_action, self.max_action, self.xd_theta_min, self.xd_theta_max)
+        xd_r = self.map_range(actions[..., 4], self.min_action, self.max_action, self.xd_r_min, self.xd_r_max)
 
         trunk_xd_lo = self.torch_sph2cart(torch.stack((x_xd_phi, xd_theta, xd_r), dim=1))
 
@@ -415,8 +421,8 @@ class EnvBezier():
         trunk_x_0 = initial__trunk[..., 0:3]
         trunk_xd_0 = robot.data.root_state_w[..., 7:10].clone()
 
-        action = torch.tensor([[0.5, 0, 1, -0.2, -0.2]], device=self.sim.device)
-        target = torch.tensor([[0.5, 0, 0]], device=self.sim.device)
+        action = torch.tensor([[-0.5160,  0.0086,  0.1819, -0.0163, -1.0356]], device=self.sim.device)
+        target = torch.tensor([[0.4, 0, 0]], device=self.sim.device)
 
         self.bezierAction.process_actions(trunk_x_0, trunk_xd_0, action, target)
 

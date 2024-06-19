@@ -255,13 +255,13 @@ class RunningRewardsCfg:
         }
     )
 
-    unilateral_constraint = RewTerm(
-        func=mdp.unilateral_constraint,
-        weight=-0.01,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")
-        }
-    )
+    # unilateral_constraint = RewTerm(
+    #     func=mdp.unilateral_constraint,
+    #     weight=-0.01,
+    #     params={
+    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")
+    #     }
+    # )
 
 
 @configclass
@@ -292,14 +292,20 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
-    no_touchdown = RewTerm(
-        func=mdp.no_touchdown,
-        weight=-0.1,
-    )
+    # no_touchdown = RewTerm(
+    #     func=mdp.no_touchdown,
+    #     weight=-0.1,
+    # )
 
-    action_regularization = RewTerm(
-        func=mdp.action_regularization,
-        weight=-0.01,
+    # action_regularization = RewTerm(
+    #     func=mdp.action_regularization,
+    #     weight=-0.01,
+    # )
+
+    action_limit_penalization = RewTerm(
+        func=mdp.action_limit_penalization,
+        params={"min_action": -5, "max_action": 5},
+        weight=-0.1,
     )
 
 
