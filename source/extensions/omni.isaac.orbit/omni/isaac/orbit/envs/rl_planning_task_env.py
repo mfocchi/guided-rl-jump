@@ -38,7 +38,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
 
         # process actions
         self.action_manager.process_action(action)
-        self.reward_buf = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
+        self.running_reward_buf = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
 
         print(f"Executing")
         # perform physics stepping until the timeout
@@ -62,7 +62,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
             if len(after_t_th_ids) > 0:
                 running_reward[after_t_th_ids] = 0
 
-            self.reward_buf += running_reward
+            self.running_reward_buf += running_reward
 
             # -- step interval events
             # dt = self.cfg.sim.dt
@@ -89,10 +89,12 @@ class RLPlanningTaskEnv(RLTaskEnv):
         # -- final reward computation
         # dt=1, because reward is multiplied dt ->
         # value = term_cfg.func(self._env, **term_cfg.params) * term_cfg.weight * dt
-        self.reward_buf += self.reward_manager.compute(dt=1)
+        self.reward_buf = self.reward_manager.compute(dt=1)
+
+        self.final_reward_buff = self.reward_buf * torch.exp(-torch.pow(self.running_reward_buf, 2))
 
         # TODO: test if leaving the reward like that allow you to have better results
-        self.reward_buf = torch.clip(self.reward_buf, 0)
+        # self.reward_buf = torch.clip(self.reward_buf, 0)
 
         # -- reset envs that terminated/timed-out and log the episode information
         # ATTENTION: for us it will always be timeout
@@ -107,6 +109,6 @@ class RLPlanningTaskEnv(RLTaskEnv):
         # -- compute observations
         # note: done after reset to get the correct observations for reset envs
         self.obs_buf = self.observation_manager.compute()
-        
+
         # return observations, rewards, resets and extras
-        return self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
+        return self.obs_buf, self.final_reward_buff, self.reset_terminated, self.reset_time_outs, self.extras
