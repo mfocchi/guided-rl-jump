@@ -26,7 +26,7 @@ def computeActivationFunction(activationType, values, lower, upper):
         raise ValueError("Invalid activation type")
 
 
-def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
+def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, z_threshold: float = 0.1) -> torch.Tensor:
     """Penalize tracking of the position error using L2-norm.
 
     The function computes the position error between the desired position (from the command) and the
@@ -37,19 +37,36 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     asset: RigidObject = env.scene[asset_cfg.name]
     # obtain the desired and current positions
 
-    des_pos_w = env.extras["trunk_tg"] + env.scene.env_origins
-    curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
-
-    # Calculate percentual_error to normalize jump performance
-    target_error = torch.norm(des_pos_w - curr_pos_w, dim=1)
-    # the norm of the target becaus is alredy relative
     target_distance = torch.norm(env.command_manager.get_command(command_name)[:, 0:3], dim=1) + 1e-12
 
-    percentual_error = target_error / target_distance
+    des_pos_w = env.extras["trunk_tg"] + env.scene.env_origins
+    des_pos_w[..., 2] -= asset.data.default_root_state[..., 2]
+    # print(f"Target: {des_pos_w[...,:3]}")
 
-    print(percentual_error.mean())
+    foot_idx = asset.find_bodies(".*foot")[0]
 
-    cost = 1.0 / ((50 * percentual_error) + 1e-12)
+    curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
+
+    # Calculate foot center, remove foot padding (2cm)
+    foot_pos_center = (torch.sum(asset.data.body_state_w[:, foot_idx, 2], dim=1) / 4) - 0.02
+
+    curr_pos_w[..., 2] = foot_pos_center
+
+    # print(f"Landing: {curr_pos_w[...,:3]}")
+
+    # Calculate percentual_error to normalize jump performance
+    target_z_error = torch.abs(des_pos_w[..., 2] - curr_pos_w[..., 2])
+    target_z_error = torch.where(target_z_error <= z_threshold, torch.tensor(0.0), target_z_error)
+
+    target_error = torch.norm(des_pos_w[..., :2] - curr_pos_w[..., :2], dim=1) + target_z_error
+
+    # the norm of the target becaus is alredy relative
+
+    jump_error = target_error * torch.exp(-target_distance)
+
+    print(f"Avg jump_error_score: {jump_error.mean()}")
+
+    cost = 1.0 / ((50 * jump_error) + 1e-12)
 #    cost = torch.log(1 + cost)
 
     # TODO:experiment with this function
