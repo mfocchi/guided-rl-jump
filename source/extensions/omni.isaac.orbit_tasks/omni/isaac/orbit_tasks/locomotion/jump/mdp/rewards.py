@@ -66,7 +66,7 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
 
     print(f"Avg jump_error_score: {jump_error.mean()}")
 
-    cost = 1.0 / ((50 * jump_error) + 1e-12)
+    cost = 1.0 / ((jump_error) + 1e-12)
 #    cost = torch.log(1 + cost)
 
     # TODO:experiment with this function
