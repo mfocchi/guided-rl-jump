@@ -34,7 +34,7 @@ roll = (0.0, 0.0)
 pitch = (0.0, 0.0)
 yaw = (0.0, 0.0)
 
-activate_curriculum = True
+activate_curriculum = False
 
 ##
 # Scene definition
@@ -254,6 +254,8 @@ class RunningRewardsCfg:
             "mu": mu
         }
     )
+
+    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
 
     # unilateral_constraint = RewTerm(
     #     func=mdp.unilateral_constraint,

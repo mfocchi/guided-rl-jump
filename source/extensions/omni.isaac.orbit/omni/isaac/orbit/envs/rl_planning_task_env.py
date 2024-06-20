@@ -4,6 +4,7 @@ import gymnasium as gym
 import math
 import numpy as np
 import torch
+from collections.abc import Sequence
 
 from omni.isaac.version import get_version
 from omni.isaac.orbit.managers import CommandManager, CurriculumManager, RewardManager, TerminationManager
@@ -58,6 +59,8 @@ class RLPlanningTaskEnv(RLTaskEnv):
             self.episode_length_buf += 1  # sim step in current episode (per env)
             # -- final reward computation
             running_reward = self.running_reward_manager.compute(dt=1).clone()
+            self.running_reward_manager.reset()
+
             # Ignore running reward after t_th
             after_t_th_ids = self.extras.get('after_t_th')
             if len(after_t_th_ids) > 0:
@@ -112,5 +115,58 @@ class RLPlanningTaskEnv(RLTaskEnv):
         # note: done after reset to get the correct observations for reset envs
         self.obs_buf = self.observation_manager.compute()
 
+        # print(f"Reward: {self.final_reward_buff}")
+        # print(f"Reward positive: {self.reward_buf}")
+        # print(f"Reward negative: {self.negative_reward_buf}")
+
         # return observations, rewards, resets and extras
         return self.obs_buf, self.final_reward_buff, self.reset_terminated, self.reset_time_outs, self.extras
+
+    def _reset_idx(self, env_ids: Sequence[int]):
+        """Reset environments based on specified indices.
+
+        Args:
+            env_ids: List of environment ids which must be reset
+        """
+        # update the curriculum for environments that need a reset
+        self.curriculum_manager.compute(env_ids=env_ids)
+        # reset the internal buffers of the scene elements
+        self.scene.reset(env_ids)
+        # apply events such as randomizations for environments that need a reset
+        if "reset" in self.event_manager.available_modes:
+            self.event_manager.apply(env_ids=env_ids, mode="reset")
+
+        # iterate over all managers and reset them
+        # this returns a dictionary of information which is stored in the extras
+        # note: This is order-sensitive! Certain things need be reset before others.
+        self.extras["log"] = dict()
+        # -- observation manager
+        info = self.observation_manager.reset(env_ids)
+        self.extras["log"].update(info)
+        # -- action manager
+        info = self.action_manager.reset(env_ids)
+        self.extras["log"].update(info)
+        # -- rewards manager
+        info = self.reward_manager.reset(env_ids)
+        self.extras["log"].update(info)
+
+        info = self.negative_rewards_manager.reset(env_ids)
+        self.extras["log"].update(info)
+
+        _ = self.running_reward_manager.reset(env_ids)
+
+        # -- curriculum manager
+        info = self.curriculum_manager.reset(env_ids)
+        self.extras["log"].update(info)
+        # -- command manager
+        info = self.command_manager.reset(env_ids)
+        self.extras["log"].update(info)
+        # -- event manager
+        info = self.event_manager.reset(env_ids)
+        self.extras["log"].update(info)
+        # -- termination manager
+        info = self.termination_manager.reset(env_ids)
+        self.extras["log"].update(info)
+
+        # reset the episode length buffer
+        self.episode_length_buf[env_ids] = 0
