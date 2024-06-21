@@ -26,7 +26,7 @@ def computeActivationFunction(activationType, values, lower, upper):
         raise ValueError("Invalid activation type")
 
 
-def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, z_threshold: float = 0.1) -> torch.Tensor:
+def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, z_threshold: float = 0.1, coeff: float = 1., dist_coeff: float = 1., err_coeff: float = 1., bias: float = 1) -> torch.Tensor:
     """Penalize tracking of the position error using L2-norm.
 
     The function computes the position error between the desired position (from the command) and the
@@ -61,13 +61,13 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     target_error = torch.norm(des_pos_w[..., :2] - curr_pos_w[..., :2], dim=1) + target_z_error
 
     # the norm of the target becaus is alredy relative
+    # jump_error = target_error * torch.exp(-target_distance)
 
-    jump_error = target_error * torch.exp(-target_distance)
+    cost = 1.0 / ((coeff * target_error) + 1e-12)
+    cost = torch.log(1 + cost)
+    cost = torch.clip((((cost + (dist_coeff * torch.exp(target_distance))) * torch.pow((1 - target_error), err_coeff)) - bias), 0, torch.inf)
 
-    print(f"Avg jump_error_score: {jump_error.mean()}")
-
-    cost = 1.0 / ((jump_error) + 1e-12)
-#    cost = torch.log(1 + cost)
+    print(f"Avg jump_error: {target_error.mean()}")
 
     # TODO:experiment with this function
     # cost = (1.0 / ((50 * (percentual_error ** 3)) + 1e-15)) - 0.02
@@ -165,9 +165,9 @@ def no_touchdown(env: RLTaskEnv) -> torch.Tensor:
     return no_touchdown_penalty
 
 
-def action_regularization(env: RLTaskEnv) -> torch.Tensor:
+def action_regularization(env: RLTaskEnv, action: int) -> torch.Tensor:
     """Penalize big action to constrain the range"""
-    return torch.sum(torch.square(env.action_manager.action), dim=1)
+    return torch.square(env.action_manager.action[..., action])
 
 
 def action_limit_penalization(env: RLTaskEnv, min_action, max_action) -> torch.Tensor:
