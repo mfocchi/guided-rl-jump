@@ -257,6 +257,8 @@ class RunningRewardsCfg:
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
 
+    # TODO: add singluarity for robot tha goes under a certain treshold and over a certain tresh
+
     # unilateral_constraint = RewTerm(
     #     func=mdp.unilateral_constraint,
     #     weight=-0.01,
@@ -274,8 +276,8 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=10.0,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
+        weight=1.0,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 1., "dist_coeff": 2., "err_coeff": 1., "bias": 3},
     )
 
 
@@ -287,25 +289,26 @@ class NegativeRewardsCfg:
         weight=-0.1,
     )
 
-    # liftoff_position_error = RewTerm(
-    #     func=mdp.liftoff_position_error,
-    #     weight=-0.1,
-    # )
+    liftoff_position_error = RewTerm(
+        func=mdp.liftoff_position_error,
+        weight=-0.1,
+    )
 
-    # liftoff_velocity_error = RewTerm(
-    #     func=mdp.liftoff_velocity_error,
-    #     weight=-0.1,
-    # )
+    liftoff_velocity_error = RewTerm(
+        func=mdp.liftoff_velocity_error,
+        weight=-0.1,
+    )
 
     action_regularization = RewTerm(
         func=mdp.action_regularization,
-        weight=-0.01,
+        params={"action": 0},
+        weight=-0.05,
     )
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,
         params={"min_action": -5, "max_action": 5},
-        weight=-0.1,
+        weight=-1,
     )
 
     target_orientation_error = RewTerm(

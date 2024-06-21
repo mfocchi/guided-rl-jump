@@ -305,19 +305,22 @@ class BezierCurveAction(ActionTerm):
         after_t_th = torch.where(self.dt > self.t_th)[0]
 
         if after_t_th.numel() > 0:
-            # # save the lo config of new env after_t_th
-            # for after_t_th_env in after_t_th:
-            #     after_t_th_env = after_t_th_env.item()
-            #     if after_t_th_env not in self._env.extras['after_t_th']:
-            #         self._env.extras['actual_lo_config'][after_t_th_env] = self._asset.data.root_state_w[after_t_th_env].clone()
 
-            # update the list of env after_t_th
+            # Only clone if necessary and add to extras if not already present
+            for after_t_th_env in after_t_th:
+                if after_t_th_env not in self._env.extras['after_t_th']:
+                    self._env.extras['actual_lo_config'][after_t_th_env] = self._asset.data.root_state_w[after_t_th_env].clone()
+
             self._env.extras['after_t_th'] = after_t_th
+
+            # Compute target_distance once
             target_distance = torch.norm(self._env.command_manager.get_command("trunk_target")[:, 0:3], dim=1)
-            # enable retraction only if jump is grather than threshold
-            q_des[torch.where(target_distance[after_t_th] >= self.q_lo_threshold)] = self.q_0_lo
-            q_des[torch.where(target_distance[after_t_th] < self.q_lo_threshold)] = self.q_0
-            qd_des[after_t_th] = torch.zeros_like(self._asset.data.default_joint_vel.clone())[0]
+
+            # Perform batch operations for q_des and qd_des
+            threshold_indices = torch.where(target_distance[after_t_th] >= self.q_lo_threshold)[0]
+            q_des[after_t_th[threshold_indices]] = self.q_0_lo
+            q_des[after_t_th[~threshold_indices]] = self.q_0
+            qd_des[after_t_th] = torch.zeros_like(self._asset.data.default_joint_vel[0])
 
         apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
 
