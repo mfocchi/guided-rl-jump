@@ -21,6 +21,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
         super().__init__(cfg=cfg, render_mode=render_mode, **kwargs)
         # ATTENTION: step_dt = max_episode_length_s
         # -> max_episode_length = 1
+        self.running_reward_buf = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
 
     @property
     def max_episode_length(self) -> int:
@@ -154,6 +155,11 @@ class RLPlanningTaskEnv(RLTaskEnv):
         self.extras["log"].update(info)
 
         _ = self.running_reward_manager.reset(env_ids)
+        # Try to log cumulative running costs
+        info = {}
+        episodic_sum_avg = torch.mean(self.running_reward_buf)
+        info["Episode Reward/" + "running costs"] = episodic_sum_avg / self.max_episode_length_s
+        self.extras["log"].update(info)
 
         # -- curriculum manager
         info = self.curriculum_manager.reset(env_ids)
