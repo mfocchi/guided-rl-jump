@@ -157,8 +157,8 @@ class BezierCurveAction(ActionTerm):
     @property
     def action_dim(self) -> int:
         # t_th, x_lo(sph), xd_lo(sph), o_lo, od_lo
-        # return 1 + 2 + 2 + 3 + 3
-        return 1 + 2 + 2
+        return 1 + 2 + 2 + 3 + 3
+        # return 1 + 2 + 2
 
     @property
     def raw_actions(self) -> torch.Tensor:
@@ -458,21 +458,22 @@ class BezierCurveAction(ActionTerm):
 
         # # Calculate Phi_lo
 
-        # psi = (self.psi_max - self.psi_min) * 0.5 * (actions[..., 5] + 1) + self.psi_min
-        # theta = (self.theta_max - self.theta_min) * 0.5 * (actions[..., 6] + 1) + self.theta_min
-        # phi = (self.phi_max - self.phi_min) * 0.5 * (actions[..., 7] + 1) + self.phi_min
+        # psi = self.map_range(actions[..., 5], self.min_action, self.max_action, self.psi_min, self.psi_max)
+        # theta = self.map_range(actions[..., 6], self.min_action, self.max_action, self.theta_min, self.theta_max)
+        # phi = self.map_range(actions[..., 7], self.min_action, self.max_action, self.phi_min, self.phi_max)
 
         # trunk_o_lo = torch.stack((psi, theta, phi), dim=1)
 
         # # Calculate Phid_lo
 
-        # psid = (self.psid_max - self.psid_min) * 0.5 * (actions[..., 8] + 1) + self.psid_min
-        # thetad = (self.thetad_max - self.thetad_min) * 0.5 * (actions[..., 9] + 1) + self.thetad_min
-        # phid = (self.phid_max - self.phid_min) * 0.5 * (actions[..., 10] + 1) + self.phid_min
+        # psid = self.map_range(actions[..., 8], self.min_action, self.max_action, self.psid_min, self.psid_max)
+        # thetad = self.map_range(actions[..., 9], self.min_action, self.max_action, self.thetad_min, self.thetad_max)
+        # phid = self.map_range(actions[..., 10], self.min_action, self.max_action, self.phid_min, self.phid_max)
 
         # trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
 
         self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins)
+        # self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
         self.trunk_tg_vis.visualize(trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3] + self._env.scene.env_origins,
                                     self._env.command_manager.get_command("trunk_target")[:, 3:7])
 
@@ -482,6 +483,7 @@ class BezierCurveAction(ActionTerm):
 
         # apply the affine transformations
         self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo), dim=1)
+        # self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo, trunk_o_lo, trunk_od_lo), dim=1)
 
         if self.cfg.debug_vis:
             # print(f"Command: {self._env.command_manager.get_command('trunk_target')}")
@@ -496,9 +498,7 @@ class BezierCurveAction(ActionTerm):
 
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
         # o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th)
-        # TODO: debug orientation and enable it
-        o = None
-        od = None
+        o, od = None, None
 
         q_des, qd_des = self.ik(x, xd, o, od, self.old_q_des)
         self.old_q_des = q_des.clone()
