@@ -44,6 +44,7 @@ def reset_robot_state(
     env.extras['after_t_th'] = torch.tensor([], device=env.device)
     env.extras['actual_lo_config'] = torch.zeros_like(asset.data.root_state_w)
     env.extras['t_th_q'] = torch.zeros_like(asset.data.joint_pos)
+    env.extras['apex_q'] = torch.zeros_like(asset.data.joint_pos)
     env.extras['apex_dt'] = torch.zeros(env.num_envs, device=env.device)
 
 
@@ -84,7 +85,7 @@ def move_landing_platform(
     This function reset the root position and velocity of the asset.
     """
     # extract the used quantities (to enable type-hinting)
-    robot: RigidObject | Articulation = env.scene[robot_cfg.name]
+    robot: Articulation = env.scene[robot_cfg.name]
     landing_platform: RigidObject | Articulation = env.scene[landing_platform_cfg.name]
 
     # Get foot positions
@@ -132,6 +133,7 @@ def move_landing_platform(
         if apex_env not in existing_apex_ids:
             # adding the touchdown state
             env.extras['apex'][apex_env] = True
+            env.extras['apex_q'][apex_env] = robot.data.joint_pos[apex_env].clone()
 
     # Move the landing platform of env_ids where apex is reached
     if len(apex_env_ids):

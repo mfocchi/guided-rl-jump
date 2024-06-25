@@ -330,10 +330,9 @@ class BezierCurveAction(ActionTerm):
             apex_elapsed_time = self._env.extras['apex_dt'][apex_env_ids]
             apex_elapsed_ratio = torch.clip(apex_elapsed_time / torch.full_like(apex_elapsed_time, self.lerp_time), 0, 1).reshape(-1, 1)
 
-            q_0_lo_extended = torch.expand_copy(self.q_0_lo, (len(apex_env_ids), len(self.q_0_lo)))
             q_0_extended = torch.expand_copy(self.q_0, (len(apex_env_ids), len(self.q_0)))
 
-            q_0_lerp = torch.lerp(q_0_lo_extended,
+            q_0_lerp = torch.lerp(self._env.extras['apex_q'][apex_env_ids],
                                   q_0_extended,
                                   apex_elapsed_ratio)
 
