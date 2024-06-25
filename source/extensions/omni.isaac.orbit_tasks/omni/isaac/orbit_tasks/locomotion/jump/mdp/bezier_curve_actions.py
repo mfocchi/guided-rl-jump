@@ -113,16 +113,6 @@ class BezierCurveAction(ActionTerm):
         self._raw_actions = torch.zeros(self.num_envs, self.action_dim, device=self.device)
         self._processed_actions = torch.zeros_like(self.raw_actions)
 
-        self.trunk_lo_vis = VisualizationMarkers(
-            VisualizationMarkersCfg(
-                prim_path="/Visuals/trajectory",
-                markers={
-                    "sphere": sim_utils.SphereCfg(
-                        radius=0.05,
-                        visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.2, 0.6, 0.66), opacity=0.3),
-                    ),
-                }))
-
         self.trunk_tg_vis = VisualizationMarkers(
             VisualizationMarkersCfg(
                 prim_path="/Visuals/trajectory",
@@ -150,6 +140,16 @@ class BezierCurveAction(ActionTerm):
                         ),
                     }))
 
+            self.trunk_lo_vis = VisualizationMarkers(
+                VisualizationMarkersCfg(
+                    prim_path="/Visuals/trajectory",
+                    markers={
+                        "sphere": sim_utils.SphereCfg(
+                            radius=0.05,
+                            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.2, 0.6, 0.66), opacity=0.3),
+                        ),
+                    }))
+
     """
     Properties.
     """
@@ -157,8 +157,8 @@ class BezierCurveAction(ActionTerm):
     @property
     def action_dim(self) -> int:
         # t_th, x_lo(sph), xd_lo(sph), o_lo, od_lo
-        return 1 + 2 + 2 + 3 + 3
-        # return 1 + 2 + 2
+        # return 1 + 2 + 2 + 3 + 3
+        return 1 + 2 + 2
 
     @property
     def raw_actions(self) -> torch.Tensor:
@@ -317,9 +317,10 @@ class BezierCurveAction(ActionTerm):
             target_distance = torch.norm(self._env.command_manager.get_command("trunk_target")[:, 0:3], dim=1)
 
             # Perform batch operations for q_des and qd_des
-            threshold_indices = torch.where(target_distance[after_t_th] >= self.q_lo_threshold)[0]
-            q_des[after_t_th[threshold_indices]] = self.q_0_lo
-            q_des[after_t_th[~threshold_indices]] = self.q_0
+            threshold_indices_q_lo = torch.where(target_distance[after_t_th] >= self.q_lo_threshold)[0]
+            threshold_indices_q_0 = torch.where(target_distance[after_t_th] < self.q_lo_threshold)[0]
+            q_des[after_t_th[threshold_indices_q_lo]] = self.q_0_lo
+            q_des[after_t_th[threshold_indices_q_0]] = self.q_0
             qd_des[after_t_th] = torch.zeros_like(self._asset.data.default_joint_vel[0])
 
         apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
@@ -472,7 +473,6 @@ class BezierCurveAction(ActionTerm):
 
         # trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
 
-        self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins)
         # self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
         self.trunk_tg_vis.visualize(trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3] + self._env.scene.env_origins,
                                     self._env.command_manager.get_command("trunk_target")[:, 3:7])
@@ -489,6 +489,7 @@ class BezierCurveAction(ActionTerm):
             # print(f"Command: {self._env.command_manager.get_command('trunk_target')}")
             print(f"Action: {self._raw_actions}")
             print(f"Processed action: {self._processed_actions}")
+            self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins)
             # print(f"x_theta, x_r: { x_theta} , {x_r}")
             # print(f"xd_theta, xd_r: { xd_theta} , {xd_r}")
             # print(f"Pos in jf: {self.torch_sph2cart(torch.stack((torch.zeros_like(x_xd_phi), x_theta, x_r), dim=1))}")
