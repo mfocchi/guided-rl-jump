@@ -130,8 +130,8 @@ class ActionsCfg:
                                          rl_body_names=["RL_foot"],
                                          rr_joint_names=["RR.*"],
                                          rr_body_names=["RR_foot"],
-                                         min_action=-5, 
-                                         max_action=5, 
+                                         min_action=-5,
+                                         max_action=5,
                                          lerp_time=0.1,
                                          t_th_min=0.3,
                                          t_th_max=1,
@@ -194,7 +194,7 @@ class EventCfg:
 #    add_base_mass = EventTerm(
 #        func=mdp.randomize_rigid_body_mass,
 #        mode="startup",
-#        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "mass_range": (-5.0, 5.0), "operation": "add"},
+#        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "mass_range": (-1.0, 1.0), "operation": "add"},
 #    )
 
     reset_robot = EventTerm(
@@ -208,14 +208,18 @@ class EventCfg:
     )
 
     # apex_detection
-    move_landing_platform = EventTerm(
-        func=mdp.move_landing_platform,
+    detect_apex = EventTerm(
+        func=mdp.detect_apex,
         mode="interval",
-        interval_range_s=(0., 0.)
+        interval_range_s=(0., 0.),
+        params={"base_lin_vel_threshold": -0.5,
+                "foot_z_threshold": 0.05,
+                "base_z_threshold": 0.3,
+                "base_heigth": 0.3}
     )
 
-    touchdown = EventTerm(
-        func=mdp.touch_down,
+    detect_touchdown = EventTerm(
+        func=mdp.detect_touchdown,
         mode="interval",
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
                 "asset_cfg": SceneEntityCfg("robot"),

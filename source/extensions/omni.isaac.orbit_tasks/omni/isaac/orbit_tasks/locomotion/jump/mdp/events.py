@@ -69,13 +69,13 @@ def reset_landing_platform(
     landing_pltform.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1), env_ids=env_ids)
 
 
-def move_landing_platform(
+def detect_apex(
     env: RLTaskEnv,
     env_ids: torch.Tensor,
     robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     landing_platform_cfg: SceneEntityCfg = SceneEntityCfg("landing_platform"),
-    base_lin_vel_threshold: float = 0,
-    foot_z_threshold: float = 0.04,
+    base_lin_vel_threshold: float = -1,
+    foot_z_threshold: float = 0.05,
     base_z_threshold: float = 0.3,
     base_heigth: float = 0.3
 
@@ -149,7 +149,7 @@ def move_landing_platform(
     # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
 
 
-def touch_down(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: float, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg):
+def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: float, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg):
     """Terminate when the contact force on the sensor exceeds the force threshold."""
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
