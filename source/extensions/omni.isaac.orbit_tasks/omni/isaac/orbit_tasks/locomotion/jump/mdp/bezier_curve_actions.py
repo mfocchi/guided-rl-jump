@@ -58,10 +58,10 @@ class BezierCurveAction(ActionTerm):
         self.rr_entity_cfg.resolve(self._env.scene)
         self.rr_body_idx = self.rr_entity_cfg.body_ids[0]
 
-        self.q_lo_threshold = self.cfg.q_lo_threshold
+        self.min_action = self.cfg.min_action
+        self.max_action = self.cfg.max_action
 
-        self.min_action = -5
-        self.max_action = 5
+        self.lerp_time = self.cfg.lerp_time
 
         self.t_th_min = self.cfg.t_th_min
         self.t_th_max = self.cfg.t_th_max
@@ -310,23 +310,36 @@ class BezierCurveAction(ActionTerm):
             for after_t_th_env in after_t_th:
                 if after_t_th_env not in self._env.extras['after_t_th']:
                     self._env.extras['actual_lo_config'][after_t_th_env] = self._asset.data.root_state_w[after_t_th_env].clone()
+                    self._env.extras['t_th_q'][after_t_th_env] = self._asset.data.joint_pos[after_t_th_env].clone()
 
             self._env.extras['after_t_th'] = after_t_th
 
-            # Compute target_distance once
-            target_distance = torch.norm(self._env.command_manager.get_command("trunk_target")[:, 0:3], dim=1)
+            elapsed_time = (torch.full_like(self.t_th, self.dt) - self.t_th)[after_t_th]
+            elapsed_ratio = torch.clip(elapsed_time / torch.full_like(elapsed_time, self.lerp_time), 0, 1)
 
-            # Perform batch operations for q_des and qd_des
-            threshold_indices_q_lo = torch.where(target_distance[after_t_th] >= self.q_lo_threshold)[0]
-            threshold_indices_q_0 = torch.where(target_distance[after_t_th] < self.q_lo_threshold)[0]
-            q_des[after_t_th[threshold_indices_q_lo]] = self.q_0_lo
-            q_des[after_t_th[threshold_indices_q_0]] = self.q_0
+            q_0_lo_lerp = torch.lerp(self._env.extras['t_th_q'][after_t_th],
+                                     torch.expand_copy(self.q_0_lo, (len(after_t_th), len(self.q_0))),
+                                     elapsed_ratio)
+
+            q_des[after_t_th] = q_0_lo_lerp
             qd_des[after_t_th] = torch.zeros_like(self._asset.data.default_joint_vel[0])
 
         apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
 
         if len(apex_env_ids) > 0:
-            q_des[after_t_th] = self.q_0
+            apex_elapsed_time = self._env.extras['apex_dt'][apex_env_ids]
+            apex_elapsed_ratio = torch.clip(apex_elapsed_time / torch.full_like(apex_elapsed_time, self.lerp_time), 0, 1).reshape(-1, 1)
+
+            q_0_lo_extended = torch.expand_copy(self.q_0_lo, (len(apex_env_ids), len(self.q_0_lo)))
+            q_0_extended = torch.expand_copy(self.q_0, (len(apex_env_ids), len(self.q_0)))
+
+            q_0_lerp = torch.lerp(q_0_lo_extended,
+                                  q_0_extended,
+                                  apex_elapsed_ratio)
+
+            q_des[apex_env_ids] = q_0_lerp
+
+            self._env.extras['apex_dt'][apex_env_ids] += self.cfg.time_step
 
         return q_des, qd_des
 
@@ -434,7 +447,7 @@ class BezierCurveAction(ActionTerm):
         self.t_th = self.t_th.reshape(-1, 1)
 
         # Phi is the same for x and xd
-        x_xd_phi = self.torch_cart2sph(trunk_tg)[..., 0].clone()
+        x_xd_phi = self.torch_cart2sph(trunk_tg.clone())[..., 0].clone()
 
         # Calculate X_lo
         # x_theta = (self.x_theta_max - self.x_theta_min) * 0.5 * (actions[..., 1] + 1) + self.x_theta_min
@@ -484,6 +497,11 @@ class BezierCurveAction(ActionTerm):
         # apply the affine transformations
         self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo), dim=1)
         # self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo, trunk_o_lo, trunk_od_lo), dim=1)
+
+        # Compute t_flight
+        arg = torch.clip(trunk_xd_lo[..., 2] * trunk_xd_lo[..., 2] - 2 * 9.81 * (trunk_tg[..., 2] - trunk_x_lo[..., 2]), 0, torch.inf)
+        self.t_fl = (trunk_xd_lo[..., 2] + torch.sqrt(arg)) / 9.81
+        print("t_fl", self.t_fl)
 
         if self.cfg.debug_vis:
             # print(f"Command: {self._env.command_manager.get_command('trunk_target')}")

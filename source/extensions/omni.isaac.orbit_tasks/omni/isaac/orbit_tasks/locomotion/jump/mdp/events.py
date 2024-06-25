@@ -43,6 +43,8 @@ def reset_robot_state(
     env.extras['touchdown'] = {}
     env.extras['after_t_th'] = torch.tensor([], device=env.device)
     env.extras['actual_lo_config'] = torch.zeros_like(asset.data.root_state_w)
+    env.extras['t_th_q'] = torch.zeros_like(asset.data.joint_pos)
+    env.extras['apex_dt'] = torch.zeros(env.num_envs, device=env.device)
 
 
 def reset_landing_platform(
