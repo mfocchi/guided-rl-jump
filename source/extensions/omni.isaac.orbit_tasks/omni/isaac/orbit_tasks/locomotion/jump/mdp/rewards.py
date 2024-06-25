@@ -41,7 +41,6 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
 
     des_pos_w = env.extras["trunk_tg"] + env.scene.env_origins
     des_pos_w[..., 2] -= asset.data.default_root_state[..., 2]
-    # print(f"Target: {des_pos_w[...,:3]}")
 
     foot_idx = asset.find_bodies(".*foot")[0]
 
@@ -52,6 +51,7 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
 
     curr_pos_w[..., 2] = foot_pos_center
 
+    # print(f"Target: {des_pos_w[...,:3]}")
     # print(f"Landing: {curr_pos_w[...,:3]}")
 
     # Calculate percentual_error to normalize jump performance

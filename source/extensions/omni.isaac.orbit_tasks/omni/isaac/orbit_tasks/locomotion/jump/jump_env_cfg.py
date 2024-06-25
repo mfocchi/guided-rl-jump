@@ -130,7 +130,7 @@ class ActionsCfg:
                                          rl_body_names=["RL_foot"],
                                          rr_joint_names=["RR.*"],
                                          rr_body_names=["RR_foot"],
-                                         q_lo_threshold=0.2,
+                                         q_lo_threshold=1,
                                          t_th_min=0.3,
                                          t_th_max=1,
                                          x_theta_min=np.pi / 4,
