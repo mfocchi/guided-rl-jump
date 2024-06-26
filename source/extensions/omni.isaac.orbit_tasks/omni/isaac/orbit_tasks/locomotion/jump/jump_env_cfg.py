@@ -27,8 +27,8 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 mu = 1.0
 time_step = 0.005
 
-pos_x = (-0.5, 0.5)
-pos_y = (-0.5, 0.5)
+pos_x = (0,0)
+pos_y = (0,0)
 pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
 pitch = (0.0, 0.0)
@@ -49,7 +49,7 @@ class MySceneCfg(InteractiveSceneCfg):
     ground = AssetBaseCfg(
         prim_path="/World/ground",
         spawn=sim_utils.GroundPlaneCfg(
-            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu, dynamic_friction=mu)
+            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu)
         ),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
     )
@@ -68,7 +68,7 @@ class MySceneCfg(InteractiveSceneCfg):
     landing_platform: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
-            size=(0.75, 0.75, 0.05),
+            size=(0.6, 0.6, 0.05),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, kinematic_enabled=True),
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
@@ -143,12 +143,12 @@ class ActionsCfg:
                                          xd_theta_max=np.pi / 2,
                                          xd_r_min=0.1,
                                          xd_r_max=5,
-                                         psi_min=-2 * np.pi,
-                                         psi_max=2 * np.pi,
-                                         theta_min=- 2 * np.pi,
-                                         theta_max=2 * np.pi,
-                                         phi_min=- 2 * np.pi,
-                                         phi_max=2 * np.pi,
+                                         psi_min=-np.pi / 4,
+                                         psi_max=np.pi / 4,
+                                         theta_min=-np.pi / 4,
+                                         theta_max=np.pi / 4,
+                                         phi_min=-np.pi,
+                                         phi_max=np.pi,
                                          psid_min=-4,
                                          psid_max=4,
                                          thetad_min=-4,
@@ -308,13 +308,13 @@ class NegativeRewardsCfg:
     action_regularization = RewTerm(
         func=mdp.action_regularization,
         params={"action": 0},
-        weight=-0.05,
+        weight=-0.001,
     )
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,
         params={"min_action": -5, "max_action": 5},
-        weight=-1,
+        weight=-0.1,
     )
 
     target_orientation_error = RewTerm(

@@ -14,7 +14,7 @@ import carb
 import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.utils.assets import ISAAC_NUCLEUS_DIR, ISAAC_ORBIT_NUCLEUS_DIR
 from omni.isaac.orbit.markers import VisualizationMarkers, VisualizationMarkersCfg
-from omni.isaac.orbit.utils.math import subtract_frame_transforms, euler_xyz_from_quat, quat_from_euler_xyz
+from omni.isaac.orbit.utils.math import subtract_frame_transforms, euler_xyz_from_quat, quat_from_euler_xyz, wrap_to_pi
 import omni.isaac.orbit.utils.string as string_utils
 from omni.isaac.orbit.assets.articulation import Articulation
 from omni.isaac.orbit.managers.action_manager import ActionTerm
@@ -157,8 +157,8 @@ class BezierCurveAction(ActionTerm):
     @property
     def action_dim(self) -> int:
         # t_th, x_lo(sph), xd_lo(sph), o_lo, od_lo
-        # return 1 + 2 + 2 + 3 + 3
-        return 1 + 2 + 2
+        return 1 + 2 + 2 + 3 + 3
+        # return 1 + 2 + 2
 
     @property
     def raw_actions(self) -> torch.Tensor:
@@ -218,11 +218,15 @@ class BezierCurveAction(ActionTerm):
 
         return bezier_position, bezier_velocity
 
-    def torch_cart2sph(self, pos: torch.Tensor):
+    def torch_cart2sph(self, pos: torch.Tensor, threshold: float = 1e-5):
         # Extract x, y, z components
         x = pos[:, 0]
         y = pos[:, 1]
         z = pos[:, 2]
+
+        # deal with precision problem
+        x = torch.where(torch.abs(x) < threshold, torch.tensor(0.0, dtype=x.dtype, device=x.device), x)
+        y = torch.where(torch.abs(y) < threshold, torch.tensor(0.0, dtype=y.dtype, device=y.device), y)
 
         # Compute spherical coordinates
         hxy = torch.hypot(x, y)
@@ -238,7 +242,7 @@ class BezierCurveAction(ActionTerm):
     def torch_sph2cart(self, pos: torch.Tensor):
         # Extract az, el, r components
         az = pos[:, 0]
-        el = pos[:, 1]
+        el =pos[:, 1]
         r = pos[:, 2]
 
         rcos_theta = r * torch.cos(el)
@@ -251,12 +255,12 @@ class BezierCurveAction(ActionTerm):
 
         return cartesian
 
-    def ik(self, x, xd, o, od, old_q_des):
+    def ik(self, x, o, old_q_des):
 
         # Add the origin to get the position for each robot environment
         x += self._env.scene.env_origins
-        # o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
-        o_quat = self._asset.data.default_root_state[:, 3:7].clone()
+        o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
+        # o_quat = self._asset.data.default_root_state[:, 3:7].clone()
 
         if self.cfg.debug_vis:
             self.trunk_traj_vis.visualize(x, o_quat)
@@ -446,7 +450,7 @@ class BezierCurveAction(ActionTerm):
         self.t_th = self.t_th.reshape(-1, 1)
 
         # Phi is the same for x and xd
-        x_xd_phi = self.torch_cart2sph(trunk_tg.clone())[..., 0].clone()
+        x_xd_phi = self.torch_cart2sph(trunk_tg.clone())[..., 0]
 
         # Calculate X_lo
         # x_theta = (self.x_theta_max - self.x_theta_min) * 0.5 * (actions[..., 1] + 1) + self.x_theta_min
@@ -469,33 +473,32 @@ class BezierCurveAction(ActionTerm):
         trunk_xd_lo = self.torch_sph2cart(torch.stack((x_xd_phi, xd_theta, xd_r), dim=1))
         self._env.extras["trunk_xd_lo"] = trunk_xd_lo
 
-        # # Calculate Phi_lo
+        # Calculate Phi_lo
 
-        # psi = self.map_range(actions[..., 5], self.min_action, self.max_action, self.psi_min, self.psi_max)
-        # theta = self.map_range(actions[..., 6], self.min_action, self.max_action, self.theta_min, self.theta_max)
-        # phi = self.map_range(actions[..., 7], self.min_action, self.max_action, self.phi_min, self.phi_max)
+        psi = self.map_range(actions[..., 5], self.min_action, self.max_action, self.psi_min, self.psi_max)
+        theta = self.map_range(actions[..., 6], self.min_action, self.max_action, self.theta_min, self.theta_max)
+        phi = self.map_range(actions[..., 7], self.min_action, self.max_action, self.phi_min, self.phi_max)
 
-        # trunk_o_lo = torch.stack((psi, theta, phi), dim=1)
+        trunk_o_lo = torch.stack((psi, theta, phi), dim=1)
 
-        # # Calculate Phid_lo
+        # Calculate Phid_lo
 
-        # psid = self.map_range(actions[..., 8], self.min_action, self.max_action, self.psid_min, self.psid_max)
-        # thetad = self.map_range(actions[..., 9], self.min_action, self.max_action, self.thetad_min, self.thetad_max)
-        # phid = self.map_range(actions[..., 10], self.min_action, self.max_action, self.phid_min, self.phid_max)
+        psid = self.map_range(actions[..., 8], self.min_action, self.max_action, self.psid_min, self.psid_max)
+        thetad = self.map_range(actions[..., 9], self.min_action, self.max_action, self.thetad_min, self.thetad_max)
+        phid = self.map_range(actions[..., 10], self.min_action, self.max_action, self.phid_min, self.phid_max)
 
-        # trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
+        trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
 
-        # self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
         self.trunk_tg_vis.visualize(trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3] + self._env.scene.env_origins,
                                     self._env.command_manager.get_command("trunk_target")[:, 3:7])
 
         # Compute the weights of bezier curve for position and orientation
         self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
-        # self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
+        self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
 
         # apply the affine transformations
-        self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo), dim=1)
-        # self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo, trunk_o_lo, trunk_od_lo), dim=1)
+        # self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo), dim=1)
+        self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo, trunk_o_lo, trunk_od_lo), dim=1)
 
         # Compute t_flight
         arg = torch.clip(trunk_xd_lo[..., 2] * trunk_xd_lo[..., 2] - 2 * 9.81 * (trunk_tg[..., 2] - trunk_x_lo[..., 2]), 0, torch.inf)
@@ -507,6 +510,7 @@ class BezierCurveAction(ActionTerm):
             print(f"Action: {self._raw_actions}")
             print(f"Processed action: {self._processed_actions}")
             self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins)
+
             # print(f"x_theta, x_r: { x_theta} , {x_r}")
             # print(f"xd_theta, xd_r: { xd_theta} , {xd_r}")
             # print(f"Pos in jf: {self.torch_sph2cart(torch.stack((torch.zeros_like(x_xd_phi), x_theta, x_r), dim=1))}")
@@ -515,10 +519,10 @@ class BezierCurveAction(ActionTerm):
     def apply_actions(self):
 
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
-        # o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th)
-        o, od = None, None
+        o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th)
+        # o, od = None, None
 
-        q_des, qd_des = self.ik(x, xd, o, od, self.old_q_des)
+        q_des, qd_des = self.ik(x, o, self.old_q_des)
         self.old_q_des = q_des.clone()
 
         self._asset.set_joint_position_target(q_des)
