@@ -144,9 +144,9 @@ class BezierCurveAction(ActionTerm):
                 VisualizationMarkersCfg(
                     prim_path="/Visuals/trajectory",
                     markers={
-                        "sphere": sim_utils.SphereCfg(
-                            radius=0.05,
-                            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.2, 0.6, 0.66), opacity=0.3),
+                        "frame": sim_utils.UsdFileCfg(
+                            usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/UIElements/frame_prim.usd",
+                            scale=(0.1, 0.1, 0.1),
                         ),
                     }))
 
@@ -242,7 +242,7 @@ class BezierCurveAction(ActionTerm):
     def torch_sph2cart(self, pos: torch.Tensor):
         # Extract az, el, r components
         az = pos[:, 0]
-        el =pos[:, 1]
+        el = pos[:, 1]
         r = pos[:, 2]
 
         rcos_theta = r * torch.cos(el)
@@ -306,15 +306,16 @@ class BezierCurveAction(ActionTerm):
 
         qd_des = (q_des - old_q_des) / self.cfg.time_step
 
+        at_t_th = torch.where(self.dt == self.t_th)[0]
+
+        if at_t_th.numel() > 0:
+
+            self._env.extras['actual_lo_config'][at_t_th] = self._asset.data.root_state_w[at_t_th].clone()
+            self._env.extras['t_th_q'][at_t_th] = self._asset.data.joint_pos[at_t_th].clone()
+
         after_t_th = torch.where(self.dt > self.t_th)[0]
 
         if after_t_th.numel() > 0:
-
-            # Only clone if necessary and add to extras if not already present
-            for after_t_th_env in after_t_th:
-                if after_t_th_env not in self._env.extras['after_t_th']:
-                    self._env.extras['actual_lo_config'][after_t_th_env] = self._asset.data.root_state_w[after_t_th_env].clone()
-                    self._env.extras['t_th_q'][after_t_th_env] = self._asset.data.joint_pos[after_t_th_env].clone()
 
             self._env.extras['after_t_th'] = after_t_th
 
@@ -509,7 +510,7 @@ class BezierCurveAction(ActionTerm):
             # print(f"Command: {self._env.command_manager.get_command('trunk_target')}")
             print(f"Action: {self._raw_actions}")
             print(f"Processed action: {self._processed_actions}")
-            self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins)
+            self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
 
             # print(f"x_theta, x_r: { x_theta} , {x_r}")
             # print(f"xd_theta, xd_r: { xd_theta} , {xd_r}")

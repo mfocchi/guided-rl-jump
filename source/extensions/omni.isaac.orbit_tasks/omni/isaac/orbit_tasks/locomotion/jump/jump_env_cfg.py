@@ -305,7 +305,7 @@ class NegativeRewardsCfg:
         weight=-0.1,
     )
 
-    action_regularization = RewTerm(
+    t_th_regularization = RewTerm(
         func=mdp.action_regularization,
         params={"action": 0},
         weight=-0.001,

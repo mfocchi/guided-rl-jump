@@ -165,9 +165,9 @@ def no_touchdown(env: RLTaskEnv) -> torch.Tensor:
     return no_touchdown_penalty
 
 
-def action_regularization(env: RLTaskEnv, action: int) -> torch.Tensor:
+def action_regularization(env: RLTaskEnv, action: int, limit: float = 0.0) -> torch.Tensor:
     """Penalize big action to constrain the range"""
-    return torch.square(env.action_manager.action[..., action])
+    return torch.square(env.action_manager.action[..., action] - limit)
 
 
 def action_limit_penalization(env: RLTaskEnv, min_action, max_action) -> torch.Tensor:
