@@ -155,10 +155,17 @@ class RLPlanningTaskEnv(RLTaskEnv):
         self.extras["log"].update(info)
 
         _ = self.running_reward_manager.reset(env_ids)
-        # Try to log cumulative running costs
+        # Log cumulative running costs
         info = {}
         episodic_sum_avg = torch.mean(self.running_reward_buf)
         info["Episode Reward/" + "running costs"] = episodic_sum_avg / self.max_episode_length_s
+        self.extras["log"].update(info)
+
+        # Log jumping error
+        info = {}
+        info["Episode Reward/" + "avg abs jumping error"] = self.extras.get("avg_abs_err", 0)
+        info["Episode Reward/" + "avg rpe jumping error"] = self.extras.get("avg_rpe_err", 0)
+
         self.extras["log"].update(info)
 
         # -- curriculum manager

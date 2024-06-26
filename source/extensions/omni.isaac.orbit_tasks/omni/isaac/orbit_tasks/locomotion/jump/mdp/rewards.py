@@ -67,7 +67,9 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     cost = torch.log(1 + cost)
     cost = torch.clip((((cost + (dist_coeff * torch.exp(target_distance))) * torch.pow((1 - target_error), err_coeff)) - bias), 0, torch.inf)
 
-    print(f"Avg jump_error: {target_error.mean()}")
+    # print(f"Avg jump_error: {target_error.mean()}")
+    env.extras["avg_abs_err"] = target_error.mean()
+    env.extras["avg_rpe_err"] = (target_error / target_distance).mean()
 
     # TODO:experiment with this function
     # cost = (1.0 / ((50 * (percentual_error ** 3)) + 1e-15)) - 0.02

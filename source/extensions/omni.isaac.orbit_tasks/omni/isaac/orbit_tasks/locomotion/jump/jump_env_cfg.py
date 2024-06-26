@@ -32,7 +32,7 @@ pos_y = (-0.5, 0.5)
 pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
 pitch = (0.0, 0.0)
-yaw = (0.0, 0.0)
+yaw = (-np.pi, np.pi)
 
 activate_curriculum = False
 
