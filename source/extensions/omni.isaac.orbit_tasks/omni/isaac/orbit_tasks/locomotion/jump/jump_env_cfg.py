@@ -27,8 +27,8 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 mu = 1.0
 time_step = 0.005
 
-pos_x = (0,0)
-pos_y = (0,0)
+pos_x = (-0.5, 1)
+pos_y = (-0.5, 0.5)
 pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
 pitch = (0.0, 0.0)
@@ -214,7 +214,7 @@ class EventCfg:
         interval_range_s=(0., 0.),
         params={"base_lin_vel_threshold": -0.5,
                 "foot_z_threshold": 0.05,
-                "base_z_threshold": 0.3,
+                "base_z_threshold": 0.25,
                 "base_heigth": 0.3}
     )
 
@@ -292,7 +292,7 @@ class NegativeRewardsCfg:
 
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight=-0.1,
+        weight=-1,
     )
 
     liftoff_position_error = RewTerm(
