@@ -332,7 +332,6 @@ class EnvBezier():
         ax[2].axhline(0.15, color='purple')
 
         ax[0].legend()
-        plt.show()
 
     def plot_traj(self, actual_traj, des_traj, title=""):
         fig, ax = plt.subplots(3, 4, figsize=(10, 8))
@@ -389,9 +388,37 @@ class EnvBezier():
         ax[2, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[2]], color="blue")
         ax[2, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[2]], color="red")
 
+    def plot_grf_traj(self, grf_traj, title="grf"):
+
+        fig, ax = plt.subplots(4, 1, figsize=(10, 8))
+        fig.suptitle(title)
+
+        actual_traj = torch.stack(grf_traj, dim=1)[0]
+
+        time = np.arange(0, len(actual_traj)) * 0.005
+
+        ax[0].plot(time, actual_traj[..., 0, 0], color="red", label="x")
+        ax[0].plot(time, actual_traj[..., 0, 1], color="green", label="y")
+        ax[0].plot(time, actual_traj[..., 0, 2], color="blue", label="z")
+
+        ax[1].plot(time, actual_traj[..., 1, 0], color="red")
+        ax[1].plot(time, actual_traj[..., 1, 1], color="green")
+        ax[1].plot(time, actual_traj[..., 1, 2], color="blue")
+
+        ax[2].plot(time, actual_traj[..., 2, 0], color="red")
+        ax[2].plot(time, actual_traj[..., 2, 1], color="green")
+        ax[2].plot(time, actual_traj[..., 2, 2], color="blue")
+
+        ax[3].plot(time, actual_traj[..., 3, 0], color="red")
+        ax[3].plot(time, actual_traj[..., 3, 1], color="green")
+        ax[3].plot(time, actual_traj[..., 3, 2], color="blue")
+
+        ax[0].legend()
+
     def run_simulator(self):
         """Runs the simulation loop."""
         robot = self.scene["robot"]
+        contact_sensor = self.scene["contact_forces"]
 
         self.reset(robot)
 
@@ -411,6 +438,8 @@ class EnvBezier():
         trunk_actual_traj = []
         trunk_des_traj = []
 
+        grf_traj = []
+
         sim_time = 0.0
         start_time = 1
         max_episode_time = 2 + start_time
@@ -421,7 +450,7 @@ class EnvBezier():
         trunk_x_0 = initial__trunk[..., 0:3]
         trunk_xd_0 = robot.data.root_state_w[..., 7:10].clone()
 
-        action = torch.tensor([[-0.5160,  0.0086,  0.1819, -0.0163, -1.0356]], device=self.sim.device)
+        action = torch.tensor([[-0.5160, 0.0086, 0.1819, -0.0163, -1.0356]], device=self.sim.device)
         target = torch.tensor([[0.4, 0, 0]], device=self.sim.device)
 
         self.bezierAction.process_actions(trunk_x_0, trunk_xd_0, action, target)
@@ -438,6 +467,7 @@ class EnvBezier():
                     self.plot_traj(qd_actual_traj, qd_des_traj, "qd")
                     self.plot_traj(tau_actual_traj, tau_des_traj, "tau")
                     self.plot_trunk_traj(trunk_actual_traj, trunk_des_traj, "trunk")
+                    self.plot_grf_traj(grf_traj, "grf z")
 
                     plt.show()
 
@@ -458,6 +488,8 @@ class EnvBezier():
 
                     trunk_actual_traj = []
                     trunk_des_traj = []
+
+                    grf_traj = []
 
                     # reset the robot
                     self.reset(robot)
@@ -505,6 +537,8 @@ class EnvBezier():
 
                     trunk_actual_traj.append(robot.data.root_state_w[..., 0:3].clone().detach().cpu())
                     trunk_des_traj.append(trunk_des[..., 0:3].detach().cpu())
+
+                    grf_traj.append(contact_sensor.data.net_forces_w.clone().detach().cpu())
 
             print("Simulation concluded :)")
             break
