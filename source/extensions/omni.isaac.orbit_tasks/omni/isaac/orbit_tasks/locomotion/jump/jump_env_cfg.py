@@ -276,6 +276,12 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 1., "dist_coeff": 2., "err_coeff": 1., "bias": 3},
     )
 
+    target_orientation_error = RewTerm(
+        func=mdp.target_orientation_error,
+        weight=0.1,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 0.1, "dist_coeff": 2., "err_coeff": 1., "bias": 1},
+    )
+
 
 @configclass
 class NegativeRewardsCfg:
@@ -305,12 +311,6 @@ class NegativeRewardsCfg:
         func=mdp.action_limit_penalization,
         params={"min_action": -5, "max_action": 5},
         weight=-1,
-    )
-
-    target_orientation_error = RewTerm(
-        func=mdp.target_orientation_error,
-        weight=-1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
     )
 
 

@@ -78,6 +78,35 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     # return torch.norm(curr_pos_w - des_pos_w, dim=1)
 
 
+def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, coeff: float = 1., dist_coeff: float = 1., err_coeff: float = 1., bias: float = 1) -> torch.Tensor:
+    """Penalize tracking orientation error using shortest path.
+
+    The function computes the orientation error between the desired orientation (from the command) and the
+    current orientation of the asset's body (in world frame). The orientation error is computed as the shortest
+    path between the desired and current orientations.
+    """
+    target_distance = torch.norm(env.command_manager.get_command(command_name)[:, 0:3], dim=1) + 1e-12
+
+    # extract the asset (to enable type hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    command = env.command_manager.get_command(command_name)
+    # obtain the desired and current orientations
+    des_quat_b = command[:, 3:7]
+    # TODO: add quaternion conversion
+    des_quat_w = quat_mul(asset.data.root_state_w[:, 3:7], des_quat_b)
+    curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7]  # type: ignore
+
+    target_error = quat_error_magnitude(curr_quat_w, des_quat_w)
+
+    print(target_error)
+
+    cost = 1.0 / ((coeff * target_error) + 1e-12)
+    cost = torch.log(1 + cost)
+    cost = torch.clip((((cost + (dist_coeff * torch.exp(target_distance))) * torch.pow((1 - target_error), err_coeff)) - bias), 0, torch.inf)
+
+    return cost
+
+
 def liftoff_position_error(env: RLTaskEnv) -> torch.Tensor:
     # obtain the desired and current positions
 
@@ -94,25 +123,6 @@ def liftoff_velocity_error(env: RLTaskEnv) -> torch.Tensor:
     curr_lo_vel_w = env.extras["actual_lo_config"][..., 7:10]
 
     return torch.norm(des_lo_vel_w - curr_lo_vel_w, dim=1)
-
-
-def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg) -> torch.Tensor:
-    """Penalize tracking orientation error using shortest path.
-
-    The function computes the orientation error between the desired orientation (from the command) and the
-    current orientation of the asset's body (in world frame). The orientation error is computed as the shortest
-    path between the desired and current orientations.
-    """
-    # extract the asset (to enable type hinting)
-    asset: RigidObject = env.scene[asset_cfg.name]
-    command = env.command_manager.get_command(command_name)
-    # obtain the desired and current orientations
-    des_quat_b = command[:, 3:7]
-    # TODO: add quaternion conversion
-    des_quat_w = quat_mul(asset.data.root_state_w[:, 3:7], des_quat_b)
-    curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7]  # type: ignore
-
-    return quat_error_magnitude(curr_quat_w, des_quat_w)
 
 
 def friction_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, mu: float = 0.8) -> torch.Tensor:
