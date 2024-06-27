@@ -156,10 +156,11 @@ def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: 
     asset: Articulation = env.scene[asset_cfg.name]
 
     foot_idx = asset.find_bodies(".*foot")[0]
+    trunk_target_z = env.command_manager.get_command("trunk_target")[..., 2]
 
     net_contact_forces = contact_sensor.data.net_forces_w
 
-    low_foot_env_ids = torch.all(asset.data.body_state_w[:, foot_idx, 2] <= foot_pos_threshold, dim=1)
+    low_foot_env_ids = torch.all(asset.data.body_state_w[:, foot_idx, 2] - trunk_target_z <= foot_pos_threshold, dim=1)
     in_contact_env_ids = torch.any(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
 
     touchdown_env_ids = torch.nonzero(low_foot_env_ids & in_contact_env_ids).reshape(1, -1)[0]

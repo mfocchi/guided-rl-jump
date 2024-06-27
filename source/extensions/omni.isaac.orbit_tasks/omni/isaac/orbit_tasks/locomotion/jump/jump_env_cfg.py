@@ -31,8 +31,8 @@ pos_x = (-0.5, 1)
 pos_y = (-0.5, 0.5)
 pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
-pitch = (0.0, 0.0)
-yaw = (-np.pi, np.pi)
+pitch = (0, 0)
+yaw = (0, 0)
 
 activate_curriculum = False
 
@@ -58,7 +58,7 @@ class MySceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
 
     # sensorsc
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*",
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot|trunk)$",
                                       track_air_time=True,
                                       visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"),
                                       debug_vis=False)
@@ -68,7 +68,7 @@ class MySceneCfg(InteractiveSceneCfg):
     landing_platform: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
-            size=(0.6, 0.6, 0.05),
+            size=(0.8, 0.8, 0.05),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, kinematic_enabled=True),
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
@@ -76,7 +76,7 @@ class MySceneCfg(InteractiveSceneCfg):
             physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.2, 0.0)),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.025))
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(-0.05, 0.0, -0.025))
     )
 
     # lights
@@ -213,8 +213,8 @@ class EventCfg:
         mode="interval",
         interval_range_s=(0., 0.),
         params={"base_lin_vel_threshold": -0.5,
-                "foot_z_threshold": 0.05,
-                "base_z_threshold": 0.3,
+                "foot_z_threshold": 0.04,
+                "base_z_threshold": 0.25,
                 "base_heigth": 0.3}
     )
 
@@ -262,16 +262,6 @@ class RunningRewardsCfg:
     )
 
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
-
-    # TODO: add singluarity for robot tha goes under a certain treshold and over a certain tresh
-
-    # unilateral_constraint = RewTerm(
-    #     func=mdp.unilateral_constraint,
-    #     weight=-0.01,
-    #     params={
-    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot")
-    #     }
-    # )
 
 
 @configclass
