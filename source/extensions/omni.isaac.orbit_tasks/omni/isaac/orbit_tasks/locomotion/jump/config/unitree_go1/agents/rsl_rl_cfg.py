@@ -21,8 +21,8 @@ class UnitreeGo1PPORunnerCfg(RslRlOnPolicyRunnerCfg):
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
-        actor_hidden_dims=[256, 256],
-        critic_hidden_dims=[256, 256],
+        actor_hidden_dims=[256, 256, 256],
+        critic_hidden_dims=[256, 256, 256],
         activation="elu",
     )
     algorithm = RslRlPpoAlgorithmCfg(
@@ -39,4 +39,4 @@ class UnitreeGo1PPORunnerCfg(RslRlOnPolicyRunnerCfg):
         desired_kl=0.01,
         max_grad_norm=1.0,
     )
-    logger="wandb"
+    logger = "wandb"

@@ -214,7 +214,7 @@ class EventCfg:
         interval_range_s=(0., 0.),
         params={"base_lin_vel_threshold": -0.5,
                 "foot_z_threshold": 0.05,
-                "base_z_threshold": 0.25,
+                "base_z_threshold": 0.3,
                 "base_heigth": 0.3}
     )
 
@@ -292,7 +292,7 @@ class NegativeRewardsCfg:
 
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight=-1,
+        weight=-0.5,
     )
 
     liftoff_position_error = RewTerm(
@@ -308,13 +308,13 @@ class NegativeRewardsCfg:
     t_th_regularization = RewTerm(
         func=mdp.action_regularization,
         params={"action": 0},
-        weight=-0.001,
+        weight=-0.01,
     )
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,
         params={"min_action": -5, "max_action": 5},
-        weight=-0.1,
+        weight=-1,
     )
 
     target_orientation_error = RewTerm(
