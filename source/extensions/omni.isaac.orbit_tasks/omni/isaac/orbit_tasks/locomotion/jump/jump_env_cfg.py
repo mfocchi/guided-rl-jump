@@ -296,14 +296,31 @@ class NegativeRewardsCfg:
         weight=-1,
     )
 
-    liftoff_velocity_error = RewTerm(
-        func=mdp.liftoff_velocity_error,
+    liftoff_orientation_error = RewTerm(
+        func=mdp.liftoff_orientation_error,
+        weight=-1,
+    )
+
+    liftoff_linear_velocity_error = RewTerm(
+        func=mdp.liftoff_linear_velocity_error,
+        weight=-0.01,
+    )
+
+    liftoff_angular_velocity_error = RewTerm(
+        func=mdp.liftoff_angular_velocity_error,
+        weight=-0.01,
+    )
+
+    # experimental, regularize z of the lift-off
+    liftoff_z_regularization = RewTerm(
+        func=mdp.liftoff_z_regularization,
+        params={"limit": 0.35},
         weight=-0.01,
     )
 
     t_th_regularization = RewTerm(
         func=mdp.action_regularization,
-        params={"action": 0},
+        params={"action": 0, "limit": 0},
         weight=-0.01,
     )
 

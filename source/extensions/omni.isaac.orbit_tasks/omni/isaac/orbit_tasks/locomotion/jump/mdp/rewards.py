@@ -107,6 +107,12 @@ def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: Scene
     return cost
 
 
+def liftoff_z_regularization(env: RLTaskEnv, limit: float = 0.3) -> torch.Tensor:
+    
+    des_lo_z = env.extras["trunk_x_lo"][..., 2]
+    return torch.square(des_lo_z - limit)
+
+
 def liftoff_position_error(env: RLTaskEnv) -> torch.Tensor:
     # obtain the desired and current positions
 
@@ -116,13 +122,32 @@ def liftoff_position_error(env: RLTaskEnv) -> torch.Tensor:
     return torch.norm(des_lo_pos_w - curr_lo_pos_w, dim=1)
 
 
-def liftoff_velocity_error(env: RLTaskEnv) -> torch.Tensor:
+def liftoff_orientation_error(env: RLTaskEnv) -> torch.Tensor:
     # obtain the desired and current positions
 
-    des_lo_vel_w = env.extras["trunk_xd_lo"]
-    curr_lo_vel_w = env.extras["actual_lo_config"][..., 7:10]
+    des_lo_o_w = env.extras["trunk_o_lo"]
+    curr_lo_o_w = env.extras["actual_lo_config"][..., 3:7]
 
-    return torch.norm(des_lo_vel_w - curr_lo_vel_w, dim=1)
+    target_error = quat_error_magnitude(des_lo_o_w, curr_lo_o_w)
+
+    return target_error
+
+def liftoff_linear_velocity_error(env: RLTaskEnv) -> torch.Tensor:
+    # obtain the desired and current positions
+
+    des_lo_lvel_w = env.extras["trunk_xd_lo"]
+    curr_lo_lvel_w = env.extras["actual_lo_config"][..., 7:10]
+
+    return torch.norm(des_lo_lvel_w - curr_lo_lvel_w, dim=1)
+
+
+def liftoff_angular_velocity_error(env: RLTaskEnv) -> torch.Tensor:
+    # obtain the desired and current positions
+
+    des_lo_lvel_w = env.extras["trunk_od_lo"]
+    curr_lo_lvel_w = env.extras["actual_lo_config"][..., 10:13]
+
+    return torch.norm(des_lo_lvel_w - curr_lo_lvel_w, dim=1)
 
 
 def friction_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, mu: float = 0.8) -> torch.Tensor:

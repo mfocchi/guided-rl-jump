@@ -480,6 +480,7 @@ class BezierCurveAction(ActionTerm):
         phi = self.map_range(actions[..., 7], self.min_action, self.max_action, self.phi_min, self.phi_max)
 
         trunk_o_lo = torch.stack((psi, theta, phi), dim=1)
+        self._env.extras["trunk_o_lo"] = quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2])
 
         # Calculate Phid_lo
 
@@ -488,6 +489,7 @@ class BezierCurveAction(ActionTerm):
         phid = self.map_range(actions[..., 10], self.min_action, self.max_action, self.phid_min, self.phid_max)
 
         trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
+        self._env.extras["trunk_od_lo"] = trunk_od_lo
 
         self.trunk_tg_vis.visualize(trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3] + self._env.scene.env_origins,
                                     self._env.command_manager.get_command("trunk_target")[:, 3:7])
