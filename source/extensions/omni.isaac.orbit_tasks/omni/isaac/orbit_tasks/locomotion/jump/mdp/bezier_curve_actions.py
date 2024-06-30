@@ -508,7 +508,7 @@ class BezierCurveAction(ActionTerm):
         print("t_fl", self.t_fl)
 
         if self.cfg.debug_vis:
-            # print(f"Command: {self._env.command_manager.get_command('trunk_target')}")
+            print(f"Command: {self._env.command_manager.get_command('trunk_target')}")
             print(f"Action: {self._raw_actions}")
             print(f"Processed action: {self._processed_actions}")
             self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))

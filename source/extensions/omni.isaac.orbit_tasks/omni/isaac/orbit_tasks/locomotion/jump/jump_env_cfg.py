@@ -26,13 +26,12 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 # External variables definition
 mu = 1.0
 time_step = 0.005
-
 pos_x = (-0.5, 0.5)
 pos_y = (-0.5, 0.5)
-pos_z = (0.0, 0.2)
+pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
 pitch = (0, 0)
-yaw = (0, 0)
+yaw = (-np.pi, np.pi)
 
 activate_curriculum = False
 
@@ -278,8 +277,8 @@ class RewardsCfg:
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=0.1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 0.1, "dist_coeff": 2., "err_coeff": 1., "bias": 2},
+        weight=0.2,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 50, "dist_coeff": 2., "err_coeff": 1., "bias": 2},
     )
 
 

@@ -9,7 +9,7 @@ from omni.isaac.orbit.assets import AssetBaseCfg, RigidObjectCfg
 from omni.isaac.orbit.scene import InteractiveScene, InteractiveSceneCfg
 from omni.isaac.orbit.managers import SceneEntityCfg
 from omni.isaac.orbit.utils import configclass
-from omni.isaac.orbit.utils.math import subtract_frame_transforms, quat_from_euler_xyz
+from omni.isaac.orbit.utils.math import subtract_frame_transforms, quat_from_euler_xyz, euler_xyz_from_quat
 from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG
 from omni.isaac.orbit.controllers import DifferentialIKController, DifferentialIKControllerCfg
 
@@ -17,6 +17,9 @@ from omni.isaac.orbit.controllers import DifferentialIKController, DifferentialI
 class BezierCurveAction():
 
     def __init__(self,
+                 min_action,
+                 max_action,
+                 lerp_time,
                  t_th_min,
                  t_th_max,
                  x_theta_min,
@@ -40,8 +43,10 @@ class BezierCurveAction():
                  phid_min,
                  phid_max) -> None:
 
-        self.min_action = -5
-        self.max_action = 5
+        self.min_action = min_action
+        self.max_action = max_action
+
+        self.lerp_time = lerp_time
 
         self.t_th_min = t_th_min
         self.t_th_max = t_th_max
@@ -76,11 +81,15 @@ class BezierCurveAction():
         self.phid_min = phid_min
         self.phid_max = phid_max
 
-    def torch_cart2sph(self, pos: torch.Tensor):
+    def torch_cart2sph(self, pos: torch.Tensor, threshold: float = 1e-5):
         # Extract x, y, z components
         x = pos[:, 0]
         y = pos[:, 1]
         z = pos[:, 2]
+
+        # deal with precision problem
+        x = torch.where(torch.abs(x) < threshold, torch.tensor(0.0, dtype=x.dtype, device=x.device), x)
+        y = torch.where(torch.abs(y) < threshold, torch.tensor(0.0, dtype=y.dtype, device=y.device), y)
 
         # Compute spherical coordinates
         hxy = torch.hypot(x, y)
@@ -158,7 +167,10 @@ class BezierCurveAction():
     def map_range(self, x, in_min, in_max, out_min, out_max):
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
-    def process_actions(self, trunk_x_0, trunk_xd_0, actions: torch.Tensor, target: torch.Tensor):
+    def process_actions(self, robot, trunk_x_0, trunk_xd_0, trunk_o_0, trunk_od_0, actions: torch.Tensor, target: torch.Tensor):
+
+        # Reset qd computation
+        self.old_q_des = robot.data.default_joint_pos.clone()
 
         trunk_tg = trunk_x_0 + target
 
@@ -181,15 +193,33 @@ class BezierCurveAction():
 
         trunk_xd_lo = self.torch_sph2cart(torch.stack((x_xd_phi, xd_theta, xd_r), dim=1))
 
-        self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
+        # Calculate Phi_lo
 
-        print(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
+        psi = self.map_range(actions[..., 5], self.min_action, self.max_action, self.psi_min, self.psi_max)
+        theta = self.map_range(actions[..., 6], self.min_action, self.max_action, self.theta_min, self.theta_max)
+        phi = self.map_range(actions[..., 7], self.min_action, self.max_action, self.phi_min, self.phi_max)
+
+        trunk_o_lo = torch.stack((psi, theta, phi), dim=1)
+
+        # Calculate Phid_lo
+
+        psid = self.map_range(actions[..., 8], self.min_action, self.max_action, self.psid_min, self.psid_max)
+        thetad = self.map_range(actions[..., 9], self.min_action, self.max_action, self.thetad_min, self.thetad_max)
+        phid = self.map_range(actions[..., 10], self.min_action, self.max_action, self.phid_min, self.phid_max)
+
+        trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
+
+        print(self.t_th, trunk_x_lo, trunk_xd_lo, trunk_o_lo, trunk_od_lo)
+
+        self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
+        self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
 
     def eval_bezier(self, dt):
 
         x, xd = self.bezier_trajectory(self.w_x, self.w_xd, dt, self.t_th)
+        o, od = self.bezier_trajectory(self.w_o, self.w_od, dt, self.t_th)
 
-        return x, xd
+        return x, xd, o, od
 
 
 class EnvBezier():
@@ -202,6 +232,8 @@ class EnvBezier():
         self.scene = scene
         self.sim_dt = self.sim.get_physics_dt()
         print("Simulation time step:", self.sim_dt)
+
+        self.q_0_lo = torch.tensor([0.2187, -0.2191, 0.2343, -0.2364, 1.3717, 1.3716, 1.6770, 1.6784, -2.4063, -2.4061, -2.2808, -2.2778], device=sim.device)
 
         diff_ik_cfg = DifferentialIKControllerCfg(command_type="position", use_relative_mode=False, ik_method="dls")
 
@@ -226,32 +258,36 @@ class EnvBezier():
         self.rr_entity_cfg.resolve(self.scene)
         self.rr_body_idx = self.rr_entity_cfg.body_ids[0]
 
-        self.bezierAction = BezierCurveAction(t_th_min=0.1,
-                                              t_th_max=1,
-                                              x_theta_min=np.pi / 4,
-                                              x_theta_max=np.pi / 2,
-                                              x_r_min=0.2,
-                                              x_r_max=0.4,
-                                              xd_theta_min=np.pi / 6,
-                                              xd_theta_max=np.pi / 2,
-                                              xd_r_min=0.1,
-                                              xd_r_max=5,
-                                              psi_min=-2 * np.pi,
-                                              psi_max=2 * np.pi,
-                                              theta_min=- 2 * np.pi,
-                                              theta_max=2 * np.pi,
-                                              phi_min=- 2 * np.pi,
-                                              phi_max=2 * np.pi,
-                                              psid_min=-4,
-                                              psid_max=4,
-                                              thetad_min=-4,
-                                              thetad_max=4,
-                                              phid_min=-4,
-                                              phid_max=4,)
+        self.bezierAction = BezierCurveAction(
+            min_action=-5,
+            max_action=5,
+            lerp_time=0.1,
+            t_th_min=0.3,
+            t_th_max=1,
+            x_theta_min=np.pi / 4,
+            x_theta_max=np.pi / 2,
+            x_r_min=0.2,
+            x_r_max=0.4,
+            xd_theta_min=np.pi / 6,
+            xd_theta_max=np.pi / 2,
+            xd_r_min=0.1,
+            xd_r_max=5,
+            psi_min=-np.pi / 4,
+            psi_max=np.pi / 4,
+            theta_min=-np.pi / 4,
+            theta_max=np.pi / 4,
+            phi_min=-np.pi,
+            phi_max=np.pi,
+            psid_min=-4,
+            psid_max=4,
+            thetad_min=-4,
+            thetad_max=4,
+            phid_min=-4,
+            phid_max=4)
 
-    def ik(self, robot, pose, old_q_des):
-        x = pose[..., 0:3]
-        o_quat = pose[..., 3:7]
+    def ik(self, robot, x, o, old_q_des):
+        x += self.scene.env_origins
+        o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
 
         q_des = torch.zeros_like(robot.data.default_joint_pos)
 
@@ -390,7 +426,7 @@ class EnvBezier():
 
     def plot_grf_traj(self, grf_traj, title="grf"):
 
-        fig, ax = plt.subplots(4, 1, figsize=(10, 8))
+        fig, ax = plt.subplots(5, 1, figsize=(10, 8))
         fig.suptitle(title)
 
         actual_traj = torch.stack(grf_traj, dim=1)[0]
@@ -412,6 +448,8 @@ class EnvBezier():
         ax[3].plot(time, actual_traj[..., 3, 0], color="red")
         ax[3].plot(time, actual_traj[..., 3, 1], color="green")
         ax[3].plot(time, actual_traj[..., 3, 2], color="blue")
+
+        ax[4].plot(time, torch.mean(actual_traj[..., 2], dim=1), color="purple")
 
         ax[0].legend()
 
@@ -441,7 +479,7 @@ class EnvBezier():
         grf_traj = []
 
         sim_time = 0.0
-        start_time = 1
+        start_time = 0.0
         max_episode_time = 2 + start_time
         count = 0
 
@@ -449,11 +487,13 @@ class EnvBezier():
 
         trunk_x_0 = initial__trunk[..., 0:3]
         trunk_xd_0 = robot.data.root_state_w[..., 7:10].clone()
+        trunk_o_0 = torch.stack(euler_xyz_from_quat(robot.data.root_state_w[:, 3:7].clone()), dim=1)
+        trunk_od_0 = robot.data.root_ang_vel_b.clone()
 
-        action = torch.tensor([[-0.5160, 0.0086, 0.1819, -0.0163, -1.0356]], device=self.sim.device)
-        target = torch.tensor([[0.4, 0, 0]], device=self.sim.device)
+        action = torch.tensor([[-0.3455, -1.6721, 3.1703, -3.5239, -1.2468, -0.0756, -0.2022, -0.0070, -0.0171, 0.2280, -0.1616]], device=self.sim.device)
+        target = torch.tensor([[0.5, 0, 0]], device=self.sim.device)
 
-        self.bezierAction.process_actions(trunk_x_0, trunk_xd_0, action, target)
+        self.bezierAction.process_actions(robot, trunk_x_0, trunk_xd_0, trunk_o_0, trunk_od_0, action, target)
 
         while True:
             # Simulate physics
@@ -495,19 +535,20 @@ class EnvBezier():
                     self.reset(robot)
 
                 trunk_des = initial__trunk.clone()
-                dt = 0
+                self.dt = 0
 
                 if sim_time > start_time:
-                    dt = sim_time - start_time
+                    self.dt = sim_time - start_time
 
-                x, xd = self.bezierAction.eval_bezier(dt)
+                x, xd, o, od = self.bezierAction.eval_bezier(self.dt)
+
                 trunk_des[..., 0:3] = x
 
-                if dt <= self.bezierAction.t_th:
-                    q_des, qd_des = self.ik(robot, trunk_des, old_q_des)
+                if self.dt <= self.bezierAction.t_th:
+                    q_des, qd_des = self.ik(robot, x, o, old_q_des)
                     old_q_des = q_des.clone()
                 else:
-                    q_des = robot.data.default_joint_pos.clone()
+                    q_des = self.q_0_lo
                     qd_des = robot.data.default_joint_vel.clone()
 
                 robot.set_joint_position_target(q_des)
@@ -524,7 +565,8 @@ class EnvBezier():
                 # update buffers
                 self.scene.update(self.sim_dt)
 
-                if sim_time > start_time and dt <= self.bezierAction.t_th:
+                # if sim_time > start_time and self.dt <= self.bezierAction.t_th:
+                if self.dt <= self.bezierAction.t_th:
 
                     q_actual_traj.append(robot.data.joint_pos.clone().detach().cpu())
                     q_des_traj.append(q_des.detach().cpu())

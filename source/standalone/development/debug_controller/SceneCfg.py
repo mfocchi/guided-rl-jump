@@ -6,13 +6,16 @@ from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.markers.config import CONTACT_SENSOR_JUMP_MARKER_CFG
 from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG
 
+mu = 1.0
 
 @configclass
 class SceneCfg(InteractiveSceneCfg):
     # ground plane
     ground = AssetBaseCfg(
         prim_path="/World/defaultGroundPlane",
-        spawn=sim_utils.GroundPlaneCfg(),
+        spawn=sim_utils.GroundPlaneCfg(
+            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu)
+        ),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0)),
     )
 
@@ -24,6 +27,6 @@ class SceneCfg(InteractiveSceneCfg):
     robot = UNITREE_GO1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
     contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot)$",
-                                    track_air_time=True,
-                                    visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"),
-                                    debug_vis=True)
+                                      track_air_time=True,
+                                      visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"),
+                                      debug_vis=True)
