@@ -348,7 +348,7 @@ class EnvBezier():
         self.rl_diff_ik_controller.reset()
         self.rr_diff_ik_controller.reset()
 
-    def plot_trunk_traj(self, actual_traj, des_traj, title=""):
+    def plot_trunk_traj(self, actual_traj, des_traj, t_start, title=""):
         fig, ax = plt.subplots(3, 1, figsize=(10, 8))
         fig.suptitle(title)
 
@@ -356,6 +356,8 @@ class EnvBezier():
         des_traj = torch.stack(des_traj, dim=1)[0]
 
         time = np.arange(0, len(des_traj)) * 0.005
+        z_min = torch.argmin(des_traj[..., 2])
+        t_zmin = time[z_min]
 
         ax[0].plot(time, actual_traj[..., 0], color="blue", label="actual")
         ax[0].plot(time, des_traj[..., 0], color="red", label="desired")
@@ -366,8 +368,16 @@ class EnvBezier():
         ax[2].plot(time, actual_traj[..., 2], color="blue")
         ax[2].plot(time, des_traj[..., 2], color="red")
         ax[2].axhline(0.15, color='purple')
+        ax[2].axvline(t_zmin, color='gray')
+
+        if t_start:
+            ax[0].axvline(t_start, color='black')
+            ax[1].axvline(t_start, color='black')
+            ax[2].axvline(t_start, color='black')
 
         ax[0].legend()
+
+        return t_zmin
 
     def plot_traj(self, actual_traj, des_traj, title=""):
         fig, ax = plt.subplots(3, 4, figsize=(10, 8))
@@ -424,9 +434,9 @@ class EnvBezier():
         ax[2, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[2]], color="blue")
         ax[2, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[2]], color="red")
 
-    def plot_grf_traj(self, grf_traj, title="grf"):
+    def plot_grf_traj(self, grf_traj, t_start, t_min, names, title="grf"):
 
-        fig, ax = plt.subplots(5, 1, figsize=(10, 8))
+        fig, ax = plt.subplots(4, 1, figsize=(10, 8))
         fig.suptitle(title)
 
         actual_traj = torch.stack(grf_traj, dim=1)[0]
@@ -436,22 +446,41 @@ class EnvBezier():
         ax[0].plot(time, actual_traj[..., 0, 0], color="red", label="x")
         ax[0].plot(time, actual_traj[..., 0, 1], color="green", label="y")
         ax[0].plot(time, actual_traj[..., 0, 2], color="blue", label="z")
+        ax[0].set_ylabel(names[0])
+        ax[0].axvline(t_min, color='gray')
 
         ax[1].plot(time, actual_traj[..., 1, 0], color="red")
         ax[1].plot(time, actual_traj[..., 1, 1], color="green")
         ax[1].plot(time, actual_traj[..., 1, 2], color="blue")
+        ax[1].set_ylabel(names[1])
+        ax[1].axvline(t_min, color='gray')
 
         ax[2].plot(time, actual_traj[..., 2, 0], color="red")
         ax[2].plot(time, actual_traj[..., 2, 1], color="green")
         ax[2].plot(time, actual_traj[..., 2, 2], color="blue")
+        ax[2].set_ylabel(names[2])
+        ax[2].axvline(t_min, color='gray')
 
         ax[3].plot(time, actual_traj[..., 3, 0], color="red")
         ax[3].plot(time, actual_traj[..., 3, 1], color="green")
         ax[3].plot(time, actual_traj[..., 3, 2], color="blue")
+        ax[3].set_ylabel(names[3])
+        ax[3].axvline(t_min, color='gray')
 
-        ax[4].plot(time, torch.mean(actual_traj[..., 2], dim=1), color="purple")
+        if t_start:
+            ax[0].axvline(t_start, color='black')
+            ax[1].axvline(t_start, color='black')
+            ax[2].axvline(t_start, color='black')
+            ax[3].axvline(t_start, color='black')
 
         ax[0].legend()
+
+        fig = plt.figure()
+        fig.suptitle(f"avg z {title}")
+        plt.plot(time, torch.mean(actual_traj[..., 2], dim=1), color="purple")
+        plt.axvline(t_min, color='gray')
+        if t_start:
+            plt.axvline(t_start, color='black')
 
     def run_simulator(self):
         """Runs the simulation loop."""
@@ -479,7 +508,7 @@ class EnvBezier():
         grf_traj = []
 
         sim_time = 0.0
-        start_time = 0.0
+        start_time = 0.5
         max_episode_time = 2 + start_time
         count = 0
 
@@ -490,7 +519,7 @@ class EnvBezier():
         trunk_o_0 = torch.stack(euler_xyz_from_quat(robot.data.root_state_w[:, 3:7].clone()), dim=1)
         trunk_od_0 = robot.data.root_ang_vel_b.clone()
 
-        action = torch.tensor([[-0.3455, -1.6721, 3.1703, -3.5239, -1.2468, -0.0756, -0.2022, -0.0070, -0.0171, 0.2280, -0.1616]], device=self.sim.device)
+        action = torch.tensor([[0.2514, -1.2007, 3.0652, -2.5994, -1.2312, -0.2063, -0.4556, -0.0423, -0.0882, 1.8352, -0.4276]], device=self.sim.device)
         target = torch.tensor([[0.5, 0, 0]], device=self.sim.device)
 
         self.bezierAction.process_actions(robot, trunk_x_0, trunk_xd_0, trunk_o_0, trunk_od_0, action, target)
@@ -503,11 +532,11 @@ class EnvBezier():
 
                     print(robot.data.root_state_w[..., :7])
 
-                    self.plot_traj(q_actual_traj, q_des_traj, "q")
-                    self.plot_traj(qd_actual_traj, qd_des_traj, "qd")
-                    self.plot_traj(tau_actual_traj, tau_des_traj, "tau")
-                    self.plot_trunk_traj(trunk_actual_traj, trunk_des_traj, "trunk")
-                    self.plot_grf_traj(grf_traj, "grf z")
+                    # self.plot_traj(q_actual_traj, q_des_traj, "q")
+                    # self.plot_traj(qd_actual_traj, qd_des_traj, "qd")
+                    # self.plot_traj(tau_actual_traj, tau_des_traj, "tau")
+                    t_min = self.plot_trunk_traj(trunk_actual_traj, trunk_des_traj, start_time, "trunk")
+                    self.plot_grf_traj(grf_traj, start_time, t_min, contact_sensor.body_names, "grf z")
 
                     plt.show()
 
