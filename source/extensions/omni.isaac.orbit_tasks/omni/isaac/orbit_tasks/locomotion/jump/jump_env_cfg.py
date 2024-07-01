@@ -287,7 +287,7 @@ class NegativeRewardsCfg:
 
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight=-0.1,
+        weight=-1,
     )
 
     liftoff_position_error = RewTerm(
@@ -314,7 +314,7 @@ class NegativeRewardsCfg:
     liftoff_z_regularization = RewTerm(
         func=mdp.liftoff_z_regularization,
         params={"limit": 0.35},
-        weight=-0.01,
+        weight=-0.1,
     )
 
     t_th_regularization = RewTerm(
