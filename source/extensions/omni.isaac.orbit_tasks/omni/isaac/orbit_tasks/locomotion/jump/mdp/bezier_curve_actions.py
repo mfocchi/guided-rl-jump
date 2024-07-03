@@ -96,6 +96,12 @@ class BezierCurveAction(ActionTerm):
         self.phid_min = self.cfg.phid_min
         self.phid_max = self.cfg.phid_max
 
+        self.xd_mult_min = self.cfg.xd_mult_min
+        self.xd_mult_max = self.cfg.xd_mult_max
+
+        self.l_expl_min = self.cfg.l_expl_min
+        self.l_expl_max = self.cfg.l_expl_max
+
         self.q_0 = self._asset.data.default_joint_pos.clone()[0]
         self.q_0_lo = torch.tensor([0.2187, -0.2191, 0.2343, -0.2364, 1.3717, 1.3716, 1.6770, 1.6784, -2.4063, -2.4061, -2.2808, -2.2778], device=self.device)
 
@@ -156,8 +162,8 @@ class BezierCurveAction(ActionTerm):
 
     @property
     def action_dim(self) -> int:
-        # t_th, x_lo(sph), xd_lo(sph), o_lo, od_lo
-        return 1 + 2 + 2 + 3 + 3
+        # t_th, x_lo(sph), xd_lo(sph), o_lo, od_lo, xd_mult, l_expl
+        return 1 + 2 + 2 + 3 + 3 + 1 + 1
         # return 1 + 2 + 2
 
     @property
@@ -182,14 +188,15 @@ class BezierCurveAction(ActionTerm):
 
         w = w.reshape(-1, 4, 3)
 
-        w_d = torch.stack((
-            ((3 / t_th) * (w[:, 1] - w[:, 0])).unsqueeze(1),
-            ((3 / t_th) * (w[:, 2] - w[:, 1])).unsqueeze(1),
-            ((3 / t_th) * (w[:, 3] - w[:, 2])).unsqueeze(1)), dim=2).squeeze()
+        # w_d = torch.stack((
+        #     ((3 / t_th) * (w[:, 1] - w[:, 0])).unsqueeze(1),
+        #     ((3 / t_th) * (w[:, 2] - w[:, 1])).unsqueeze(1),
+        #     ((3 / t_th) * (w[:, 3] - w[:, 2])).unsqueeze(1)), dim=2).squeeze()
 
-        return w, w_d
+        return w  # , w_d
 
-    def bezier_trajectory(self, w: torch.Tensor, w_d: torch.Tensor, t_ex: float, t_th: torch.Tensor):
+    # def bezier_trajectory(self, w: torch.Tensor, w_d: torch.Tensor, t_ex: float, t_th: torch.Tensor):
+    def bezier_trajectory(self, w: torch.Tensor, t_ex: float, t_th: torch.Tensor):
 
         t = t_ex / t_th
 
@@ -200,23 +207,23 @@ class BezierCurveAction(ActionTerm):
             (1.0) * (t**3) * (1 - t)**(3 - 3),
         ), dim=-1)
 
-        bezier_curve_2 = torch.cat((
-            (1.0) * (t**0) * (1 - t)**(2 - 0),
-            (2.0) * (t**1) * (1 - t)**(2 - 1),
-            (1.0) * (t**2) * (1 - t)**(2 - 2),
-        ), dim=-1)
+        # bezier_curve_2 = torch.cat((
+        #     (1.0) * (t**0) * (1 - t)**(2 - 0),
+        #     (2.0) * (t**1) * (1 - t)**(2 - 1),
+        #     (1.0) * (t**2) * (1 - t)**(2 - 2),
+        # ), dim=-1)
 
         bezier_position = torch.cat((
             (w[..., 0] * bezier_curve_3).sum(dim=-1).reshape(-1, 1),
             (w[..., 1] * bezier_curve_3).sum(dim=-1).reshape(-1, 1),
             (w[..., 2] * bezier_curve_3).sum(dim=-1).reshape(-1, 1)), dim=1)
 
-        bezier_velocity = torch.cat((
-            (w_d[..., 0] * bezier_curve_2).sum(dim=-1).reshape(-1, 1),
-            (w_d[..., 1] * bezier_curve_2).sum(dim=-1).reshape(-1, 1),
-            (w_d[..., 2] * bezier_curve_2).sum(dim=-1).reshape(-1, 1)), dim=1)
+        # bezier_velocity = torch.cat((
+        #     (w_d[..., 0] * bezier_curve_2).sum(dim=-1).reshape(-1, 1),
+        #     (w_d[..., 1] * bezier_curve_2).sum(dim=-1).reshape(-1, 1),
+        #     (w_d[..., 2] * bezier_curve_2).sum(dim=-1).reshape(-1, 1)), dim=1)
 
-        return bezier_position, bezier_velocity
+        return bezier_position  # , bezier_velocity
 
     def torch_cart2sph(self, pos: torch.Tensor, threshold: float = 1e-5):
         # Extract x, y, z components
@@ -306,27 +313,27 @@ class BezierCurveAction(ActionTerm):
 
         qd_des = (q_des - old_q_des) / self.cfg.time_step
 
-        after_t_th = torch.where(self.dt > self.t_th)[0]
+        after_t_th_total = torch.where(self.dt > self.t_th_total)[0]
 
-        if after_t_th.numel() > 0:
+        if after_t_th_total.numel() > 0:
 
-            new_lo = after_t_th[~torch.isin(after_t_th, self._env.extras['after_t_th'])]
+            new_lo = after_t_th_total[~torch.isin(after_t_th_total, self._env.extras['after_t_th_total'])]
             if new_lo.numel() > 0:
 
                 self._env.extras['actual_lo_config'][new_lo] = self._asset.data.root_state_w[new_lo].clone()
                 self._env.extras['t_th_q'][new_lo] = self._asset.data.joint_pos[new_lo].clone()
 
-            self._env.extras['after_t_th'] = after_t_th
+            self._env.extras['after_t_th_total'] = after_t_th_total
 
-            elapsed_time = (torch.full_like(self.t_th, self.dt) - self.t_th)[after_t_th]
+            elapsed_time = (torch.full_like(self.t_th, self.dt) - self.t_th)[after_t_th_total]
             elapsed_ratio = torch.clip(elapsed_time / torch.full_like(elapsed_time, self.lerp_time), 0, 1)
 
-            q_0_lo_lerp = torch.lerp(self._env.extras['t_th_q'][after_t_th],
-                                     torch.expand_copy(self.q_0_lo, (len(after_t_th), len(self.q_0))),
+            q_0_lo_lerp = torch.lerp(self._env.extras['t_th_q'][after_t_th_total],
+                                     torch.expand_copy(self.q_0_lo, (len(after_t_th_total), len(self.q_0))),
                                      elapsed_ratio)
 
-            q_des[after_t_th] = q_0_lo_lerp
-            qd_des[after_t_th] = torch.zeros_like(self._asset.data.default_joint_vel[0])
+            q_des[after_t_th_total] = q_0_lo_lerp
+            qd_des[after_t_th_total] = torch.zeros_like(self._asset.data.default_joint_vel[0])
 
         apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
 
@@ -460,6 +467,8 @@ class BezierCurveAction(ActionTerm):
         x_r = self.map_range(actions[..., 2], self.min_action, self.max_action, self.x_r_min, self.x_r_max)
 
         trunk_x_lo = self.torch_sph2cart(torch.stack((x_xd_phi, x_theta, x_r), dim=1))
+        self.trunk_x_lo = trunk_x_lo
+
         self._env.extras["trunk_x_lo"] = trunk_x_lo
 
         # Calculate Xd_lo
@@ -491,21 +500,47 @@ class BezierCurveAction(ActionTerm):
         trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
         self._env.extras["trunk_od_lo"] = trunk_od_lo
 
+        # Calculate explosive path
+
+        xd_mult = self.map_range(actions[..., 11], self.min_action, self.max_action, self.xd_mult_min, self.xd_mult_max)
+        l_expl = self.map_range(actions[..., 12], self.min_action, self.max_action, self.l_expl_min, self.l_expl_max)
+
+        trunk_xd_lo_un = trunk_xd_lo / torch.norm(trunk_xd_lo)
+        self.trunk_x_exp = trunk_x_lo + trunk_xd_lo_un * l_expl.reshape(-1, 1)
+
+        self._env.extras["trunk_x_exp"] = self.trunk_x_exp
+
+        self.trunk_xd_exp = trunk_xd_lo * xd_mult.reshape(-1, 1)
+
+        self._env.extras["trunk_xd_exp"] = self.trunk_xd_exp
+
+        print(self.trunk_x_exp)
+
+        vf_n = torch.norm(self.trunk_xd_exp, dim=1)
+        v0_n = torch.norm(trunk_xd_lo, dim=1)
+        sf_n = torch.norm(self.trunk_x_exp, dim=1)
+        s0_n = torch.norm(trunk_x_lo, dim=1)
+
+        a = 0.5 * ((torch.pow(vf_n, 2) - torch.pow(v0_n, 2)) / (sf_n - s0_n))
+
+        self.t_exp = ((vf_n - v0_n) / a).reshape(-1, 1)
+        self.t_th_total = self.t_th + self.t_exp
+
         self.trunk_tg_vis.visualize(trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3] + self._env.scene.env_origins,
                                     self._env.command_manager.get_command("trunk_target")[:, 3:7])
 
         # Compute the weights of bezier curve for position and orientation
-        self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
-        self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
+        self.w_x = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
+        self.w_o = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
 
         # apply the affine transformations
         # self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo), dim=1)
-        self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo, trunk_o_lo, trunk_od_lo), dim=1)
+        self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo, trunk_o_lo, trunk_od_lo, self.trunk_x_exp, self.trunk_xd_exp, self.t_exp), dim=1)
 
-        # Compute t_flight
-        arg = torch.clip(trunk_xd_lo[..., 2] * trunk_xd_lo[..., 2] - 2 * 9.81 * (trunk_tg[..., 2] - trunk_x_lo[..., 2]), 0, torch.inf)
-        self.t_fl = (trunk_xd_lo[..., 2] + torch.sqrt(arg)) / 9.81
-        print("t_fl", self.t_fl)
+        # # Compute t_flight
+        # arg = torch.clip(trunk_xd_lo[..., 2] * trunk_xd_lo[..., 2] - 2 * 9.81 * (trunk_tg[..., 2] - trunk_x_lo[..., 2]), 0, torch.inf)
+        # self.t_fl = (trunk_xd_lo[..., 2] + torch.sqrt(arg)) / 9.81
+        # print("t_fl", self.t_fl)
 
         if self.cfg.debug_vis:
             print(f"Command: {self._env.command_manager.get_command('trunk_target')}")
@@ -519,10 +554,18 @@ class BezierCurveAction(ActionTerm):
             # print(f"Vel in jf: {self.torch_sph2cart(torch.stack((torch.zeros_like(x_xd_phi), xd_theta, xd_r), dim=1))}")
 
     def apply_actions(self):
+        after_t_th = torch.where(self.dt > self.t_th)[0]
 
-        x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
-        o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th)
-        # o, od = None, None
+        x = self.bezier_trajectory(self.w_x, self.dt, self.t_th)
+
+        if after_t_th.numel() > 0:
+            t = self.dt - self.t_th
+            t = torch.clip(t / self.t_exp, 0, 1)
+            x_expl = torch.lerp(self.trunk_x_lo, self.trunk_x_exp, t)
+
+            x[after_t_th] = x_expl[after_t_th]
+
+        o = self.bezier_trajectory(self.w_o, self.dt, self.t_th_total)
 
         q_des, qd_des = self.ik(x, o, self.old_q_des)
         self.old_q_des = q_des.clone()

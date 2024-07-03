@@ -154,6 +154,10 @@ class ActionsCfg:
                                          thetad_max=4,
                                          phid_min=-4,
                                          phid_max=4,
+                                         xd_mult_min=0,
+                                         xd_mult_max=5,
+                                         l_expl_min=0,
+                                         l_expl_max=0.3,
                                          debug_vis=True,
                                          debug_plot=False)
 

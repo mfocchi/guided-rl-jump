@@ -41,7 +41,7 @@ def reset_robot_state(
     # reset apex, touchdown info
     env.extras['apex'] = {}
     env.extras['touchdown'] = {}
-    env.extras['after_t_th'] = torch.tensor([], device=env.device)
+    env.extras['after_t_th_total'] = torch.tensor([], device=env.device)
     env.extras['actual_lo_config'] = torch.zeros_like(asset.data.root_state_w)
     env.extras['t_th_q'] = torch.zeros_like(asset.data.joint_pos)
     env.extras['apex_q'] = torch.zeros_like(asset.data.joint_pos)
@@ -121,7 +121,7 @@ def detect_apex(
     # Get the apex apex_env_ids from intersections of all conditions
     apex_env_ids = foot_lifted_off_env_ids[(foot_lifted_off_env_ids.view(1, -1) == base_lifted_off_env_ids.view(-1, 1)).any(dim=0)]
     apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == base_negative_lin_vel_env_ids.view(-1, 1)).any(dim=0)]
-    apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == env.extras['after_t_th'].view(-1, 1)).any(dim=0)]
+    apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == env.extras['after_t_th_total'].view(-1, 1)).any(dim=0)]
 
     # Calculate the landing platform default position and orientation
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids]
@@ -157,7 +157,7 @@ def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: 
 
     foot_idx = asset.find_bodies(".*foot")[0]
     trunk_target_z = env.command_manager.get_command("trunk_target")[..., 2].reshape(-1, 1)
-    
+
     net_contact_forces = contact_sensor.data.net_forces_w
 
     low_foot_env_ids = torch.all(asset.data.body_state_w[:, foot_idx, 2] - trunk_target_z <= foot_pos_threshold, dim=1)

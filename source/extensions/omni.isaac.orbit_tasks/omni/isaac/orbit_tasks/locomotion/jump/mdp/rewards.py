@@ -116,7 +116,8 @@ def liftoff_z_regularization(env: RLTaskEnv, limit: float = 0.3) -> torch.Tensor
 def liftoff_position_error(env: RLTaskEnv) -> torch.Tensor:
     # obtain the desired and current positions
 
-    des_lo_pos_w = env.extras["trunk_x_lo"] + env.scene.env_origins
+    # des_lo_pos_w = env.extras["trunk_x_lo"] + env.scene.env_origins
+    des_lo_pos_w = env.extras["trunk_x_exp"] + env.scene.env_origins
     curr_lo_pos_w = env.extras["actual_lo_config"][..., 0:3]
 
     return torch.norm(des_lo_pos_w - curr_lo_pos_w, dim=1)
@@ -135,7 +136,8 @@ def liftoff_orientation_error(env: RLTaskEnv) -> torch.Tensor:
 def liftoff_linear_velocity_error(env: RLTaskEnv) -> torch.Tensor:
     # obtain the desired and current positions
 
-    des_lo_lvel_w = env.extras["trunk_xd_lo"]
+    # des_lo_lvel_w = env.extras["trunk_xd_lo"]
+    des_lo_lvel_w = env.extras["trunk_xd_exp"]
     curr_lo_lvel_w = env.extras["actual_lo_config"][..., 7:10]
 
     return torch.norm(des_lo_lvel_w - curr_lo_lvel_w, dim=1)

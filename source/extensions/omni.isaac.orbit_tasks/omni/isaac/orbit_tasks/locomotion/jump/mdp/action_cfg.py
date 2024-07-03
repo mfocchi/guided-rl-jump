@@ -75,5 +75,15 @@ class BezierCurveActionCfg(ActionTermCfg):
     phid_min: float = MISSING
     phid_max: float = MISSING
 
+    # --explosion phase --
+
+    xd_mult_min: float = MISSING
+    xd_mult_max: float = MISSING
+
+
+    l_expl_min: float = MISSING
+    l_expl_max: float = MISSING
+
+
     debug_vis: bool = False
     debug_plot: bool = False

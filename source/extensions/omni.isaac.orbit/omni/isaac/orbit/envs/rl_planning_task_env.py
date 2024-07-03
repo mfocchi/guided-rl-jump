@@ -62,10 +62,10 @@ class RLPlanningTaskEnv(RLTaskEnv):
             running_reward = self.running_reward_manager.compute(dt=1).clone()
             self.running_reward_manager.reset()
 
-            # Ignore running reward after t_th
-            after_t_th_ids = self.extras.get('after_t_th')
-            if len(after_t_th_ids) > 0:
-                running_reward[after_t_th_ids] = 0
+            # Ignore running reward after t_th+t_expl
+            after_t_th_total_ids = self.extras.get('after_t_th_total')
+            if len(after_t_th_total_ids) > 0:
+                running_reward[after_t_th_total_ids] = 0
 
             self.running_reward_buf += running_reward
 
