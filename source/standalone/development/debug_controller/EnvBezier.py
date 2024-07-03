@@ -184,14 +184,14 @@ class BezierCurveAction():
         x_theta = self.map_range(actions[..., 1], self.min_action, self.max_action, self.x_theta_min, self.x_theta_max)
         x_r = self.map_range(actions[..., 2], self.min_action, self.max_action, self.x_r_min, self.x_r_max)
 
-        trunk_x_lo = self.torch_sph2cart(torch.stack((x_xd_phi, x_theta, x_r), dim=1))
+        self.trunk_x_lo = self.torch_sph2cart(torch.stack((x_xd_phi, x_theta, x_r), dim=1))
 
         # Calculate Xd_lo
 
         xd_theta = self.map_range(actions[..., 3], self.min_action, self.max_action, self.xd_theta_min, self.xd_theta_max)
         xd_r = self.map_range(actions[..., 4], self.min_action, self.max_action, self.xd_r_min, self.xd_r_max)
 
-        trunk_xd_lo = self.torch_sph2cart(torch.stack((x_xd_phi, xd_theta, xd_r), dim=1))
+        self.trunk_xd_lo = self.torch_sph2cart(torch.stack((x_xd_phi, xd_theta, xd_r), dim=1))
 
         # Calculate Phi_lo
 
@@ -199,7 +199,7 @@ class BezierCurveAction():
         theta = self.map_range(actions[..., 6], self.min_action, self.max_action, self.theta_min, self.theta_max)
         phi = self.map_range(actions[..., 7], self.min_action, self.max_action, self.phi_min, self.phi_max)
 
-        trunk_o_lo = torch.stack((psi, theta, phi), dim=1)
+        self.trunk_o_lo = torch.stack((psi, theta, phi), dim=1)
 
         # Calculate Phid_lo
 
@@ -207,19 +207,50 @@ class BezierCurveAction():
         thetad = self.map_range(actions[..., 9], self.min_action, self.max_action, self.thetad_min, self.thetad_max)
         phid = self.map_range(actions[..., 10], self.min_action, self.max_action, self.phid_min, self.phid_max)
 
-        trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
+        self.trunk_od_lo = torch.stack((psid, thetad, phid), dim=1)
 
-        print(self.t_th, trunk_x_lo, trunk_xd_lo, trunk_o_lo, trunk_od_lo)
+        # TODO: implement scaling
+        xd_mult = actions[..., 11]
+        l_expl = actions[..., 12]
 
-        self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
-        self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
+        # NOTE: debug override
+        self.trunk_x_lo = torch.tensor([[0., 0., 0.2]], device="cuda")
+        self.trunk_xd_lo = torch.tensor([[0, 0, 1.]], device="cuda")
+        self.trunk_o_lo = torch.tensor([[0, -0.1, 0]], device="cuda")
+        self.trunk_od_lo = torch.tensor([[0, 0., 0]], device="cuda")
+        self.t_th = torch.tensor([[0.5]], device="cuda")
+
+        self.trunk_xd_exp = self.trunk_xd_lo * xd_mult
+        trunk_xd_0_un = self.trunk_xd_lo / torch.norm(self.trunk_xd_lo)
+
+        self.trunk_x_exp = self.trunk_x_lo + trunk_xd_0_un * l_expl
+
+        vf_n = torch.norm(self.trunk_xd_exp)
+        v0_n = torch.norm(self.trunk_xd_lo)
+        sf_n = torch.norm(self.trunk_x_exp)
+        s0_n = torch.norm(self.trunk_x_lo)
+
+        a = 0.5 * ((torch.pow(vf_n, 2) - torch.pow(v0_n, 2)) / (sf_n - s0_n))
+
+        self.t_exp = (vf_n - v0_n) / a
+        self.t_th_total = self.t_th + self.t_exp
+
+        print(f"t_th: {self.t_th}, x_lo: {self.trunk_x_lo}, xd_lo: {self.trunk_xd_lo}\n\
+              o_lo: {self.trunk_o_lo}, od_lo: {self.trunk_od_lo}, xd_mult: {xd_mult}, l_exp:{l_expl}\n\
+                x_exp: {self.trunk_x_exp}, xd_exp: {self.trunk_xd_exp}, t_exp: {self.t_exp}")
+
+        self.w_x, self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, self.trunk_x_lo, self.trunk_xd_lo, self.t_th)
+        self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, self.trunk_o_lo, self.trunk_od_lo, self.t_th_total)
 
     def eval_bezier(self, dt):
+        if dt < self.t_th:
+            x, _ = self.bezier_trajectory(self.w_x, self.w_xd, dt, self.t_th)
+        else:
+            t = dt - self.t_th
+            x = torch.lerp(self.trunk_x_lo, self.trunk_x_exp, t / self.t_exp)
+        o, _ = self.bezier_trajectory(self.w_o, self.w_od, dt, self.t_th_total)
 
-        x, xd = self.bezier_trajectory(self.w_x, self.w_xd, dt, self.t_th)
-        o, od = self.bezier_trajectory(self.w_o, self.w_od, dt, self.t_th)
-
-        return x, xd, o, od
+        return x, o
 
 
 class EnvBezier():
@@ -348,7 +379,7 @@ class EnvBezier():
         self.rl_diff_ik_controller.reset()
         self.rr_diff_ik_controller.reset()
 
-    def plot_trunk_traj(self, actual_traj, des_traj, t_start, title=""):
+    def plot_trunk_traj(self, actual_traj, des_traj, t_th, title=""):
         fig, ax = plt.subplots(3, 1, figsize=(10, 8))
         fig.suptitle(title)
 
@@ -356,30 +387,30 @@ class EnvBezier():
         des_traj = torch.stack(des_traj, dim=1)[0]
 
         time = np.arange(0, len(des_traj)) * 0.005
+        time_act = np.arange(0, len(actual_traj)) * 0.005
         z_min = torch.argmin(des_traj[..., 2])
         t_zmin = time[z_min]
 
-        ax[0].plot(time, actual_traj[..., 0], color="blue", label="actual")
+        ax[0].plot(time_act, actual_traj[..., 0], color="blue", label="actual")
         ax[0].plot(time, des_traj[..., 0], color="red", label="desired")
 
-        ax[1].plot(time, actual_traj[..., 1], color="blue")
+        ax[1].plot(time_act, actual_traj[..., 1], color="blue")
         ax[1].plot(time, des_traj[..., 1], color="red")
 
-        ax[2].plot(time, actual_traj[..., 2], color="blue")
+        ax[2].plot(time_act, actual_traj[..., 2], color="blue")
         ax[2].plot(time, des_traj[..., 2], color="red")
         ax[2].axhline(0.15, color='purple')
         ax[2].axvline(t_zmin, color='gray')
 
-        if t_start:
-            ax[0].axvline(t_start, color='black')
-            ax[1].axvline(t_start, color='black')
-            ax[2].axvline(t_start, color='black')
+        ax[0].axvline(t_th, color='orange')
+        ax[1].axvline(t_th, color='orange')
+        ax[2].axvline(t_th, color='orange')
 
         ax[0].legend()
 
         return t_zmin
 
-    def plot_traj(self, actual_traj, des_traj, title=""):
+    def plot_traj(self, actual_traj, des_traj, t_th, title=""):
         fig, ax = plt.subplots(3, 4, figsize=(10, 8))
         fig.suptitle(title)
 
@@ -392,12 +423,15 @@ class EnvBezier():
         ax[0, 0].set_title("FL")
         ax[0, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[0]], color="blue", label="actual")
         ax[0, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[0]], color="red", label="desired")
+        ax[0, 0].axvline(t_th, color='orange')
 
         ax[1, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[1]], color="blue")
         ax[1, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[1]], color="red")
+        ax[1, 0].axvline(t_th, color='orange')
 
         ax[2, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[2]], color="blue")
         ax[2, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[2]], color="red")
+        ax[2, 0].axvline(t_th, color='orange')
 
         ax[0, 0].legend()
 
@@ -405,36 +439,46 @@ class EnvBezier():
         ax[0, 1].set_title("FR")
         ax[0, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[0]], color="blue")
         ax[0, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[0]], color="red")
+        ax[0, 1].axvline(t_th, color='orange')
 
         ax[1, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[1]], color="blue")
         ax[1, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[1]], color="red")
+        ax[1, 1].axvline(t_th, color='orange')
 
         ax[2, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[2]], color="blue")
         ax[2, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[2]], color="red")
+        ax[2, 1].axvline(t_th, color='orange')
 
         # RL
         ax[0, 2].set_title("RL")
         ax[0, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[0]], color="blue")
         ax[0, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[0]], color="red")
+        ax[0, 2].axvline(t_th, color='orange')
 
         ax[1, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[1]], color="blue")
         ax[1, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[1]], color="red")
+        ax[1, 2].axvline(t_th, color='orange')
 
         ax[2, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[2]], color="blue")
         ax[2, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[2]], color="red")
+        ax[2, 2].axvline(t_th, color='orange')
 
         # RR
         ax[0, 3].set_title("RR")
         ax[0, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[0]], color="blue")
         ax[0, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[0]], color="red")
+        ax[0, 3].axvline(t_th, color='orange')
 
         ax[1, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[1]], color="blue")
         ax[1, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[1]], color="red")
+        ax[1, 3].axvline(t_th, color='orange')
 
         ax[2, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[2]], color="blue")
         ax[2, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[2]], color="red")
+        ax[2, 3].axvline(t_th, color='orange')
 
-    def plot_grf_traj(self, grf_traj, t_start, t_min, names, title="grf"):
+
+    def plot_grf_traj(self, grf_traj, t_min, names, t_th, title="grf"):
 
         fig, ax = plt.subplots(4, 1, figsize=(10, 8))
         fig.suptitle(title)
@@ -467,11 +511,10 @@ class EnvBezier():
         ax[3].set_ylabel(names[3])
         ax[3].axvline(t_min, color='gray')
 
-        if t_start:
-            ax[0].axvline(t_start, color='black')
-            ax[1].axvline(t_start, color='black')
-            ax[2].axvline(t_start, color='black')
-            ax[3].axvline(t_start, color='black')
+        ax[0].axvline(t_th, color='orange')
+        ax[1].axvline(t_th, color='orange')
+        ax[2].axvline(t_th, color='orange')
+        ax[3].axvline(t_th, color='orange')
 
         ax[0].legend()
 
@@ -479,8 +522,8 @@ class EnvBezier():
         fig.suptitle(f"avg z {title}")
         plt.plot(time, torch.mean(actual_traj[..., 2], dim=1), color="purple")
         plt.axvline(t_min, color='gray')
-        if t_start:
-            plt.axvline(t_start, color='black')
+        plt.axvline(t_th, color='orange')
+
 
     def run_simulator(self):
         """Runs the simulation loop."""
@@ -508,7 +551,7 @@ class EnvBezier():
         grf_traj = []
 
         sim_time = 0.0
-        start_time = 0.5
+        start_time = 0.0
         max_episode_time = 2 + start_time
         count = 0
 
@@ -519,8 +562,8 @@ class EnvBezier():
         trunk_o_0 = torch.stack(euler_xyz_from_quat(robot.data.root_state_w[:, 3:7].clone()), dim=1)
         trunk_od_0 = robot.data.root_ang_vel_b.clone()
 
-        action = torch.tensor([[0.2514, -1.2007, 3.0652, -2.5994, -1.2312, -0.2063, -0.4556, -0.0423, -0.0882, 1.8352, -0.4276]], device=self.sim.device)
-        target = torch.tensor([[0.5, 0, 0]], device=self.sim.device)
+        action = torch.tensor([[0.2514, -1.2007, 3.0652, -2.5994, -1.2312, -0.2063, -0.4556, -0.0423, -0.0882, 1.8352, -0.4276, 3., 0.2]], device=self.sim.device)
+        target = torch.tensor([[0.0, 0, 0]], device=self.sim.device)
 
         self.bezierAction.process_actions(robot, trunk_x_0, trunk_xd_0, trunk_o_0, trunk_od_0, action, target)
 
@@ -530,13 +573,15 @@ class EnvBezier():
 
                 if sim_time > max_episode_time:
 
-                    print(robot.data.root_state_w[..., :7])
+                    print(f"landing: {robot.data.root_state_w[..., :7]}")
 
-                    # self.plot_traj(q_actual_traj, q_des_traj, "q")
-                    # self.plot_traj(qd_actual_traj, qd_des_traj, "qd")
-                    # self.plot_traj(tau_actual_traj, tau_des_traj, "tau")
-                    t_min = self.plot_trunk_traj(trunk_actual_traj, trunk_des_traj, start_time, "trunk")
-                    self.plot_grf_traj(grf_traj, start_time, t_min, contact_sensor.body_names, "grf z")
+                    t_th = self.bezierAction.t_th.detach().cpu()
+
+                    self.plot_traj(q_actual_traj, q_des_traj, t_th, "q")
+                    self.plot_traj(qd_actual_traj, qd_des_traj, t_th, "qd")
+                    self.plot_traj(tau_actual_traj, tau_des_traj, t_th, "tau")
+                    t_min = self.plot_trunk_traj(trunk_actual_traj, trunk_des_traj, t_th, "trunk")
+                    self.plot_grf_traj(grf_traj, t_min, contact_sensor.body_names, t_th, "grf z")
 
                     plt.show()
 
@@ -569,11 +614,9 @@ class EnvBezier():
                 if sim_time > start_time:
                     self.dt = sim_time - start_time
 
-                x, xd, o, od = self.bezierAction.eval_bezier(self.dt)
-
-                trunk_des[..., 0:3] = x
-
-                if self.dt <= self.bezierAction.t_th:
+                if self.dt <= self.bezierAction.t_th_total:
+                    x, o = self.bezierAction.eval_bezier(self.dt)
+                    trunk_des[..., 0:3] = x
                     q_des, qd_des = self.ik(robot, x, o, old_q_des)
                     old_q_des = q_des.clone()
                 else:
@@ -595,7 +638,7 @@ class EnvBezier():
                 self.scene.update(self.sim_dt)
 
                 # if sim_time > start_time and self.dt <= self.bezierAction.t_th:
-                if self.dt <= self.bezierAction.t_th:
+                if self.dt <= self.bezierAction.t_th_total:
 
                     q_actual_traj.append(robot.data.joint_pos.clone().detach().cpu())
                     q_des_traj.append(q_des.detach().cpu())
@@ -606,10 +649,11 @@ class EnvBezier():
                     tau_actual_traj.append(robot.data.applied_torque.clone().detach().cpu())
                     tau_des_traj.append(robot.data.computed_torque.clone().detach().cpu())
 
-                    trunk_actual_traj.append(robot.data.root_state_w[..., 0:3].clone().detach().cpu())
                     trunk_des_traj.append(trunk_des[..., 0:3].detach().cpu())
 
                     grf_traj.append(contact_sensor.data.net_forces_w.clone().detach().cpu())
+
+                trunk_actual_traj.append(robot.data.root_state_w[..., 0:3].clone().detach().cpu())
 
             print("Simulation concluded :)")
             break

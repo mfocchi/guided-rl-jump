@@ -15,7 +15,7 @@ class SceneCfg(InteractiveSceneCfg):
     ground = AssetBaseCfg(
         prim_path="/World/defaultGroundPlane",
         spawn=sim_utils.GroundPlaneCfg(
-            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu)
+            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu, dynamic_friction=mu)
         ),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0)),
     )
@@ -37,7 +37,7 @@ class SceneCfg(InteractiveSceneCfg):
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
             activate_contact_sensors=True,
-            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu),
+            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu, dynamic_friction=mu),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.2, 0.0)),
         ),
         init_state=RigidObjectCfg.InitialStateCfg(pos=(-0.05, 0.0, -0.025))
