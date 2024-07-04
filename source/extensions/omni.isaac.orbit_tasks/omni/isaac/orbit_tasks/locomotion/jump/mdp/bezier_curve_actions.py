@@ -514,16 +514,14 @@ class BezierCurveAction(ActionTerm):
 
         self._env.extras["trunk_xd_exp"] = self.trunk_xd_exp
 
-        print(self.trunk_x_exp)
-
         vf_n = torch.norm(self.trunk_xd_exp, dim=1)
         v0_n = torch.norm(trunk_xd_lo, dim=1)
         sf_n = torch.norm(self.trunk_x_exp, dim=1)
         s0_n = torch.norm(trunk_x_lo, dim=1)
 
-        a = 0.5 * ((torch.pow(vf_n, 2) - torch.pow(v0_n, 2)) / (sf_n - s0_n))
+        a = 0.5 * ((torch.pow(vf_n, 2) - torch.pow(v0_n, 2)) / ((sf_n - s0_n) + 1e-15))
 
-        self.t_exp = ((vf_n - v0_n) / a).reshape(-1, 1)
+        self.t_exp = ((vf_n - v0_n) / (a + 1e-15)).reshape(-1, 1)
         self.t_th_total = self.t_th + self.t_exp
 
         self.trunk_tg_vis.visualize(trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3] + self._env.scene.env_origins,

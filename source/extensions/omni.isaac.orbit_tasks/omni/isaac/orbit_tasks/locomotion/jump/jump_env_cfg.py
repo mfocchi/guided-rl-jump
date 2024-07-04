@@ -26,12 +26,12 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 # External variables definition
 mu = 1.0
 time_step = 0.005
-pos_x = (-0.5, 0.5)
-pos_y = (-0.5, 0.5)
+pos_x = (-1, 1)
+pos_y = (-1, 1)
 pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
 pitch = (0, 0)
-yaw = (-np.pi, np.pi)
+yaw = (0, 0)
 
 activate_curriculum = False
 
@@ -132,8 +132,8 @@ class ActionsCfg:
                                          min_action=-5,
                                          max_action=5,
                                          lerp_time=0.1,
-                                         t_th_min=0.3,
-                                         t_th_max=1,
+                                         t_th_min=0.1,
+                                         t_th_max=0.8,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
                                          x_r_min=0.2,
@@ -154,7 +154,7 @@ class ActionsCfg:
                                          thetad_max=4,
                                          phid_min=-4,
                                          phid_max=4,
-                                         xd_mult_min=0,
+                                         xd_mult_min=1,
                                          xd_mult_max=5,
                                          l_expl_min=0,
                                          l_expl_max=0.3,
@@ -299,10 +299,10 @@ class NegativeRewardsCfg:
         weight=-1,
     )
 
-    liftoff_orientation_error = RewTerm(
-        func=mdp.liftoff_orientation_error,
-        weight=-1,
-    )
+    # liftoff_orientation_error = RewTerm(
+    #     func=mdp.liftoff_orientation_error,
+    #     weight=-1,
+    # )
 
     liftoff_linear_velocity_error = RewTerm(
         func=mdp.liftoff_linear_velocity_error,
@@ -321,11 +321,11 @@ class NegativeRewardsCfg:
         weight=-0.1,
     )
 
-    t_th_regularization = RewTerm(
-        func=mdp.action_regularization,
-        params={"action": 0, "limit": 0},
-        weight=-0.01,
-    )
+    # t_th_regularization = RewTerm(
+    #     func=mdp.action_regularization,
+    #     params={"action": 0, "limit": 0},
+    #     weight=-0.01,
+    # )
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,

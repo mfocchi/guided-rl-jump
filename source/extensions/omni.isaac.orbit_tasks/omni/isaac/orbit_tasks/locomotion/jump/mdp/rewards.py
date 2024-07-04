@@ -109,7 +109,8 @@ def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: Scene
 
 def liftoff_z_regularization(env: RLTaskEnv, limit: float = 0.3) -> torch.Tensor:
     
-    des_lo_z = env.extras["trunk_x_lo"][..., 2]
+    # des_lo_z = env.extras["trunk_x_lo"][..., 2]
+    des_lo_z = env.extras["trunk_x_exp"][..., 2]
     return torch.square(des_lo_z - limit)
 
 
