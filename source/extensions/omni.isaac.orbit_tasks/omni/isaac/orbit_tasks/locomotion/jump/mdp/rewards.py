@@ -98,17 +98,18 @@ def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: Scene
 
     target_error = quat_error_magnitude(curr_quat_w, des_quat_w)
 
-    print(target_error)
+    # print(target_error)
 
-    cost = 1.0 / ((coeff * target_error) + 1e-12)
-    cost = torch.log(1 + cost)
-    cost = torch.clip((((cost + (dist_coeff * torch.exp(target_distance))) * torch.pow((1 - target_error), err_coeff)) - bias), 0, torch.inf)
+    # cost = 1.0 / ((coeff * target_error) + 1e-12)
+    # cost = torch.log(1 + cost)
+    # cost = torch.clip((((cost + (dist_coeff * torch.exp(target_distance))) * torch.pow((1 - target_error), err_coeff)) - bias), 0, torch.inf)
 
-    return cost
+    # return cost
+    return target_error
 
 
 def liftoff_z_regularization(env: RLTaskEnv, limit: float = 0.3) -> torch.Tensor:
-    
+
     # des_lo_z = env.extras["trunk_x_lo"][..., 2]
     des_lo_z = env.extras["trunk_x_exp"][..., 2]
     return torch.square(des_lo_z - limit)
@@ -133,6 +134,7 @@ def liftoff_orientation_error(env: RLTaskEnv) -> torch.Tensor:
     target_error = quat_error_magnitude(des_lo_o_w, curr_lo_o_w)
 
     return target_error
+
 
 def liftoff_linear_velocity_error(env: RLTaskEnv) -> torch.Tensor:
     # obtain the desired and current positions
@@ -171,6 +173,18 @@ def friction_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, mu: float = 
     #  #evns,#sensors (n, 4)
     # sum along each robot to get the total violation cost
     costs = torch.sum(computeActivationFunction('linear', residuals, -torch.inf, 0.0), dim=1)
+
+    return costs
+
+
+def contact_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, contact_threshold: float = 1) -> torch.Tensor:
+
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    net_contact_forces = contact_sensor.data.net_forces_w
+
+    costs = ~torch.all(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1).reshape(-1, 1)
+    costs = torch.sum(costs, dim=1)
 
     return costs
 

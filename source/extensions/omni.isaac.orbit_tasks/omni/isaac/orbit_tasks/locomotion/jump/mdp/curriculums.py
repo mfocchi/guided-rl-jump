@@ -24,11 +24,11 @@ if TYPE_CHECKING:
     from omni.isaac.orbit.envs import RLTaskEnv
 
 
-def modify_maximum_distance(env: RLTaskEnv, env_ids: Sequence[int], term_name: str, num_steps: int, pos_x, pos_y, pos_z, roll, pitch, yaw, activate: bool = False):
+def modify_maximum_distance(env: RLTaskEnv, env_ids: Sequence[int], term_name: str, start: float, num_steps: int, pos_x, pos_y, pos_z, roll, pitch, yaw, activate: bool = False):
 
     if activate:
         if env.common_step_counter <= num_steps:
-            coeff = float(env.common_step_counter / num_steps)
+            coeff = start + np.clip((env.common_step_counter / num_steps) - start, 0, 1 - start)
 
             curr_pos_x = coeff * np.array(pos_x)
             curr_pos_y = coeff * np.array(pos_y)

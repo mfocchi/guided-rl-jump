@@ -33,7 +33,7 @@ roll = (0.0, 0.0)
 pitch = (0, 0)
 yaw = (0, 0)
 
-activate_curriculum = False
+activate_curriculum = True
 
 ##
 # Scene definition
@@ -264,6 +264,15 @@ class RunningRewardsCfg:
         }
     )
 
+    contact_constraint = RewTerm(
+        func=mdp.contact_constraint,
+        weight=-0.01,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
+            "contact_threshold": 1
+        }
+    )
+
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
 
 
@@ -279,15 +288,15 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 1., "dist_coeff": 2., "err_coeff": 1., "bias": 3},
     )
 
-    target_orientation_error = RewTerm(
-        func=mdp.target_orientation_error,
-        weight=0.2,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 50, "dist_coeff": 2., "err_coeff": 1., "bias": 2},
-    )
-
 
 @configclass
 class NegativeRewardsCfg:
+
+    target_orientation_error = RewTerm(
+        func=mdp.target_orientation_error,
+        weight=-10,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 50, "dist_coeff": 2., "err_coeff": 1., "bias": 2},
+    )
 
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
@@ -299,10 +308,10 @@ class NegativeRewardsCfg:
         weight=-1,
     )
 
-    # liftoff_orientation_error = RewTerm(
-    #     func=mdp.liftoff_orientation_error,
-    #     weight=-1,
-    # )
+    liftoff_orientation_error = RewTerm(
+        func=mdp.liftoff_orientation_error,
+        weight=-1,
+    )
 
     liftoff_linear_velocity_error = RewTerm(
         func=mdp.liftoff_linear_velocity_error,
@@ -347,6 +356,7 @@ class CurriculumCfg:
 
     action_rate = CurrTerm(
         func=mdp.modify_maximum_distance, params={"term_name": "trunk_target",
+                                                  "start": 0.2,
                                                   "num_steps": 500,
                                                   "pos_x": pos_x,
                                                   "pos_y": pos_y,
