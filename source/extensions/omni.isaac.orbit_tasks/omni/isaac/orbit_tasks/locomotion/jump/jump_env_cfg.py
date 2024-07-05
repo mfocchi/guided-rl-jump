@@ -33,7 +33,7 @@ roll = (0.0, 0.0)
 pitch = (0, 0)
 yaw = (0, 0)
 
-activate_curriculum = True
+activate_curriculum = False
 
 ##
 # Scene definition
@@ -216,7 +216,7 @@ class EventCfg:
         mode="interval",
         interval_range_s=(0., 0.),
         params={"base_lin_vel_threshold": -0.5,
-                "foot_z_threshold": 0.04,
+                "foot_z_threshold": 0.03,
                 "base_z_threshold": 0.3,
                 "base_heigth": 0.3}
     )
@@ -330,11 +330,12 @@ class NegativeRewardsCfg:
         weight=-0.1,
     )
 
-    # t_th_regularization = RewTerm(
-    #     func=mdp.action_regularization,
-    #     params={"action": 0, "limit": 0},
-    #     weight=-0.01,
-    # )
+    singularity_penalty = RewTerm(
+        func=mdp.singularity_penalty,
+        params={"x_limit": 0.15, "y_limit": 0.1, "z_limit": 0.4},
+        weight=-10,
+    )
+
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,

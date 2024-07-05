@@ -115,6 +115,21 @@ def liftoff_z_regularization(env: RLTaskEnv, limit: float = 0.3) -> torch.Tensor
     return torch.square(des_lo_z - limit)
 
 
+def singularity_penalty(env: RLTaskEnv, x_limit: float = 0.1, y_limit: float = 0.1, z_limit: float = 0.4) -> torch.Tensor:
+
+    x = torch.abs(env.extras["trunk_x_exp"][..., 0])
+    y = torch.abs(env.extras["trunk_x_exp"][..., 1])
+    z = torch.abs(env.extras["trunk_x_exp"][..., 2])
+
+    x_cost = computeActivationFunction('linear', x, -torch.inf, x_limit)
+    y_cost = computeActivationFunction('linear', y, -torch.inf, y_limit)
+    z_cost = computeActivationFunction('linear', z, -torch.inf, z_limit)
+
+    costs = x_cost + y_cost + z_cost
+
+    return costs
+
+
 def liftoff_position_error(env: RLTaskEnv) -> torch.Tensor:
     # obtain the desired and current positions
 
