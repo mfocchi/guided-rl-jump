@@ -33,6 +33,9 @@ roll = (0.0, 0.0)
 pitch = (0, 0)
 yaw = (0, 0)
 
+min_action = -5
+max_action = 5
+
 activate_curriculum = False
 
 ##
@@ -129,8 +132,8 @@ class ActionsCfg:
                                          rl_body_names=["RL_foot"],
                                          rr_joint_names=["RR.*"],
                                          rr_body_names=["RR_foot"],
-                                         min_action=-5,
-                                         max_action=5,
+                                         min_action=min_action,
+                                         max_action=max_action,
                                          lerp_time=0.1,
                                          t_th_min=0.1,
                                          t_th_max=0.8,
@@ -294,7 +297,7 @@ class NegativeRewardsCfg:
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=-1000,
+        weight=-10000,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 50, "dist_coeff": 2., "err_coeff": 1., "bias": 2},
     )
 
@@ -332,15 +335,20 @@ class NegativeRewardsCfg:
 
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
-        params={"x_limit": 0.15, "y_limit": 0.1, "z_limit": 0.4},
-        weight=-10,
+        params={"x_limit": 0.1, "y_limit": 0.1, "z_limit": 0.4},
+        weight=-100,
     )
-
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,
-        params={"min_action": -5, "max_action": 5},
+        params={"min_action": min_action, "max_action": max_action},
         weight=-1,
+    )
+
+    t_th_total_regularization = RewTerm(
+        func=mdp.t_th_total_regularization,
+        params={"limit": 0.65},
+        weight=-10,
     )
 
 

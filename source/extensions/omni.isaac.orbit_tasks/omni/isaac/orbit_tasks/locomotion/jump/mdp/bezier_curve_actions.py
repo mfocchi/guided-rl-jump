@@ -523,6 +523,7 @@ class BezierCurveAction(ActionTerm):
 
         self.t_exp = ((vf_n - v0_n) / (a + 1e-15)).reshape(-1, 1)
         self.t_th_total = self.t_th + self.t_exp
+        self._env.extras["t_th_total"] = self.t_th_total
 
         self.trunk_tg_vis.visualize(trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3] + self._env.scene.env_origins,
                                     self._env.command_manager.get_command("trunk_target")[:, 3:7])

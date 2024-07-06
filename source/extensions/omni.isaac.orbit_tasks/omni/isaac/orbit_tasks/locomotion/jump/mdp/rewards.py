@@ -115,6 +115,12 @@ def liftoff_z_regularization(env: RLTaskEnv, limit: float = 0.3) -> torch.Tensor
     return torch.square(des_lo_z - limit)
 
 
+def t_th_total_regularization(env: RLTaskEnv, limit: float = 0.65) -> torch.Tensor:
+
+    t_th_total = env.extras["t_th_total"].flatten()
+    return torch.square(t_th_total - limit)
+
+
 def singularity_penalty(env: RLTaskEnv, x_limit: float = 0.1, y_limit: float = 0.1, z_limit: float = 0.4) -> torch.Tensor:
 
     x = torch.abs(env.extras["trunk_x_exp"][..., 0])
