@@ -327,7 +327,7 @@ class NegativeRewardsCfg:
     liftoff_z_regularization = RewTerm(
         func=mdp.liftoff_z_regularization,
         params={"limit": 0.35},
-        weight=-0.1,
+        weight=-1,
     )
 
     singularity_penalty = RewTerm(
