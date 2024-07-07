@@ -26,12 +26,12 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 # External variables definition
 mu = 1.0
 time_step = 0.005
-pos_x = (-1, 1)
-pos_y = (-1, 1)
+pos_x = (-0.5, 0.8)
+pos_y = (-0.5, 0.5)
 pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
 pitch = (0, 0)
-yaw = (0, 0)
+yaw = (-np.pi / 4, np.pi / 4)
 
 min_action = -5
 max_action = 5
@@ -297,7 +297,8 @@ class NegativeRewardsCfg:
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=-10000,
+        weight=-10,
+        # weight=-10000,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 50, "dist_coeff": 2., "err_coeff": 1., "bias": 2},
     )
 
@@ -308,7 +309,7 @@ class NegativeRewardsCfg:
 
     liftoff_position_error = RewTerm(
         func=mdp.liftoff_position_error,
-        weight=-1,
+        weight=-10,
     )
 
     liftoff_orientation_error = RewTerm(
@@ -318,12 +319,12 @@ class NegativeRewardsCfg:
 
     liftoff_linear_velocity_error = RewTerm(
         func=mdp.liftoff_linear_velocity_error,
-        weight=-0.01,
+        weight=-0.1,
     )
 
     liftoff_angular_velocity_error = RewTerm(
         func=mdp.liftoff_angular_velocity_error,
-        weight=-0.01,
+        weight=-0.1,
     )
 
     # experimental, regularize z of the lift-off
@@ -348,7 +349,7 @@ class NegativeRewardsCfg:
     t_th_total_regularization = RewTerm(
         func=mdp.t_th_total_regularization,
         params={"limit": 0.65},
-        weight=-10,
+        weight=-1,
     )
 
 
