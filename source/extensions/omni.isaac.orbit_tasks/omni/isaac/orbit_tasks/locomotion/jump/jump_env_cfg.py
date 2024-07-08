@@ -28,7 +28,7 @@ mu = 1.0
 time_step = 0.005
 pos_x = (-0.5, 0.8)
 pos_y = (-0.5, 0.5)
-pos_z = (0.0, 0.2)
+pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
 pitch = (0, 0)
 yaw = (0, 0)
@@ -298,7 +298,7 @@ class NegativeRewardsCfg:
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=-100,
+        weight=-1,
         # weight=-10000,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 50, "dist_coeff": 2., "err_coeff": 1., "bias": 2},
     )
