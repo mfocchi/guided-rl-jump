@@ -137,7 +137,7 @@ class ActionsCfg:
                                          max_action=max_action,
                                          lerp_time=0.1,
                                          t_th_min=0.1,
-                                         t_th_max=0.8,
+                                         t_th_max=0.7,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
                                          x_r_min=0.2,
@@ -145,7 +145,7 @@ class ActionsCfg:
                                          xd_theta_min=np.pi / 6,
                                          xd_theta_max=np.pi / 2,
                                          xd_r_min=0.1,
-                                         xd_r_max=5,
+                                         xd_r_max=3,
                                          psi_min=-np.pi / 4,
                                          psi_max=np.pi / 4,
                                          theta_min=-np.pi / 4,
@@ -162,7 +162,7 @@ class ActionsCfg:
                                          xd_mult_max=5,
                                          l_expl_min=0,
                                          l_expl_max=0.3,
-                                         debug_vis=True,
+                                         debug_vis=False,
                                          debug_plot=False)
 
 
@@ -256,7 +256,7 @@ class RunningRewardsCfg:
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-0.01
+        weight=-0.001
     )
 
     friction_constraint = RewTerm(
@@ -298,7 +298,7 @@ class NegativeRewardsCfg:
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=-10,
+        weight=-100,
         # weight=-10000,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 50, "dist_coeff": 2., "err_coeff": 1., "bias": 2},
     )
@@ -338,7 +338,7 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": 0.1, "y_limit": 0.1, "z_limit": 0.4},
-        weight=-100,
+        weight=-1000,
     )
 
     action_limit_penalization = RewTerm(
@@ -400,7 +400,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.episode_length_s = 2.0
+        self.episode_length_s = 1.5
         self.sim.dt = time_step
         self.decimation = 1
         # simulation settings

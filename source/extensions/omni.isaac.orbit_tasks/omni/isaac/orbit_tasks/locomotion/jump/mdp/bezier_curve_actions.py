@@ -545,6 +545,7 @@ class BezierCurveAction(ActionTerm):
             print(f"Command: {self._env.command_manager.get_command('trunk_target')}")
             print(f"Action: {self._raw_actions}")
             print(f"Processed action: {self._processed_actions}")
+            print(f"{xd_mult}, {l_expl}")
             self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
 
             # print(f"x_theta, x_r: { x_theta} , {x_r}")
