@@ -28,10 +28,11 @@ mu = 1.0
 time_step = 0.005
 pos_x = (-0.5, 0.8)
 pos_y = (-0.5, 0.5)
-pos_z = (0.0, 0.0)
+pos_z = (0.0, 0.2)
 roll = (0.0, 0.0)
 pitch = (0, 0)
-yaw = (-np.pi / 4, np.pi / 4)
+yaw = (0, 0)
+# yaw = (-np.pi / 4, np.pi / 4)
 
 min_action = -5
 max_action = 5
@@ -346,11 +347,11 @@ class NegativeRewardsCfg:
         weight=-1,
     )
 
-    t_th_total_regularization = RewTerm(
-        func=mdp.t_th_total_regularization,
-        params={"limit": 0.65},
-        weight=-1,
-    )
+    # t_th_total_regularization = RewTerm(
+    #     func=mdp.t_th_total_regularization,
+    #     params={"limit": 0.65},
+    #     weight=-1,
+    # )
 
 
 @ configclass
