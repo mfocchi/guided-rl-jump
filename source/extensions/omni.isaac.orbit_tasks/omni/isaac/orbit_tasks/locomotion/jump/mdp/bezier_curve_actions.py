@@ -105,6 +105,8 @@ class BezierCurveAction(ActionTerm):
         self.q_0 = self._asset.data.default_joint_pos.clone()[0]
         self.q_0_lo = torch.tensor([0.2187, -0.2191, 0.2343, -0.2364, 1.3717, 1.3716, 1.6770, 1.6784, -2.4063, -2.4061, -2.2808, -2.2778], device=self.device)
 
+        self.default_stiffness = self._asset.actuators["base_legs"].stiffness[0, 0]
+
         diff_ik_cfg = DifferentialIKControllerCfg(command_type="position", use_relative_mode=False, ik_method="dls")
 
         self.fl_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self.device)
@@ -332,6 +334,7 @@ class BezierCurveAction(ActionTerm):
             q_des[apex_env_ids] = q_0_lerp
 
             self._env.extras['apex_dt'][apex_env_ids] += self.cfg.time_step
+            self._asset.actuators["base_legs"].stiffness[apex_env_ids] = torch.full((1, 12), self.default_stiffness / 2).to(self.device)
 
         return q_des, qd_des
 
@@ -339,11 +342,13 @@ class BezierCurveAction(ActionTerm):
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
     def process_actions(self, actions: torch.Tensor):
-
         # clip current action
         actions = torch.clip(actions, self.min_action, self.max_action)
         # store the raw actions
         self._raw_actions[:] = actions
+
+        # reset stiffness
+        self._asset.actuators["base_legs"].stiffness = torch.full_like(self._asset.actuators["base_legs"].stiffness, self.default_stiffness)
 
         # reset time counter
         self.dt = 0
