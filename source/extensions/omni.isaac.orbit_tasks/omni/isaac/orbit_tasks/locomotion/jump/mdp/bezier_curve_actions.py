@@ -129,22 +129,7 @@ class BezierCurveAction(ActionTerm):
                     ),
                 }))
 
-        if self.cfg.debug_plot:
-            self.queue = Queue()
-            self.plot_process = Process(target=self.plot_trajectory, args=(self.queue,))
-            self.plot_process.start()
-            print("Plotting process has started")
-
         if self.cfg.debug_vis:
-            self.trunk_traj_vis = VisualizationMarkers(
-                VisualizationMarkersCfg(
-                    prim_path="/Visuals/trajectory",
-                    markers={
-                        "frame": sim_utils.UsdFileCfg(
-                            usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/UIElements/frame_prim.usd",
-                            scale=(0.1, 0.1, 0.1),
-                        ),
-                    }))
 
             self.trunk_lo_vis = VisualizationMarkers(
                 VisualizationMarkersCfg(
@@ -269,9 +254,6 @@ class BezierCurveAction(ActionTerm):
         o_quat = quat_from_euler_xyz(o[..., 0], o[..., 1], o[..., 2])
         # o_quat = self._asset.data.default_root_state[:, 3:7].clone()
 
-        if self.cfg.debug_vis:
-            self.trunk_traj_vis.visualize(x, o_quat)
-
         q_des = torch.zeros_like(self._asset.data.default_joint_pos)
 
         root_pose_w = self._asset.data.root_state_w[:, 0:7].clone()
@@ -353,77 +335,10 @@ class BezierCurveAction(ActionTerm):
 
         return q_des, qd_des
 
-    def plot_trajectory(self, queue):
-
-        plt.ion()
-        fig, ax = plt.subplots(3, 1, figsize=(10, 8))
-
-        x_desired = []
-        x_actual = []
-
-        while True:
-            if not queue.empty():
-                data = queue.get()
-
-                if data == "reset":
-                    print("Resetting plot")
-                    ax[0].cla()
-                    ax[1].cla()
-                    ax[2].cla()
-                    x_desired = []
-                    x_actual = []
-                else:
-                    x_d, x_a = data
-
-                    x_desired.append(x_d)
-                    x_actual.append(x_a)
-
-                    x_desired_np = np.stack(x_desired)
-                    x_actual_np = np.stack(x_actual)
-
-                    time = np.arange(0, len(x_desired_np)) * 0.005
-
-                    ax[0].clear()
-                    ax[1].clear()
-                    ax[2].clear()
-
-                    ax[0].plot(time, x_actual_np[..., 0], color='red', label='Actual')
-                    ax[0].plot(time, x_desired_np[..., 0], color='blue', label='Desired')
-                    ax[0].set_ylabel("X")
-                    ax[0].legend()
-
-                    ax[1].plot(time, x_actual_np[..., 1], color='red')
-                    ax[1].plot(time, x_desired_np[..., 1], color='blue')
-                    ax[1].set_ylabel("Y")
-
-                    ax[2].plot(time, x_actual_np[..., 2], color='red')
-                    ax[2].plot(time, x_desired_np[..., 2], color='blue')
-                    ax[2].set_ylabel("Z")
-
-                    ax[2].set_xlabel("Time [s]")
-
-                    plt.show()
-                    plt.pause(0.01)
-
-            # Check if the plot window is closed
-            if not plt.get_fignums():
-                print("Plot window closed. Terminating subprocess.")
-                break
-
-        # Add a small sleep to avoid busy waiting
-        tm.sleep(0.1)
-
-        # Close the plot window before terminating
-        plt.close()
-
     def map_range(self, x, in_min, in_max, out_min, out_max):
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
     def process_actions(self, actions: torch.Tensor):
-
-        if self.cfg.debug_plot:
-            # Reset data
-            self.queue.put("reset")
 
         # clip current action
         actions = torch.clip(actions, self.min_action, self.max_action)
@@ -534,7 +449,7 @@ class BezierCurveAction(ActionTerm):
 
         # apply the affine transformations
         # self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo), dim=1)
-        self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo, trunk_o_lo, trunk_od_lo, self.trunk_x_exp, self.trunk_xd_exp, self.t_exp), dim=1)
+        self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo, trunk_o_lo, trunk_od_lo, xd_mult.reshape(-1, 1), l_expl.reshape(-1, 1), self.trunk_x_exp, self.trunk_xd_exp, self.t_exp), dim=1)
 
         # # Compute t_flight
         # arg = torch.clip(trunk_xd_lo[..., 2] * trunk_xd_lo[..., 2] - 2 * 9.81 * (trunk_tg[..., 2] - trunk_x_lo[..., 2]), 0, torch.inf)
@@ -544,8 +459,18 @@ class BezierCurveAction(ActionTerm):
         if self.cfg.debug_vis:
             print(f"Command: {self._env.command_manager.get_command('trunk_target')}")
             print(f"Action: {self._raw_actions}")
-            print(f"Processed action: {self._processed_actions}")
-            print(f"{xd_mult}, {l_expl}")
+            print(f"Processed action:\n\
+                    t_th: {self._processed_actions[...,0]}\n\
+                    trunk_x_lo: {self._processed_actions[...,1:4]}\n\
+                    trunk_xd_lo: {self._processed_actions[...,4:7]}\n\
+                    trunk_o_lo: {self._processed_actions[...,7:10]}\n\
+                    trunk_od_lo: {self._processed_actions[...,10:13]}\n\
+                    xd_mult: {self._processed_actions[...,13]}\n\
+                    l_expl: {self._processed_actions[...,14]}\n\
+                    trunk_x_exp: {self._processed_actions[...,15:18]}\n\
+                    trunk_xd_exp: {self._processed_actions[...,18:21]}\n\
+                    t_exp: {self._processed_actions[...,21]}\n\
+                    ")
             self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
 
             # print(f"x_theta, x_r: { x_theta} , {x_r}")
@@ -573,20 +498,4 @@ class BezierCurveAction(ActionTerm):
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
 
-        if self.cfg.debug_plot:
-
-            if self.dt < self.t_th[0]:
-                # Collect the current desired and actual positions for plotting
-                desired_pos = x[0].clone().cpu().numpy()
-                actual_pos = self._asset.data.root_state_w[0, 0:3].clone().cpu().numpy()
-
-                # Send the positions to the plotting process
-                self.queue.put((desired_pos, actual_pos))
-
         self.dt += self.cfg.time_step
-
-    def __del__(self):
-        if self.cfg.debug_plot:
-            if self.plot_process.is_alive():
-                self.plot_process.terminate()
-                self.plot_process.join()

@@ -162,8 +162,7 @@ class ActionsCfg:
                                          xd_mult_max=5,
                                          l_expl_min=0,
                                          l_expl_max=0.3,
-                                         debug_vis=False,
-                                         debug_plot=False)
+                                         debug_vis=True)
 
 
 @configclass

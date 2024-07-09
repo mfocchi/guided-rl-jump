@@ -86,4 +86,3 @@ class BezierCurveActionCfg(ActionTermCfg):
 
 
     debug_vis: bool = False
-    debug_plot: bool = False
