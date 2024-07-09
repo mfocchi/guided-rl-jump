@@ -450,7 +450,8 @@ class BezierCurveAction(ActionTerm):
 
         # Compute the weights of bezier curve for position and orientation
         self.w_x = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
-        self.w_o = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
+        # self.w_o = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
+        self.w_o = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th_total)
 
         # apply the affine transformations
         # self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo), dim=1)
