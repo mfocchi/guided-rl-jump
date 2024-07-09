@@ -26,13 +26,13 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 # External variables definition
 mu = 1.0
 time_step = 0.005
-pos_x = (-0.5, 0.8)
-pos_y = (-0.5, 0.5)
-pos_z = (0.0, 0.0)
+pos_x = (-0.6, 0.6)
+pos_y = (-0.6, 0.6)
+pos_z = (0.0, 0.3)
 roll = (0.0, 0.0)
 pitch = (0, 0)
-yaw = (0, 0)
-# yaw = (-np.pi / 4, np.pi / 4)
+# yaw = (0, 0)
+yaw = (-np.pi / 4, np.pi / 4)
 
 min_action = -5
 max_action = 5
@@ -269,14 +269,14 @@ class RunningRewardsCfg:
 
     contact_constraint = RewTerm(
         func=mdp.contact_constraint,
-        weight=-0.01,
+        weight=-0.001,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
             "contact_threshold": 1
         }
     )
 
-    dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
+    # dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-1.0e-5)
 
 
 @configclass
@@ -287,24 +287,23 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=1.0,
+        weight=2.0,
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 1., "dist_coeff": 2., "err_coeff": 1., "bias": 3},
+    )
+
+    target_orientation_error = RewTerm(
+        func=mdp.target_orientation_error,
+        weight=1.0,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 1, "dist_coeff": 2., "err_coeff": 1., "bias": 3},
     )
 
 
 @configclass
 class NegativeRewardsCfg:
 
-    target_orientation_error = RewTerm(
-        func=mdp.target_orientation_error,
-        weight=-1,
-        # weight=-10000,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 50, "dist_coeff": 2., "err_coeff": 1., "bias": 2},
-    )
-
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight=-1,
+        weight=-10,
     )
 
     liftoff_position_error = RewTerm(
@@ -327,11 +326,10 @@ class NegativeRewardsCfg:
         weight=-0.1,
     )
 
-    # experimental, regularize z of the lift-off
     liftoff_z_regularization = RewTerm(
         func=mdp.liftoff_z_regularization,
         params={"limit": 0.35},
-        weight=-1,
+        weight=-100,
     )
 
     singularity_penalty = RewTerm(
@@ -343,14 +341,14 @@ class NegativeRewardsCfg:
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,
         params={"min_action": min_action, "max_action": max_action},
-        weight=-1,
+        weight=-10,
     )
 
-    # t_th_total_regularization = RewTerm(
-    #     func=mdp.t_th_total_regularization,
-    #     params={"limit": 0.65},
-    #     weight=-1,
-    # )
+    od_regularization = RewTerm(
+        func=mdp.od_regularization,
+        params={"limit": 0},
+        weight=-0.001,
+    )
 
 
 @ configclass

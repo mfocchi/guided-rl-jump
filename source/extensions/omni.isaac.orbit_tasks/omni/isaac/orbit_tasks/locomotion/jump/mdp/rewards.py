@@ -115,6 +115,12 @@ def liftoff_z_regularization(env: RLTaskEnv, limit: float = 0.3) -> torch.Tensor
     return torch.square(des_lo_z - limit)
 
 
+def od_regularization(env: RLTaskEnv, limit: float = 0) -> torch.Tensor:
+
+    od = torch.norm(env.extras["trunk_od_lo"], dim=1)
+    return torch.square(od - limit)
+
+
 def t_th_total_regularization(env: RLTaskEnv, limit: float = 0.65) -> torch.Tensor:
 
     t_th_total = env.extras["t_th_total"].flatten()
@@ -242,7 +248,7 @@ def no_touchdown(env: RLTaskEnv) -> torch.Tensor:
 
 def action_regularization(env: RLTaskEnv, action: int, limit: float = 0.0) -> torch.Tensor:
     """Penalize big action to constrain the range"""
-    return torch.square(env.action_manager.action[..., action] - limit)
+    return torch.sum(torch.square(env.action_manager.action[..., action] - limit), dim=1)
 
 
 def action_limit_penalization(env: RLTaskEnv, min_action, max_action) -> torch.Tensor:
