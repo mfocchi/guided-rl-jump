@@ -173,15 +173,15 @@ def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: 
         touchdown_env = touchdown_env.item()
         # Check if the env is in the apex and not have done touchdown
         if touchdown_env not in existing_touchdown_ids and touchdown_env in apex_env_ids:
-            root_state = asset.data.root_state_w[touchdown_env][..., :7].clone()
+            root_state = asset.data.root_state_w[touchdown_env].clone()
             joint_pos = asset.data.joint_pos[touchdown_env].clone()
             # adding the touchdown state
             env.extras['touchdown'][touchdown_env] = torch.cat((root_state, joint_pos), dim=0)
 
-    # try to pause the simulation for the env that are in touchdown
-    if len(env.extras['touchdown']):
-        existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
-        values = torch.stack(list(env.extras['touchdown'].values())).to(env.device)
-        asset.write_root_pose_to_sim(values[..., 0:7], env_ids=existing_touchdown_ids)
-        asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
-        asset.write_joint_state_to_sim(values[..., 7:19], torch.zeros((len(existing_touchdown_ids), 12), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
+    # # try to pause the simulation for the env that are in touchdown
+    # if len(env.extras['touchdown']):
+    #     existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+    #     values = torch.stack(list(env.extras['touchdown'].values())).to(env.device)
+    #     asset.write_root_pose_to_sim(values[..., 0:7], env_ids=existing_touchdown_ids)
+    #     asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
+    #     asset.write_joint_state_to_sim(values[..., 7:19], torch.zeros((len(existing_touchdown_ids), 12), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
