@@ -45,7 +45,7 @@ GO1_ACTUATOR_CFG = DCMotorCfg(
     effort_limit=23.7,  # taken from spec sheet
     velocity_limit=30.0,  # taken from spec sheet
     saturation_effort=23.7,  # same as effort limit
-    stiffness=150.0,
+    stiffness=120.0,
     damping=0.5,
     friction=0.0,
 )

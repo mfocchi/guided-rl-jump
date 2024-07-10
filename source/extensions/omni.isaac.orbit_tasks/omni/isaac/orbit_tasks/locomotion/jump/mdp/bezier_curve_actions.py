@@ -102,8 +102,9 @@ class BezierCurveAction(ActionTerm):
         self.l_expl_min = self.cfg.l_expl_min
         self.l_expl_max = self.cfg.l_expl_max
 
-        self.q_0 = self._asset.data.default_joint_pos.clone()[0]
-        self.q_0_lo = torch.tensor([0.2187, -0.2191, 0.2343, -0.2364, 1.3717, 1.3716, 1.6770, 1.6784, -2.4063, -2.4061, -2.2808, -2.2778], device=self.device)
+        # self.q_0_td = self._asset.data.default_joint_pos.clone()[0]
+        self.q_0_td = torch.tensor([0.1789, -0.1784, 0.1867, -0.1861, 1.2234, 1.2230, 1.4733, 1.4733, -2.2329, -2.2327, -2.1055, -2.1053], device=self.device)
+        self.q_0_lo = torch.tensor([0.3430, -0.3425, 0.3433, -0.3424, 1.5495, 1.5490, 1.9171, 1.9173, -2.6620, -2.6618, -2.4902, -2.4901], device=self.device)
 
         self.default_stiffness = self._asset.actuators["base_legs"].stiffness[0, 0]
 
@@ -313,7 +314,7 @@ class BezierCurveAction(ActionTerm):
             elapsed_ratio = torch.clip(elapsed_time / torch.full_like(elapsed_time, self.lerp_time), 0, 1)
 
             q_0_lo_lerp = torch.lerp(self._env.extras['t_th_q'][after_t_th_total],
-                                     torch.expand_copy(self.q_0_lo, (len(after_t_th_total), len(self.q_0))),
+                                     torch.expand_copy(self.q_0_lo, (len(after_t_th_total), len(self.q_0_td))),
                                      elapsed_ratio)
 
             q_des[after_t_th_total] = q_0_lo_lerp
@@ -325,7 +326,7 @@ class BezierCurveAction(ActionTerm):
             apex_elapsed_time = self._env.extras['apex_dt'][apex_env_ids]
             apex_elapsed_ratio = torch.clip(apex_elapsed_time / torch.full_like(apex_elapsed_time, self.lerp_time), 0, 1).reshape(-1, 1)
 
-            q_0_extended = torch.expand_copy(self.q_0, (len(apex_env_ids), len(self.q_0)))
+            q_0_extended = torch.expand_copy(self.q_0_td, (len(apex_env_ids), len(self.q_0_td)))
 
             q_0_lerp = torch.lerp(self._env.extras['apex_q'][apex_env_ids],
                                   q_0_extended,
@@ -334,7 +335,7 @@ class BezierCurveAction(ActionTerm):
             q_des[apex_env_ids] = q_0_lerp
 
             self._env.extras['apex_dt'][apex_env_ids] += self.cfg.time_step
-            self._asset.actuators["base_legs"].stiffness[apex_env_ids] = torch.full((1, 12), self.default_stiffness / 2).to(self.device)
+            self._asset.actuators["base_legs"].stiffness[apex_env_ids] = torch.full((1, 12), self.default_stiffness / 4).to(self.device)
 
         return q_des, qd_des
 
