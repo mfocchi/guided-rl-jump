@@ -105,10 +105,14 @@ def liftoff_z_regularization(env: RLTaskEnv, limit: float = 0.3) -> torch.Tensor
     return torch.square(des_lo_z - limit)
 
 
-def od_regularization(env: RLTaskEnv, limit: float = 0) -> torch.Tensor:
-
-    od = torch.norm(env.extras["trunk_od_lo"], dim=1)
-    return torch.square(od - limit)
+def touchdown_angular_velocity_penalization(env: RLTaskEnv) -> torch.Tensor:
+    cost = torch.full((env.num_envs,), 10.0, device=env.device)
+    if len(env.extras['touchdown']):
+        touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+        values = torch.stack(list(env.extras['touchdown'].values()))[..., 10:13].to(env.device)
+        od_td = torch.norm(values, dim=1)
+        cost[touchdown_ids] = od_td
+    return cost
 
 
 def t_th_total_regularization(env: RLTaskEnv, limit: float = 0.65) -> torch.Tensor:
