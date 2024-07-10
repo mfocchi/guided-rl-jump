@@ -291,19 +291,19 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 1., "dist_coeff": 2., "err_coeff": 1., "bias": 3},
     )
 
-    target_orientation_error = RewTerm(
-        func=mdp.target_orientation_error,
-        weight=1.0,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 1, "dist_coeff": 2., "err_coeff": 1., "bias": 3},
-    )
-
 
 @configclass
 class NegativeRewardsCfg:
 
+    target_orientation_error = RewTerm(
+        func=mdp.target_orientation_error,
+        weight=-1,
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
+    )
+
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight=-10,
+        weight=-1,
     )
 
     liftoff_position_error = RewTerm(
