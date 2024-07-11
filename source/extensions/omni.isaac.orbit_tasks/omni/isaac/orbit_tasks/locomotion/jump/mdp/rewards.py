@@ -129,7 +129,7 @@ def singularity_penalty(env: RLTaskEnv, x_limit: float = 0.1, y_limit: float = 0
 
     x_cost = computeActivationFunction('linear', x, -torch.inf, x_limit)
     y_cost = computeActivationFunction('linear', y, -torch.inf, y_limit)
-    z_cost = computeActivationFunction('linear', z, -torch.inf, z_limit)
+    z_cost = computeActivationFunction('quadratic', z, -torch.inf, z_limit)
 
     costs = x_cost + y_cost + z_cost
 

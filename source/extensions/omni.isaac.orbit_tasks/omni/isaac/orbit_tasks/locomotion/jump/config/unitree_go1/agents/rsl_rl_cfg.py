@@ -15,8 +15,8 @@ from omni.isaac.orbit_tasks.utils.wrappers.rsl_rl import (
 @configclass
 class UnitreeGo1PPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 1
-    max_iterations = 2000
-    save_interval = 10
+    max_iterations = 4000
+    save_interval = 100
     experiment_name = "unitree_go1_jump"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(

@@ -162,7 +162,7 @@ class ActionsCfg:
                                          xd_mult_max=5,
                                          l_expl_min=0,
                                          l_expl_max=0.3,
-                                         debug_vis=True)
+                                         debug_vis=False)
 
 
 @configclass
@@ -327,7 +327,7 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": 0.1, "y_limit": 0.1, "z_limit": 0.35},
-        weight=-1000,
+        weight=-2000,
     )
 
     action_limit_penalization = RewTerm(
@@ -338,7 +338,7 @@ class NegativeRewardsCfg:
 
     touchdown_angular_velocity_penalization = RewTerm(
         func=mdp.touchdown_angular_velocity_penalization,
-        weight=-1,
+        weight=-0.05,
     )
 
 
