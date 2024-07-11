@@ -46,6 +46,7 @@ def reset_robot_state(
     env.extras['t_th_q'] = torch.zeros_like(asset.data.joint_pos)
     env.extras['apex_q'] = torch.zeros_like(asset.data.joint_pos)
     env.extras['apex_dt'] = torch.zeros(env.num_envs, device=env.device)
+    env.extras['landing_z'] = torch.zeros(env.num_envs, device=env.device)
 
 
 def reset_landing_platform(
@@ -74,10 +75,11 @@ def detect_apex(
     env_ids: torch.Tensor,
     robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     landing_platform_cfg: SceneEntityCfg = SceneEntityCfg("landing_platform"),
-    base_lin_vel_threshold: float = -1,
-    foot_z_threshold: float = 0.05,
+    base_lin_vel_threshold: float = -0.2,
+    foot_z_threshold: float = 0.03,
     base_z_threshold: float = 0.3,
-    base_heigth: float = 0.3
+    foot_height_offset: float = 0.02,
+    offset: float = 0.05
 
 ):
     """Reset the asset root state to the default position and velocity.
@@ -90,16 +92,18 @@ def detect_apex(
 
     # Get foot positions
     foot_idx = robot.find_bodies(".*foot")[0]
-    fl_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[0], 2]
-    fr_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[1], 2]
-    rl_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[2], 2]
-    rr_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[3], 2]
+    fl_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[0], 2].clone()
+    fr_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[1], 2].clone()
+    rl_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[2], 2].clone()
+    rr_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[3], 2].clone()
 
     # Get foots z position
     foots_z_pos_w = torch.cat((fl_foot_z_pos_w.unsqueeze(1),
                                fr_foot_z_pos_w.unsqueeze(1),
                                rl_foot_z_pos_w.unsqueeze(1),
                                rr_foot_z_pos_w.unsqueeze(1)), dim=1)
+
+    foots_z_pos_w -= foot_height_offset
 
     # Get base z position
     base_pose_w = robot.data.root_state_w[:, 0:3]
@@ -123,9 +127,29 @@ def detect_apex(
     apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == base_negative_lin_vel_env_ids.view(-1, 1)).any(dim=0)]
     apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == env.extras['after_t_th_total'].view(-1, 1)).any(dim=0)]
 
+    foot_target_z = trunk_target[..., 2]
+
+    foot_height_z = torch.min(foots_z_pos_w, dim=1).values
+    landing_z = torch.clip(foot_height_z - offset, min=torch.zeros_like(foot_target_z), max=foot_target_z)
+
+    # get if the reached foot z is greather than the saved ona but lower/equal than the target one
+    z_overwrite_ids = torch.nonzero((landing_z > env.extras['landing_z']) & (landing_z <= foot_target_z)).reshape(1, -1)[0]
+
+    if len(z_overwrite_ids):
+        env.extras['landing_z'][z_overwrite_ids] = landing_z[z_overwrite_ids]
+
     # Calculate the landing platform default position and orientation
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids]
     orientations = root_states[:, 3:7]
+
+    positions[..., 0:2] += trunk_target[..., 0:2]
+    # correct landing platform offset
+    positions[..., 2] = env.extras['landing_z'] - 0.025
+
+    after_t_th_total_ids = env.extras['after_t_th_total']
+
+    if after_t_th_total_ids.numel() > 0:
+        landing_platform.write_root_pose_to_sim(torch.cat([positions[after_t_th_total_ids], orientations[after_t_th_total_ids]], dim=-1), env_ids=after_t_th_total_ids)
 
     existing_apex_ids = env.extras.get('apex', {})
     for apex_env in apex_env_ids:
@@ -136,15 +160,15 @@ def detect_apex(
             env.extras['apex_q'][apex_env] = robot.data.joint_pos[apex_env].clone()
 
     # Move the landing platform of env_ids where apex is reached
-    if len(apex_env_ids):
+    # if len(apex_env_ids):
         # Transform landing platform position and orientation accordingly to the com_targert command
-        positions[apex_env_ids] += trunk_target[apex_env_ids, 0:3]
-        positions[apex_env_ids, 2] += robot.data.default_root_state[apex_env_ids, 2]
-        positions[apex_env_ids, 2] -= base_heigth
-        orientations[apex_env_ids] = trunk_target[apex_env_ids, 3:7]
+        # positions[apex_env_ids] += trunk_target[apex_env_ids, 0:3]
+        # positions[apex_env_ids, 2] += robot.data.default_root_state[apex_env_ids, 2]
+        # positions[apex_env_ids, 2] -= base_heigth
+        # orientations[apex_env_ids] = trunk_target[apex_env_ids, 3:7]
 
         # Write the changes to the simulator
-        landing_platform.write_root_pose_to_sim(torch.cat([positions[apex_env_ids], orientations[apex_env_ids]], dim=-1), env_ids=apex_env_ids)
+        # landing_platform.write_root_pose_to_sim(torch.cat([positions[apex_env_ids], orientations[apex_env_ids]], dim=-1), env_ids=apex_env_ids)
 
     # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
 
@@ -156,14 +180,12 @@ def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: 
     asset: Articulation = env.scene[asset_cfg.name]
 
     foot_idx = asset.find_bodies(".*foot")[0]
-    trunk_target_z = env.command_manager.get_command("trunk_target")[..., 2].reshape(-1, 1)
-
     net_contact_forces = contact_sensor.data.net_forces_w
 
-    low_foot_env_ids = torch.all(asset.data.body_state_w[:, foot_idx, 2] - trunk_target_z <= foot_pos_threshold, dim=1)
+    near_foot_env_ids = torch.std(asset.data.body_state_w[:, foot_idx, 2], dim=1) <= foot_pos_threshold
     in_contact_env_ids = torch.any(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
 
-    touchdown_env_ids = torch.nonzero(low_foot_env_ids & in_contact_env_ids).reshape(1, -1)[0]
+    touchdown_env_ids = torch.nonzero(near_foot_env_ids & in_contact_env_ids).reshape(1, -1)[0]
 
     apex_env_ids = torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int)
 
@@ -178,10 +200,11 @@ def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: 
             # adding the touchdown state
             env.extras['touchdown'][touchdown_env] = torch.cat((root_state, joint_pos), dim=0)
 
-    # # try to pause the simulation for the env that are in touchdown
-    # if len(env.extras['touchdown']):
-    #     existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
-    #     values = torch.stack(list(env.extras['touchdown'].values())).to(env.device)
-    #     asset.write_root_pose_to_sim(values[..., 0:7], env_ids=existing_touchdown_ids)
-    #     asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
-    #     asset.write_joint_state_to_sim(values[..., 7:19], torch.zeros((len(existing_touchdown_ids), 12), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
+    # print(f"detected touchdow: {env.extras['touchdown'].keys()}")
+    # try to pause the simulation for the env that are in touchdown
+    if len(env.extras['touchdown']):
+        existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+        values = torch.stack(list(env.extras['touchdown'].values())).to(env.device)
+        asset.write_root_pose_to_sim(values[..., 0:7], env_ids=existing_touchdown_ids)
+        asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
+        asset.write_joint_state_to_sim(values[..., 13:25], torch.zeros((len(existing_touchdown_ids), 12), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)

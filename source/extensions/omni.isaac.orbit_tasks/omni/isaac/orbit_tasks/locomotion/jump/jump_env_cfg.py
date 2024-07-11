@@ -28,7 +28,7 @@ mu = 1.0
 time_step = 0.005
 pos_x = (-0.6, 0.6)
 pos_y = (-0.6, 0.6)
-pos_z = (0.0, 0.3)
+pos_z = (0.0, 0.5)
 roll = (0.0, 0.0)
 pitch = (0, 0)
 # yaw = (0, 0)
@@ -162,7 +162,7 @@ class ActionsCfg:
                                          xd_mult_max=5,
                                          l_expl_min=0,
                                          l_expl_max=0.3,
-                                         debug_vis=False)
+                                         debug_vis=True)
 
 
 @configclass
@@ -221,7 +221,8 @@ class EventCfg:
         params={"base_lin_vel_threshold": -0.2,
                 "foot_z_threshold": 0.03,
                 "base_z_threshold": 0.3,
-                "base_heigth": 0.3}
+                "foot_height_offset": 0.02,
+                "offset": 0.05}
     )
 
     detect_touchdown = EventTerm(
@@ -229,7 +230,7 @@ class EventCfg:
         mode="interval",
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
                 "asset_cfg": SceneEntityCfg("robot"),
-                "foot_pos_threshold": 0.03,
+                "foot_pos_threshold": 0.01,
                 "contact_threshold": 5.0},
         interval_range_s=(0., 0.)
     )
@@ -286,7 +287,13 @@ class RewardsCfg:
     target_position_error = RewTerm(
         func=mdp.target_position_error,
         weight=1.0,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target", "coeff": 1., "dist_coeff": 2., "err_coeff": 1., "bias": 3},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"),
+                "command_name": "trunk_target",
+                "coeff": 1.,
+                "dist_coeff": 2.,
+                "err_coeff": 1.,
+                "bias": 3,
+                "foot_height_offset": 0.02},
     )
 
 
