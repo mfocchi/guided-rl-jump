@@ -28,7 +28,7 @@ mu = 1.0
 time_step = 0.005
 pos_x = (-0.6, 0.6)
 pos_y = (-0.6, 0.6)
-pos_z = (0.0, 0.5)
+pos_z = (0.0, 0.4)
 roll = (0.0, 0.0)
 pitch = (0, 0)
 # yaw = (0, 0)
@@ -334,7 +334,7 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": 0.1, "y_limit": 0.1, "z_limit": 0.35},
-        weight=-2000,
+        weight=-100,
     )
 
     action_limit_penalization = RewTerm(

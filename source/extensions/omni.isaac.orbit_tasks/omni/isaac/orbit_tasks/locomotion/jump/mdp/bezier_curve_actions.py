@@ -426,8 +426,8 @@ class BezierCurveAction(ActionTerm):
         xd_mult = self.map_range(actions[..., 11], self.min_action, self.max_action, self.xd_mult_min, self.xd_mult_max)
         l_expl = self.map_range(actions[..., 12], self.min_action, self.max_action, self.l_expl_min, self.l_expl_max)
 
-        trunk_xd_lo_un = trunk_xd_lo / torch.norm(trunk_xd_lo)
-        self.trunk_x_exp = trunk_x_lo + trunk_xd_lo_un * l_expl.reshape(-1, 1)
+        trunk_xd_lo_un = trunk_xd_lo / torch.norm(trunk_xd_lo, dim=1).reshape(-1,1)
+        self.trunk_x_exp = trunk_x_lo + (trunk_xd_lo_un * l_expl.reshape(-1, 1))
 
         self._env.extras["trunk_x_exp"] = self.trunk_x_exp
 
@@ -478,12 +478,8 @@ class BezierCurveAction(ActionTerm):
                     trunk_xd_exp: {self._processed_actions[...,18:21]}\n\
                     t_exp: {self._processed_actions[...,21]}\n\
                     ")
-            self.trunk_lo_vis.visualize(trunk_x_lo + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
 
-            # print(f"x_theta, x_r: { x_theta} , {x_r}")
-            # print(f"xd_theta, xd_r: { xd_theta} , {xd_r}")
-            # print(f"Pos in jf: {self.torch_sph2cart(torch.stack((torch.zeros_like(x_xd_phi), x_theta, x_r), dim=1))}")
-            # print(f"Vel in jf: {self.torch_sph2cart(torch.stack((torch.zeros_like(x_xd_phi), xd_theta, xd_r), dim=1))}")
+            self.trunk_lo_vis.visualize(self.trunk_x_exp + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
 
     def apply_actions(self):
         after_t_th = torch.where(self.dt > self.t_th)[0]
