@@ -82,7 +82,8 @@ UNITREE_A1_CFG = ArticulationCfg(
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.42),
+        # pos=(0.0, 0.0, 0.42),
+        pos=(0.0, 0.0, 0.3),
         joint_pos={
             ".*L_hip_joint": 0.1,
             ".*R_hip_joint": -0.1,
@@ -99,7 +100,8 @@ UNITREE_A1_CFG = ArticulationCfg(
             effort_limit=33.5,
             saturation_effort=33.5,
             velocity_limit=21.0,
-            stiffness=25.0,
+            # stiffness=25.0,
+            stiffness=120.0,
             damping=0.5,
             friction=0.0,
         ),
@@ -137,13 +139,6 @@ UNITREE_GO1_CFG = ArticulationCfg(
             "R[L,R]_thigh_joint": 1.0,
             ".*_calf_joint": -1.5,
         },
-        # joint_pos={
-        #     ".*L_hip_joint": 0.2,
-        #     ".*R_hip_joint": -0.2,
-        #     "F[L,R]_thigh_joint": 0.935,
-        #     "R[L,R]_thigh_joint": 0.935,
-        #     ".*_calf_joint": -1.624,
-        # },
         joint_vel={".*": 0.0},
     ),
     soft_joint_pos_limit_factor=0.9,
@@ -172,7 +167,7 @@ UNITREE_GO2_CFG = ArticulationCfg(
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.4),
+        pos=(0.0, 0.0, 0.3),
         joint_pos={
             ".*L_hip_joint": 0.1,
             ".*R_hip_joint": -0.1,
@@ -189,7 +184,8 @@ UNITREE_GO2_CFG = ArticulationCfg(
             effort_limit=23.5,
             saturation_effort=23.5,
             velocity_limit=30.0,
-            stiffness=25.0,
+            # stiffness=25.0,
+            stiffness=120.0,
             damping=0.5,
             friction=0.0,
         ),

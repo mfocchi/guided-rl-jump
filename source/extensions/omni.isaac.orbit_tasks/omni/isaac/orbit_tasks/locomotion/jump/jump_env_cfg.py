@@ -33,6 +33,8 @@ roll = (0.0, 0.0)
 pitch = (0, 0)
 yaw = (-np.pi / 2, np.pi / 2)
 
+trunk_name = "trunk"
+
 min_action = -5
 max_action = 5
 
@@ -64,7 +66,6 @@ class MySceneCfg(InteractiveSceneCfg):
                                       track_air_time=True,
                                       visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"),
                                       debug_vis=False)
-    # contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot|trunk)$", track_air_time=True, visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"), debug_vis=True)
 
     # add landing_platform
     landing_platform: RigidObjectCfg = RigidObjectCfg(
@@ -101,7 +102,7 @@ class CommandsCfg:
     """Command specifications for the MDP."""
     trunk_target = mdp.UniformTargetCommandCfg(
         asset_name="robot",
-        body_name="trunk",
+        body_name=trunk_name,
         # command is sampled on a new episodejoint_pos
         # resampling_time > episode_length_s = no target change during episode
         resampling_time_range=(5, 5),
@@ -199,7 +200,7 @@ class EventCfg:
 #    add_base_mass = EventTerm(
 #        func=mdp.randomize_rigid_body_mass,
 #        mode="startup",
-#        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "mass_range": (-1.0, 1.0), "operation": "add"},
+#        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "mass_range": (-1.0, 1.0), "operation": "add"},
 #    )
 
     reset_robot = EventTerm(
@@ -286,7 +287,7 @@ class RewardsCfg:
     target_position_error = RewTerm(
         func=mdp.target_position_error,
         weight=2.0,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"),
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name),
                 "command_name": "trunk_target",
                 "coeff": 1.,
                 "dist_coeff": 2.,
@@ -302,7 +303,7 @@ class NegativeRewardsCfg:
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
         weight=-1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names="trunk"), "command_name": "trunk_target"},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "command_name": "trunk_target"},
     )
 
     no_touchdown = RewTerm(
