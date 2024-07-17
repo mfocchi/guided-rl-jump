@@ -26,12 +26,11 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 # External variables definition
 mu = 1.0
 time_step = 0.005
-pos_x = (-0.6, 0.6)
+pos_x = (-0.6, 1)
 pos_y = (-0.6, 0.6)
-pos_z = (0.0, 0.4)
+pos_z = (0.0, 0.0)
 roll = (0.0, 0.0)
 pitch = (0, 0)
-# yaw = (0, 0)
 yaw = (-np.pi / 2, np.pi / 2)
 
 min_action = -5
