@@ -250,6 +250,16 @@ class BezierCurveAction(ActionTerm):
 
         return cartesian
 
+    def cerp(self, start, end, weight, start_tangent: float = 1e-3, end_tangent: float = 1e-3):
+        # Hermite basis functions
+        h00 = (2 * weight**3) - (3 * weight**2) + 1
+        h10 = weight**3 - 2 * weight**2 + weight
+        h01 = (-2 * weight**3) + (3 * weight**2)
+        h11 = weight**3 - weight**2
+
+        # Interpolation
+        return (h00 * start) + (h10 * start_tangent) + (h01 * end) + (h11 * end_tangent)
+
     def ik(self, x, o, old_q_des):
 
         # Add the origin to get the position for each robot environment
@@ -313,12 +323,15 @@ class BezierCurveAction(ActionTerm):
             elapsed_time = (torch.full_like(self.t_th, self.dt) - self.t_th)[after_t_th_total]
             elapsed_ratio = torch.clip(elapsed_time / torch.full_like(elapsed_time, self.lerp_time), 0, 1)
 
-            q_0_lo_lerp = torch.lerp(self._env.extras['t_th_q'][after_t_th_total],
-                                     torch.expand_copy(self.q_0_lo, (len(after_t_th_total), len(self.q_0_td))),
-                                     elapsed_ratio)
+            q_0_lo_lerp = self.cerp(self._env.extras['t_th_q'][after_t_th_total],
+                                    torch.expand_copy(self.q_0_lo, (len(after_t_th_total), len(self.q_0_td))),
+                                    elapsed_ratio)
 
             q_des[after_t_th_total] = q_0_lo_lerp
             qd_des[after_t_th_total] = torch.zeros_like(self._asset.data.default_joint_vel[0])
+
+            # reduce the stiffness to reduce instabilities
+            self._asset.actuators["base_legs"].stiffness[after_t_th_total] = torch.full((1, 12), self.default_stiffness / 4).to(self.device)
 
         apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
 
@@ -328,14 +341,13 @@ class BezierCurveAction(ActionTerm):
 
             q_0_extended = torch.expand_copy(self.q_0_td, (len(apex_env_ids), len(self.q_0_td)))
 
-            q_0_lerp = torch.lerp(self._env.extras['apex_q'][apex_env_ids],
-                                  q_0_extended,
-                                  apex_elapsed_ratio)
+            q_0_lerp = self.cerp(self._env.extras['apex_q'][apex_env_ids],
+                                 q_0_extended,
+                                 apex_elapsed_ratio)
 
             q_des[apex_env_ids] = q_0_lerp
 
             self._env.extras['apex_dt'][apex_env_ids] += self.cfg.time_step
-            self._asset.actuators["base_legs"].stiffness[apex_env_ids] = torch.full((1, 12), self.default_stiffness / 4).to(self.device)
 
         return q_des, qd_des
 
@@ -426,7 +438,7 @@ class BezierCurveAction(ActionTerm):
         xd_mult = self.map_range(actions[..., 11], self.min_action, self.max_action, self.xd_mult_min, self.xd_mult_max)
         l_expl = self.map_range(actions[..., 12], self.min_action, self.max_action, self.l_expl_min, self.l_expl_max)
 
-        trunk_xd_lo_un = trunk_xd_lo / torch.norm(trunk_xd_lo, dim=1).reshape(-1,1)
+        trunk_xd_lo_un = trunk_xd_lo / torch.norm(trunk_xd_lo, dim=1).reshape(-1, 1)
         self.trunk_x_exp = trunk_x_lo + (trunk_xd_lo_un * l_expl.reshape(-1, 1))
 
         self._env.extras["trunk_x_exp"] = self.trunk_x_exp
@@ -441,6 +453,8 @@ class BezierCurveAction(ActionTerm):
         s0_n = torch.norm(trunk_x_lo, dim=1)
 
         a = 0.5 * ((torch.pow(vf_n, 2) - torch.pow(v0_n, 2)) / ((sf_n - s0_n) + 1e-15))
+
+        self._env.extras["a"] = a
 
         self.t_exp = ((vf_n - v0_n) / (a + 1e-15)).reshape(-1, 1)
         self.t_th_total = self.t_th + self.t_exp

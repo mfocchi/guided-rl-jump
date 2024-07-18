@@ -26,6 +26,7 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 # External variables definition
 mu = 1.0
 time_step = 0.005
+
 pos_x = (-0.6, 1)
 pos_y = (-0.6, 0.6)
 pos_z = (0.0, 0.0)
@@ -140,12 +141,12 @@ class ActionsCfg:
                                          t_th_max=0.7,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
-                                         x_r_min=0.2,
+                                         x_r_min=0.1,
                                          x_r_max=0.4,
                                          xd_theta_min=np.pi / 6,
                                          xd_theta_max=np.pi / 2,
                                          xd_r_min=0.1,
-                                         xd_r_max=3,
+                                         xd_r_max=5,
                                          psi_min=-np.pi / 4,
                                          psi_max=np.pi / 4,
                                          theta_min=-np.pi / 4,
@@ -324,7 +325,7 @@ class NegativeRewardsCfg:
 
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
-        params={"x_limit": 0.1, "y_limit": 0.1, "z_limit": 0.35},
+        params={"x_limit": 0.1, "y_limit": 0.1, "z_limit": 0.4},
         weight=-10,
     )
 
@@ -337,6 +338,16 @@ class NegativeRewardsCfg:
     touchdown_angular_velocity_penalization = RewTerm(
         func=mdp.touchdown_angular_velocity_penalization,
         weight=-0.001,
+    )
+
+    a_regularization = RewTerm(
+        func=mdp.a_regularization,
+        weight=-0.01,
+    )
+
+    t_th_total_regularization = RewTerm(
+        func=mdp.t_th_total_regularization,
+        weight=-0.01,
     )
 
 

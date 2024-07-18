@@ -105,6 +105,13 @@ def liftoff_z_regularization(env: RLTaskEnv, limit: float = 0.3) -> torch.Tensor
     return torch.square(des_lo_z - limit)
 
 
+def a_regularization(env: RLTaskEnv, limit: float = 9.81) -> torch.Tensor:
+
+    a = env.extras["a"]
+
+    return computeActivationFunction('linear', a, limit, torch.inf)
+
+
 def touchdown_angular_velocity_penalization(env: RLTaskEnv) -> torch.Tensor:
     cost = torch.full((env.num_envs,), 10.0, device=env.device)
     if len(env.extras['touchdown']):
