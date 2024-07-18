@@ -71,15 +71,15 @@ class MySceneCfg(InteractiveSceneCfg):
     landing_platform: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
-            size=(0.8, 0.8, 0.05),
+            size=(0.65, 0.65, 0.05),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, kinematic_enabled=True),
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
             activate_contact_sensors=True,
             physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu),
-            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.2, 0.0)),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.85, 0.46), roughness=1),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(-0.05, 0.0, -0.025))
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(-0.1, 0.0, -0.025))
     )
 
     # lights
@@ -100,7 +100,7 @@ class MySceneCfg(InteractiveSceneCfg):
 @configclass
 class CommandsCfg:
     """Command specifications for the MDP."""
-    trunk_target = mdp.UniformTargetCommandCfg(
+    trunk_target = mdp.UniformTargetCommandCfgJump(
         asset_name="robot",
         body_name=trunk_name,
         # command is sampled on a new episodejoint_pos
@@ -108,7 +108,7 @@ class CommandsCfg:
         resampling_time_range=(5, 5),
         debug_vis=False,
         # Position relative to the current one
-        ranges=mdp.UniformTargetCommandCfg.Ranges(
+        ranges=mdp.UniformTargetCommandCfgJump.Ranges(
             pos_x=pos_x,
             pos_y=pos_y,
             pos_z=pos_z,
@@ -197,11 +197,11 @@ class ObservationsCfg:
 class EventCfg:
     """Configuration for events."""
 
-#    add_base_mass = EventTerm(
-#        func=mdp.randomize_rigid_body_mass,
-#        mode="startup",
-#        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "mass_range": (-1.0, 1.0), "operation": "add"},
-#    )
+    add_base_mass = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        mode="startup",
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "mass_range": (-1.0, 1.0), "operation": "add"},
+    )
 
     reset_robot = EventTerm(
         func=mdp.reset_robot_state,
@@ -267,15 +267,6 @@ class RunningRewardsCfg:
             "mu": mu
         }
     )
-
-    # contact_constraint = RewTerm(
-    #     func=mdp.contact_constraint,
-    #     weight=-0.001,
-    #     params={
-    #         "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
-    #         "contact_threshold": 1
-    #     }
-    # )
 
 
 @configclass

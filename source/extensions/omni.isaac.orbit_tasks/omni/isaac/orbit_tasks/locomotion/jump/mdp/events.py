@@ -182,10 +182,11 @@ def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: 
     foot_idx = asset.find_bodies(".*foot")[0]
     net_contact_forces = contact_sensor.data.net_forces_w
 
-    near_foot_env_ids = torch.std(asset.data.body_state_w[:, foot_idx, 2], dim=1) <= foot_pos_threshold
-    in_contact_env_ids = torch.any(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
-
-    touchdown_env_ids = torch.nonzero(near_foot_env_ids & in_contact_env_ids).reshape(1, -1)[0]
+    # near_foot_env_ids = torch.std(asset.data.body_state_w[:, foot_idx, 2], dim=1) <= foot_pos_threshold
+    in_contact_env_ids = torch.all(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
+    
+    # touchdown_env_ids = torch.nonzero(near_foot_env_ids & in_contact_env_ids).reshape(1, -1)[0]
+    touchdown_env_ids = torch.nonzero(in_contact_env_ids).reshape(1, -1)[0]
 
     apex_env_ids = torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int)
 
