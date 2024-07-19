@@ -491,6 +491,7 @@ class BezierCurveAction(ActionTerm):
                     trunk_x_exp: {self._processed_actions[...,15:18]}\n\
                     trunk_xd_exp: {self._processed_actions[...,18:21]}\n\
                     t_exp: {self._processed_actions[...,21]}\n\
+                    a: {a}\n\
                     ")
 
             self.trunk_lo_vis.visualize(self.trunk_x_exp + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))

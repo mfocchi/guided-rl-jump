@@ -29,7 +29,7 @@ time_step = 0.005
 
 pos_x = (-0.6, 1)
 pos_y = (-0.6, 0.6)
-pos_z = (0.0, 0.0)
+pos_z = (0.0, 0.4)
 roll = (0.0, 0.0)
 pitch = (0, 0)
 yaw = (-np.pi / 2, np.pi / 2)
@@ -347,7 +347,7 @@ class NegativeRewardsCfg:
 
     t_th_total_regularization = RewTerm(
         func=mdp.t_th_total_regularization,
-        weight=-0.01,
+        weight=-0.1,
     )
 
 
