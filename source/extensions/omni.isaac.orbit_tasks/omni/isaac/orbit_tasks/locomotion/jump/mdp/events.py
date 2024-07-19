@@ -140,7 +140,7 @@ def detect_apex(
 
     # Calculate the landing platform default position and orientation
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids]
-    orientations = root_states[:, 3:7]
+    orientations = trunk_target[env_ids, 3:7]
 
     positions[..., 0:2] += trunk_target[..., 0:2]
     # correct landing platform offset
@@ -158,17 +158,6 @@ def detect_apex(
             # adding the touchdown state
             env.extras['apex'][apex_env] = True
             env.extras['apex_q'][apex_env] = robot.data.joint_pos[apex_env].clone()
-
-    # Move the landing platform of env_ids where apex is reached
-    # if len(apex_env_ids):
-        # Transform landing platform position and orientation accordingly to the com_targert command
-        # positions[apex_env_ids] += trunk_target[apex_env_ids, 0:3]
-        # positions[apex_env_ids, 2] += robot.data.default_root_state[apex_env_ids, 2]
-        # positions[apex_env_ids, 2] -= base_heigth
-        # orientations[apex_env_ids] = trunk_target[apex_env_ids, 3:7]
-
-        # Write the changes to the simulator
-        # landing_platform.write_root_pose_to_sim(torch.cat([positions[apex_env_ids], orientations[apex_env_ids]], dim=-1), env_ids=apex_env_ids)
 
     # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
 

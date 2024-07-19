@@ -27,12 +27,12 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 mu = 1.0
 time_step = 0.005
 
-pos_x = (-0.6, 1)
+pos_x = (-0.6, 0.6)
 pos_y = (-0.6, 0.6)
 pos_z = (0.0, 0.4)
-roll = (0.0, 0.0)
-pitch = (0, 0)
-yaw = (-np.pi / 2, np.pi / 2)
+roll = (-np.pi / 9, np.pi / 9)
+pitch = (-np.pi / 9, np.pi / 9)
+yaw = (-np.pi, np.pi)
 
 trunk_name = "trunk"
 
@@ -72,7 +72,7 @@ class MySceneCfg(InteractiveSceneCfg):
     landing_platform: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
-            size=(0.65, 0.65, 0.05),
+            size=(0.7, 0.7, 0.05),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, kinematic_enabled=True),
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
@@ -80,7 +80,7 @@ class MySceneCfg(InteractiveSceneCfg):
             physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.85, 0.46), roughness=1),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(-0.1, 0.0, -0.025))
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.025))
     )
 
     # lights
@@ -174,17 +174,7 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
 
-        # base_pos_z = ObsTerm(func=mdp.base_pos_z, noise=Unoise(n_min=-0.01, n_max=0.01))
-        # base_lin_vel = ObsTerm(func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
-        # base_ang_vel = ObsTerm(func=mdp.base_ang_vel, noise=Unoise(n_min=-0.1, n_max=0.1))
-        # base_pos_z = ObsTerm(func=mdp.base_pos_z)
-        # base_lin_vel = ObsTerm(func=mdp.base_lin_vel)
-        # base_ang_vel = ObsTerm(func=mdp.base_ang_vel)
-
         target_commands = ObsTerm(func=mdp.generated_commands, params={"command_name": "trunk_target"})
-
-        # TODO: add foot bosition in base f
-        # TODO: add contact state
 
         def __post_init__(self):
             self.enable_corruption = True
