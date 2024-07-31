@@ -148,9 +148,9 @@ class ActionsCfg:
                                          xd_r_min=0.1,
                                          xd_r_max=5,
                                          psi_min=-np.pi / 4,
-                                         psi_max=np.pi / 4,
+                                         psi_max=0,
                                          theta_min=-np.pi / 4,
-                                         theta_max=np.pi / 4,
+                                         theta_max= 0,
                                          phi_min=-np.pi,
                                          phi_max=np.pi,
                                          psid_min=-4,
@@ -330,15 +330,15 @@ class NegativeRewardsCfg:
         weight=-0.001,
     )
 
-    a_regularization = RewTerm(
-        func=mdp.a_regularization,
-        weight=-0.01,
-    )
+    # a_regularization = RewTerm(
+    #     func=mdp.a_regularization,
+    #     weight=-0.01,
+    # )
 
-    t_th_total_regularization = RewTerm(
-        func=mdp.t_th_total_regularization,
-        weight=-0.05,
-    )
+    # t_th_total_regularization = RewTerm(
+    #     func=mdp.t_th_total_regularization,
+    #     weight=-0.05,
+    # )
 
 
 @ configclass

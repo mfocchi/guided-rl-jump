@@ -105,16 +105,19 @@ class UniformTargetCommandJump(CommandTerm):
         self.pose_command_o[env_ids, 1] = r.uniform_(*self.cfg.ranges.pos_y)
         self.pose_command_o[env_ids, 2] = r.uniform_(*self.cfg.ranges.pos_z)
 
-        ratio = self.pose_command_o[env_ids, 2] / self.cfg.ranges.pos_z[1]
-        
+        if self.cfg.ranges.pos_z[1] != 0:
+            ratio = self.pose_command_o[env_ids, 2] / self.cfg.ranges.pos_z[1]
+        else:
+            ratio = 1
+
         # -- orientation
         euler_angles = torch.zeros_like(self.pose_command_o[env_ids, :3])
         euler_angles[:, 0].uniform_(*self.cfg.ranges.roll)
         euler_angles[:, 1].uniform_(*self.cfg.ranges.pitch)
         euler_angles[:, 2].uniform_(*self.cfg.ranges.yaw)
 
-        euler_angles[:, 0] = euler_angles[:, 0] * ratio 
-        euler_angles[:, 1] = euler_angles[:, 1] * ratio 
+        euler_angles[:, 0] = euler_angles[:, 0] * ratio
+        euler_angles[:, 1] = euler_angles[:, 1] * ratio
 
         self.pose_command_o[env_ids, 3:] = quat_from_euler_xyz(
             euler_angles[:, 0], euler_angles[:, 1], euler_angles[:, 2]
