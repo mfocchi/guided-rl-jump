@@ -29,7 +29,7 @@ class FileCfg(RigidObjectSpawnerCfg):
     scale: tuple[float, float, float] | None = None
     """Scale of the asset. Defaults to None, in which case the scale is not modified."""
 
-    articulation_props: schemas.ArticulationPropertiesCfg | None = None
+    articulation_props: schemas.ArticulationRootPropertiesCfg | None = None
     """Properties to apply to the articulation root."""
 
     fixed_tendons_props: schemas.FixedTendonsPropertiesCfg | None = None
@@ -68,6 +68,14 @@ class UsdFileCfg(FileCfg):
 
     usd_path: str = MISSING
     """Path to the USD file to spawn asset from."""
+
+    variants: object | dict[str, str] | None = None
+    """Variants to select from in the input USD file. Defaults to None, in which case no variants are applied.
+
+    This can either be a configclass object, in which case each attribute is used as a variant set name and its specified value,
+    or a dictionary mapping between the two. Please check the :meth:`~omni.isaac.orbit.sim.utils.select_usd_variants` function
+    for more information.
+    """
 
 
 @configclass

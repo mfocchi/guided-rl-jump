@@ -23,6 +23,7 @@ Guidelines for modifications:
 * Farbod Farshidian
 * Hunter Hansen
 * James Smith
+* James Tigue
 * **Mayank Mittal** (maintainer)
 * Nikita Rudin
 * Pascal Roth
@@ -39,6 +40,9 @@ Guidelines for modifications:
 * Jia Lin Yuan
 * Jingzhou Liu
 * Kourosh Darvish
+* Lorenz Wellhausen
+* Muhong Guo
+* Özhan Özen
 * Qinxi Yu
 * René Zurbrügg
 * Ritvik Singh

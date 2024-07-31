@@ -1,6 +1,59 @@
 Changelog
 ---------
 
+0.16.5 (2024-05-22)
+~~~~~~~~~~~~~~~~~~~
+
+Fixed
+^^^^^
+
+* Fixed :class:`omni.isaac.orbit.sensor.ContactSensor` not loading correctly in extension mode.
+  Earlier, the :attr:`omni.isaac.orbit.sensor.ContactSensor.body_physx_view` was not initialized when
+  :meth:`omni.isaac.orbit.sensor.ContactSensor._debug_vis_callback` is called which references it.
+
+
+0.16.4 (2024-05-15)
+~~~~~~~~~~~~~~~~~~~
+
+Fixed
+^^^^^
+
+* Fixed compound classes being directly assigned in ``default_factory`` generator method
+  :meth:`omni.isaac.orbit.utils.configclass._return_f`, which resulted in shared references such that modifications to
+  compound objects were reflected across all instances generated from the same ``default_factory`` method.
+
+
+0.16.3 (2024-05-13)
+~~~~~~~~~~~~~~~~~~~
+
+Added
+^^^^^
+
+* Added ``variants`` attribute to the :class:`omni.isaac.orbit.sim.from_files.UsdFileCfg` class to select USD
+  variants when loading assets from USD files.
+
+
+0.16.2 (2024-04-26)
+~~~~~~~~~~~~~~~~~~~
+
+Fixed
+^^^^^
+
+* Fixed parsing of filter prim path expressions in the :class:`omni.isaac.orbit.sensors.ContactSensor` class.
+  Earlier, the filter prim paths given to the physics view was not being parsed since they were specified as
+  regex expressions instead of glob expressions.
+
+
+0.16.1 (2024-04-20)
+~~~~~~~~~~~~~~~~~~~
+
+Added
+^^^^^
+
+* Added attribute :attr:`omni.isaac.orbit.sim.ArticulationRootPropertiesCfg.fix_root_link` to fix the root link
+  of an articulation to the world frame.
+
+
 0.16.0 (2024-04-16)
 ~~~~~~~~~~~~~~~~~~~
 

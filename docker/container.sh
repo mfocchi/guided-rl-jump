@@ -179,7 +179,7 @@ configure_x11() {
     fi
     load_statefile_variable __ORBIT_TMP_XAUTH
     # Create temp .xauth file to be mounted in the container
-    if [ "$__ORBIT_TMP_XAUTH" = "null" ]; then
+    if [ "$__ORBIT_TMP_XAUTH" = "null" ] || [ ! -f "$__ORBIT_TMP_XAUTH" ]; then
         __ORBIT_TMP_XAUTH=$(mktemp --suffix=".xauth")
         set_statefile_variable __ORBIT_TMP_XAUTH $__ORBIT_TMP_XAUTH
         # Extract MIT-MAGIC-COOKIE for current display | Change the 'connection family' to FamilyWild (ffff) | merge into tmp .xauth file
@@ -197,7 +197,7 @@ x11_check() {
     if [ "$__ORBIT_X11_FORWARDING_ENABLED" = "null" ]; then
         echo "[INFO] X11 forwarding from the Orbit container is off by default."
         echo "[INFO] It will fail if there is no display, or this script is being run via ssh without proper configuration."
-=        read -p "Would you like to enable it? (y/N) " x11_answer
+        read -p "Would you like to enable it? (y/N) " x11_answer
         if [ "$x11_answer" != "${x11_answer#[Yy]}" ]; then
             __ORBIT_X11_FORWARDING_ENABLED=1
             set_statefile_variable __ORBIT_X11_FORWARDING_ENABLED 1
