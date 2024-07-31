@@ -30,9 +30,9 @@ time_step = 0.005
 pos_x = (-0.6, 0.6)
 pos_y = (-0.6, 0.6)
 pos_z = (0.0, 0.4)
-roll = (-np.pi / 9, np.pi / 9)
-pitch = (-np.pi / 9, np.pi / 9)
-yaw = (-np.pi, np.pi)
+roll = (0,0)
+pitch = (0,0)
+yaw = (-np.pi/2, np.pi/2)
 
 trunk_name = "trunk"
 
@@ -148,7 +148,7 @@ class ActionsCfg:
                                          xd_r_min=0.1,
                                          xd_r_max=5,
                                          psi_min=-np.pi / 4,
-                                         psi_max=0,
+                                         psi_max=np.pi / 4,
                                          theta_min=-np.pi / 4,
                                          theta_max= 0,
                                          phi_min=-np.pi,
