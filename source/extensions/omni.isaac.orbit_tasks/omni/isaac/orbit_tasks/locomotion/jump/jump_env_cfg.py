@@ -335,10 +335,10 @@ class NegativeRewardsCfg:
     #     weight=-0.01,
     # )
 
-    # t_th_total_regularization = RewTerm(
-    #     func=mdp.t_th_total_regularization,
-    #     weight=-0.05,
-    # )
+    t_th_total_regularization = RewTerm(
+        func=mdp.t_th_total_regularization,
+        weight=-0.1,
+    )
 
 
 @ configclass
