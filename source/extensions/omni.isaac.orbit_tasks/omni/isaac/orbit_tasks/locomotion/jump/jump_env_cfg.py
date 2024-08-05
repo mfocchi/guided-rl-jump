@@ -22,11 +22,22 @@ from omni.isaac.orbit.utils.noise import AdditiveUniformNoiseCfg as Unoise
 from omni.isaac.orbit.markers.config import CONTACT_SENSOR_JUMP_MARKER_CFG
 import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 
+# ============================
+# Global terms definition
+# ============================
 
-# External variables definition
-mu = 1.0
+# Simulation
 time_step = 0.005
 
+# Terrain
+mu = 1.0
+
+# Action config
+min_action = -5
+max_action = 5
+
+
+# Target config
 pos_x = (-0.6, 0.6)
 pos_y = (-0.6, 0.6)
 pos_z = (0.0, 0.4)
@@ -34,16 +45,29 @@ roll = (0, 0)
 pitch = (0, 0)
 yaw = (-np.pi / 2, np.pi / 2)
 
-trunk_name = "trunk"
-
-min_action = -5
-max_action = 5
-
 activate_curriculum = False
 
-##
+# Robot params
+trunk_name = "trunk"
+robot_height = 0.3
+foot_offset = 0.02
+
+fl_joint_names = ["FL.*"]
+fl_body_names = ["FL_foot"]
+fr_joint_names = ["FR.*"]
+fr_body_names = ["FR_foot"]
+rl_joint_names = ["RL.*"]
+rl_body_names = ["RL_foot"]
+rr_joint_names = ["RR.*"]
+rr_body_names = ["RR_foot"]
+
+x_limit = 0.15
+y_limit = 0.15
+z_limit = 0.4
+
+# ============================
 # Scene definition
-##
+# ============================
 
 
 @configclass
@@ -80,7 +104,8 @@ class MySceneCfg(InteractiveSceneCfg):
             physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.85, 0.46), roughness=1),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.025))
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.225))
+        # init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.025))
     )
 
     # lights
@@ -93,9 +118,9 @@ class MySceneCfg(InteractiveSceneCfg):
         spawn=sim_utils.DomeLightCfg(color=(0.13, 0.13, 0.13), intensity=1000.0),
     )
 
-##
+# ============================
 # MDP settings
-##
+# ============================
 
 
 @configclass
@@ -126,16 +151,17 @@ class ActionsCfg:
     jump_traj = mdp.BezierCurveActionCfg(asset_name="robot",
                                          time_step=time_step,
                                          joint_names=[".*"],
-                                         fl_joint_names=["FL.*"],
-                                         fl_body_names=["FL_foot"],
-                                         fr_joint_names=["FR.*"],
-                                         fr_body_names=["FR_foot"],
-                                         rl_joint_names=["RL.*"],
-                                         rl_body_names=["RL_foot"],
-                                         rr_joint_names=["RR.*"],
-                                         rr_body_names=["RR_foot"],
+                                         fl_joint_names=fl_joint_names,
+                                         fl_body_names=fl_body_names,
+                                         fr_joint_names=fr_joint_names,
+                                         fr_body_names=fr_body_names,
+                                         rl_joint_names=rl_joint_names,
+                                         rl_body_names=rl_body_names,
+                                         rr_joint_names=rr_joint_names,
+                                         rr_body_names=rr_body_names,
                                          min_action=min_action,
                                          max_action=max_action,
+                                         robot_height=robot_height,
                                          lerp_time=0.1,
                                          t_th_min=0.1,
                                          t_th_max=0.7,
@@ -212,7 +238,7 @@ class EventCfg:
         params={"base_lin_vel_threshold": -0.2,
                 "foot_z_threshold": 0.03,
                 "base_z_threshold": 0.3,
-                "foot_height_offset": 0.02,
+                "foot_height_offset": foot_offset,
                 "offset": 0.05}
     )
 
@@ -275,7 +301,7 @@ class RewardsCfg:
                 "dist_coeff": 2.,
                 "err_coeff": 1.,
                 "bias": 3,
-                "foot_height_offset": 0.02},
+                "foot_height_offset": foot_offset},
     )
 
 
@@ -329,7 +355,7 @@ class NegativeRewardsCfg:
     #     func=mdp.touchdown_angular_velocity_penalization,
     #     weight=-0.001,
     # )
-    
+
     # apex_z_regularization = RewTerm(
     #     func=mdp.apex_z_regularization,
     #     params={"command_name": "trunk_target", "delta": 0.2},

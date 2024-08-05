@@ -61,6 +61,8 @@ class BezierCurveAction(ActionTerm):
         self.min_action = self.cfg.min_action
         self.max_action = self.cfg.max_action
 
+        self.robot_height = self.cfg.robot_height
+
         self.lerp_time = self.cfg.lerp_time
 
         self.t_th_min = self.cfg.t_th_min
@@ -378,6 +380,7 @@ class BezierCurveAction(ActionTerm):
 
         # TODO: this hold for a robot that is in real world withoud capture sys?
         trunk_x_0 = self._asset.data.root_state_w[:, 0:3].clone() - self._env.scene.env_origins
+        trunk_z_offset = trunk_x_0[...,2] - self.robot_height
         trunk_xd_0 = self._asset.data.root_lin_vel_b.clone()
         trunk_o_0 = torch.stack(euler_xyz_from_quat(self._asset.data.root_state_w[:, 3:7].clone()), dim=1)
         trunk_od_0 = self._asset.data.root_ang_vel_b.clone()
@@ -401,7 +404,10 @@ class BezierCurveAction(ActionTerm):
         x_r = self.map_range(actions[..., 2], self.min_action, self.max_action, self.x_r_min, self.x_r_max)
 
         trunk_x_lo = self.torch_sph2cart(torch.stack((x_xd_phi, x_theta, x_r), dim=1))
+        # add z offset to the x_lo according to x_0
+        trunk_x_lo[...,2] += trunk_z_offset
         self.trunk_x_lo = trunk_x_lo
+
 
         self._env.extras["trunk_x_lo"] = trunk_x_lo
 

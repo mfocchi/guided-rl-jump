@@ -35,6 +35,8 @@ class BezierCurveActionCfg(ActionTermCfg):
     min_action: float = MISSING
     max_action: float = MISSING
 
+    robot_height: float = MISSING
+
     lerp_time: float = MISSING
 
     # T_th --
