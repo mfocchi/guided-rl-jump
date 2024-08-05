@@ -109,7 +109,7 @@ def apex_z_regularization(env: RLTaskEnv, command_name: str, delta: float = 0.2,
     apex_z = env.extras["apex_z"]
     target_z = env.command_manager.get_command(command_name)[...,2] + initial_z + robot_height + delta
 
-    return torch.clip(apex_z - target_z, -torch.inf, 0)
+    return torch.abs(torch.clip(apex_z - target_z, -torch.inf, 0))
 
 def a_regularization(env: RLTaskEnv, limit: float = 9.81) -> torch.Tensor:
 
