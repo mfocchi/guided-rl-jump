@@ -31,6 +31,7 @@ time_step = 0.005
 
 # Terrain
 mu = 1.0
+initial_z = 0.4
 
 # Action config
 min_action = -5
@@ -38,9 +39,9 @@ max_action = 5
 
 
 # Target config
-pos_x = (-0.6, 0.6)
-pos_y = (-0.6, 0.6)
-pos_z = (0.0, 0.4)
+pos_x = (-1, 1)
+pos_y = (-1, 1)
+pos_z = (-0.4, 0.4)
 roll = (0, 0)
 pitch = (0, 0)
 yaw = (-np.pi / 2, np.pi / 2)
@@ -104,8 +105,7 @@ class MySceneCfg(InteractiveSceneCfg):
             physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.85, 0.46), roughness=1),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.225))
-        # init_state=RigidObjectCfg.InitialStateCfg(pos=(0.0, 0.0, -0.025))
+        init_state=RigidObjectCfg.InitialStateCfg(pos=(-0.05, 0.0, -0.025))
     )
 
     # lights
@@ -222,15 +222,16 @@ class EventCfg:
 
     reset_robot = EventTerm(
         func=mdp.reset_robot_state,
-        mode="reset"
+        mode="reset",
+        params={"initial_z": initial_z}
     )
 
     reset_landing_platform = EventTerm(
         func=mdp.reset_landing_platform,
-        mode="reset"
+        mode="reset",
+        params={"initial_z": initial_z}
     )
 
-    # apex_detection
     detect_apex = EventTerm(
         func=mdp.detect_apex,
         mode="interval",
@@ -239,7 +240,8 @@ class EventCfg:
                 "foot_z_threshold": 0.03,
                 "base_z_threshold": 0.3,
                 "foot_height_offset": foot_offset,
-                "offset": 0.05}
+                "offset": 0.05,
+                "initial_z": initial_z}
     )
 
     detect_touchdown = EventTerm(
@@ -356,11 +358,11 @@ class NegativeRewardsCfg:
     #     weight=-0.001,
     # )
 
-    # apex_z_regularization = RewTerm(
-    #     func=mdp.apex_z_regularization,
-    #     params={"command_name": "trunk_target", "delta": 0.2},
-    #     weight=-0.1,
-    # )
+    apex_z_regularization = RewTerm(
+        func=mdp.apex_z_regularization,
+        params={"command_name": "trunk_target", "delta": 0.2, "initial_z": initial_z, "robot_height": robot_height},
+        weight=-0.1,
+    )
 
     # a_regularization = RewTerm(
     #     func=mdp.a_regularization,

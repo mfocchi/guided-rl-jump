@@ -17,6 +17,7 @@ def reset_robot_state(
     env: RLTaskEnv,
     env_ids: torch.Tensor,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    initial_z: float = 0.0,
 ):
     """Reset the asset root state to the default position and velocity.
 
@@ -27,6 +28,8 @@ def reset_robot_state(
     asset.reset()
     # get default root state
     root_states = asset.data.default_root_state[env_ids].clone()
+    # move initial z according to params
+    root_states[...,2] += initial_z
     root_states[..., 0:3] += env.scene.env_origins[env_ids]
 
     # set into the physics simulation
@@ -54,6 +57,7 @@ def reset_landing_platform(
     env: RLTaskEnv,
     env_ids: torch.Tensor,
     landing_pltform_cfg: SceneEntityCfg = SceneEntityCfg("landing_platform"),
+    initial_z: float = 0.0,
 
 ):
     """Reset the asset root state to the default position and velocity.
@@ -64,6 +68,8 @@ def reset_landing_platform(
     landing_pltform: RigidObject = env.scene[landing_pltform_cfg.name]
 
     root_states = landing_pltform.data.default_root_state[env_ids].clone()
+    # move initial z according to params
+    root_states[...,2] += initial_z
 
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids]
     orientations = root_states[:, 3:7]
@@ -80,7 +86,8 @@ def detect_apex(
     foot_z_threshold: float = 0.03,
     base_z_threshold: float = 0.3,
     foot_height_offset: float = 0.02,
-    offset: float = 0.05
+    offset: float = 0.05,
+    initial_z: float = 0.0,
 
 ):
     """Reset the asset root state to the default position and velocity.
@@ -117,9 +124,9 @@ def detect_apex(
     trunk_target = env.command_manager.get_command("trunk_target")
 
     # Obtain env ids of robot with foots heigher than the threshold
-    foot_lifted_off_env_ids = torch.nonzero(torch.all(foots_z_pos_w > foot_z_threshold, dim=1)).reshape(1, -1)[0]
+    foot_lifted_off_env_ids = torch.nonzero(torch.all(foots_z_pos_w > foot_z_threshold + initial_z, dim=1)).reshape(1, -1)[0]
     # Obtain env ids of robot with base heigher than the threshold
-    base_lifted_off_env_ids = torch.nonzero(base_pose_w[:, 2] > base_z_threshold).reshape(1, -1)[0]
+    base_lifted_off_env_ids = torch.nonzero(base_pose_w[:, 2] > base_z_threshold + initial_z).reshape(1, -1)[0]
     # Obtain env ids of robot that are experiencing a negative z linear velocity
     base_negative_lin_vel_env_ids = torch.nonzero(base_lin_vel_w[:, 2] < base_lin_vel_threshold).reshape(1, -1)[0]
 
@@ -128,16 +135,10 @@ def detect_apex(
     apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == base_negative_lin_vel_env_ids.view(-1, 1)).any(dim=0)]
     apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == env.extras['after_t_th_total'].view(-1, 1)).any(dim=0)]
 
-    foot_target_z = trunk_target[..., 2]
+    foot_target_z = trunk_target[..., 2] + initial_z
 
     foot_height_z = torch.min(foots_z_pos_w, dim=1).values
     landing_z = torch.clip(foot_height_z - offset, min=torch.zeros_like(foot_target_z), max=foot_target_z)
-
-    # get if the reached foot z is greather than the saved ona but lower/equal than the target one
-    z_overwrite_ids = torch.nonzero((landing_z > env.extras['landing_z']) & (landing_z <= foot_target_z)).reshape(1, -1)[0]
-
-    if len(z_overwrite_ids):
-        env.extras['landing_z'][z_overwrite_ids] = landing_z[z_overwrite_ids]
 
     # Calculate the landing platform default position and orientation
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids]
@@ -147,19 +148,22 @@ def detect_apex(
     # correct landing platform offset
     positions[..., 2] = env.extras['landing_z'] - 0.025
 
-    after_t_th_total_ids = env.extras['after_t_th_total']
-
-    if after_t_th_total_ids.numel() > 0:
-        landing_platform.write_root_pose_to_sim(torch.cat([positions[after_t_th_total_ids], orientations[after_t_th_total_ids]], dim=-1), env_ids=after_t_th_total_ids)
-
     existing_apex_ids = env.extras.get('apex', {})
+
     for apex_env in apex_env_ids:
-        apex_env = apex_env.item()
+        apex_env = int(apex_env.item())
         if apex_env not in existing_apex_ids:
             # adding the touchdown state
             env.extras['apex'][apex_env] = True
             env.extras['apex_q'][apex_env] = robot.data.joint_pos[apex_env].clone()
             env.extras['apex_z'][apex_env] = robot.data.root_state_w[apex_env][...,2].clone()
+
+            # get if the reached foot z is greather than the saved ona but lower/equal than the target one
+            if (landing_z[apex_env] > env.extras['landing_z'][apex_env]) and (landing_z[apex_env] <= foot_target_z[apex_env]):
+                env.extras['landing_z'][apex_env] = landing_z[apex_env]
+
+    existing_apex_ids = torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int)
+    landing_platform.write_root_pose_to_sim(torch.cat([positions[existing_apex_ids], orientations[existing_apex_ids]], dim=-1), env_ids=existing_apex_ids)
 
     # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
 

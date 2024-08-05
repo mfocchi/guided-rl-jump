@@ -10,9 +10,7 @@ from omni.isaac.orbit_tasks.locomotion.jump.jump_env_cfg import LocomotionJumpEn
 ##
 # Pre-defined configs
 ##
-from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG, UNITREE_GO2_CFG, UNITREE_A1_CFG  # isort: skip
-from omni.isaac.orbit_assets.anymal import ANYMAL_B_CFG
-
+from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG  # isort: skip
 
 @configclass
 class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
@@ -21,8 +19,6 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         super().__post_init__()
 
         self.scene.robot = UNITREE_GO1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-        # self.scene.robot = UNITREE_GO2_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
-        # self.scene.robot = UNITREE_A1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
 
 

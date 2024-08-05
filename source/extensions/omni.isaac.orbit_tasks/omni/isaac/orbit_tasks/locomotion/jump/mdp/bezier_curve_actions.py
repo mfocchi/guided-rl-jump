@@ -340,7 +340,7 @@ class BezierCurveAction(ActionTerm):
 
         if len(apex_env_ids) > 0:
             apex_elapsed_time = self._env.extras['apex_dt'][apex_env_ids]
-            apex_elapsed_ratio = torch.clip(apex_elapsed_time / torch.full_like(apex_elapsed_time, 2*self.lerp_time), 0, 1).reshape(-1, 1)
+            apex_elapsed_ratio = torch.clip(apex_elapsed_time / torch.full_like(apex_elapsed_time, self.lerp_time), 0, 1).reshape(-1, 1)
 
             q_0_extended = torch.expand_copy(self.q_0_td, (len(apex_env_ids), len(self.q_0_td)))
 
@@ -380,7 +380,7 @@ class BezierCurveAction(ActionTerm):
 
         # TODO: this hold for a robot that is in real world withoud capture sys?
         trunk_x_0 = self._asset.data.root_state_w[:, 0:3].clone() - self._env.scene.env_origins
-        trunk_z_offset = trunk_x_0[...,2] - self.robot_height
+        trunk_z_offset = trunk_x_0[..., 2] - self.robot_height
         trunk_xd_0 = self._asset.data.root_lin_vel_b.clone()
         trunk_o_0 = torch.stack(euler_xyz_from_quat(self._asset.data.root_state_w[:, 3:7].clone()), dim=1)
         trunk_od_0 = self._asset.data.root_ang_vel_b.clone()
@@ -405,9 +405,8 @@ class BezierCurveAction(ActionTerm):
 
         trunk_x_lo = self.torch_sph2cart(torch.stack((x_xd_phi, x_theta, x_r), dim=1))
         # add z offset to the x_lo according to x_0
-        trunk_x_lo[...,2] += trunk_z_offset
+        trunk_x_lo[..., 2] += trunk_z_offset
         self.trunk_x_lo = trunk_x_lo
-
 
         self._env.extras["trunk_x_lo"] = trunk_x_lo
 
