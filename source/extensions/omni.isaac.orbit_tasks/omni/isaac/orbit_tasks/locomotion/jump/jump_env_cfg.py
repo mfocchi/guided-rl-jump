@@ -30,9 +30,9 @@ time_step = 0.005
 pos_x = (-0.6, 0.6)
 pos_y = (-0.6, 0.6)
 pos_z = (0.0, 0.4)
-roll = (0,0)
-pitch = (0,0)
-yaw = (-np.pi/2, np.pi/2)
+roll = (0, 0)
+pitch = (0, 0)
+yaw = (-np.pi / 2, np.pi / 2)
 
 trunk_name = "trunk"
 
@@ -147,12 +147,12 @@ class ActionsCfg:
                                          xd_theta_max=np.pi / 2,
                                          xd_r_min=0.1,
                                          xd_r_max=5,
-                                         psi_min=-np.pi / 4,
-                                         psi_max=np.pi / 4,
-                                         theta_min=-np.pi / 4,
-                                         theta_max= 0,
-                                         phi_min=-np.pi,
-                                         phi_max=np.pi,
+                                         psi_min=-np.pi / 6,
+                                         psi_max=np.pi / 6,
+                                         theta_min=-np.pi / 6,
+                                         theta_max=np.pi / 6,
+                                         phi_min=-np.pi / 4,
+                                         phi_max=np.pi / 4,
                                          psid_min=-4,
                                          psid_max=4,
                                          thetad_min=-4,
@@ -284,7 +284,7 @@ class NegativeRewardsCfg:
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=-1,
+        weight=-2,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "command_name": "trunk_target"},
     )
 
@@ -325,20 +325,26 @@ class NegativeRewardsCfg:
         weight=-10,
     )
 
-    touchdown_angular_velocity_penalization = RewTerm(
-        func=mdp.touchdown_angular_velocity_penalization,
-        weight=-0.001,
-    )
+    # touchdown_angular_velocity_penalization = RewTerm(
+    #     func=mdp.touchdown_angular_velocity_penalization,
+    #     weight=-0.001,
+    # )
+    
+    # apex_z_regularization = RewTerm(
+    #     func=mdp.apex_z_regularization,
+    #     params={"command_name": "trunk_target", "delta": 0.2},
+    #     weight=-0.1,
+    # )
 
     # a_regularization = RewTerm(
     #     func=mdp.a_regularization,
     #     weight=-0.01,
     # )
 
-    t_th_total_regularization = RewTerm(
-        func=mdp.t_th_total_regularization,
-        weight=-0.1,
-    )
+    # t_th_total_regularization = RewTerm(
+    #     func=mdp.t_th_total_regularization,
+    #     weight=-0.1,
+    # )
 
 
 @ configclass

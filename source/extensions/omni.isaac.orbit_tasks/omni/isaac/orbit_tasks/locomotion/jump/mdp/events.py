@@ -46,6 +46,7 @@ def reset_robot_state(
     env.extras['t_th_q'] = torch.zeros_like(asset.data.joint_pos)
     env.extras['apex_q'] = torch.zeros_like(asset.data.joint_pos)
     env.extras['apex_dt'] = torch.zeros(env.num_envs, device=env.device)
+    env.extras['apex_z'] = torch.zeros(env.num_envs, device=env.device)
     env.extras['landing_z'] = torch.zeros(env.num_envs, device=env.device)
 
 
@@ -158,6 +159,7 @@ def detect_apex(
             # adding the touchdown state
             env.extras['apex'][apex_env] = True
             env.extras['apex_q'][apex_env] = robot.data.joint_pos[apex_env].clone()
+            env.extras['apex_z'][apex_env] = robot.data.root_state_w[apex_env][...,2].clone()
 
     # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
 
