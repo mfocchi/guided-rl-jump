@@ -104,12 +104,14 @@ def liftoff_z_regularization(env: RLTaskEnv, limit: float = 0.4) -> torch.Tensor
     des_lo_z = env.extras["trunk_x_exp"][..., 2]
     return torch.square(des_lo_z - limit)
 
+
 def apex_z_regularization(env: RLTaskEnv, command_name: str, delta: float = 0.2, initial_z: float = 0.0, robot_height: float = 0.3) -> torch.Tensor:
 
     apex_z = env.extras["apex_z"]
-    target_z = env.command_manager.get_command(command_name)[...,2] + initial_z + robot_height + delta
+    target_z = env.command_manager.get_command(command_name)[..., 2] + initial_z + robot_height + delta
 
     return torch.abs(torch.clip(apex_z - target_z, -torch.inf, 0))
+
 
 def a_regularization(env: RLTaskEnv, limit: float = 9.81) -> torch.Tensor:
 
@@ -134,17 +136,19 @@ def t_th_total_regularization(env: RLTaskEnv, limit: float = 0.65) -> torch.Tens
     return torch.square(t_th_total - limit)
 
 
-def singularity_penalty(env: RLTaskEnv, x_limit: float = 0.1, y_limit: float = 0.1, z_limit: float = 0.4) -> torch.Tensor:
+def singularity_penalty(env: RLTaskEnv, x_limit: float = 0.1, y_limit: float = 0.1, z_limit: float = 0.4, initial_z: float = 0.0) -> torch.Tensor:
 
     x = torch.abs(env.extras["trunk_x_exp"][..., 0])
     y = torch.abs(env.extras["trunk_x_exp"][..., 1])
-    z = torch.abs(env.extras["trunk_x_exp"][..., 2])
+    z = torch.abs(env.extras["trunk_x_exp"][..., 2] - initial_z)
 
     x_cost = computeActivationFunction('linear', x, -torch.inf, x_limit)
     y_cost = computeActivationFunction('linear', y, -torch.inf, y_limit)
     z_cost = computeActivationFunction('linear', z, -torch.inf, z_limit)
 
     costs = x_cost + y_cost + z_cost
+
+    print(costs)
 
     return costs
 

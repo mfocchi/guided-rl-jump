@@ -343,7 +343,7 @@ class NegativeRewardsCfg:
 
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
-        params={"x_limit": 0.15, "y_limit": 0.15, "z_limit": 0.4},
+        params={"x_limit": 0.15, "y_limit": 0.15, "z_limit": 0.4, "initial_z": initial_z},
         weight=-10,
     )
 
