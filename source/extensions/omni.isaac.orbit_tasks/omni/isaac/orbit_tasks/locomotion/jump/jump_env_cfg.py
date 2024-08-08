@@ -39,8 +39,8 @@ max_action = 5
 
 
 # Target config
-pos_x = (-1, 1)
-pos_y = (-1, 1)
+pos_x = (-0.8, 0.8)
+pos_y = (-0.6, 0.6)
 pos_z = (-0.4, 0.4)
 roll = (0, 0)
 pitch = (0, 0)
@@ -97,7 +97,7 @@ class MySceneCfg(InteractiveSceneCfg):
     landing_platform: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
-            size=(0.7, 0.7, 0.05),
+            size=(0.8, 0.8, 0.05),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, kinematic_enabled=True),
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
@@ -163,8 +163,8 @@ class ActionsCfg:
                                          max_action=max_action,
                                          robot_height=robot_height,
                                          lerp_time=0.1,
-                                         t_th_min=0.1,
-                                         t_th_max=0.7,
+                                         t_th_min=0.4,
+                                         t_th_max=0.8,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
                                          x_r_min=0.1,
@@ -187,7 +187,7 @@ class ActionsCfg:
                                          phid_max=4,
                                          xd_mult_min=1,
                                          xd_mult_max=5,
-                                         l_expl_min=0,
+                                         l_expl_min=0.0,
                                          l_expl_max=0.3,
                                          debug_vis=True)
 
@@ -275,7 +275,7 @@ class RunningRewardsCfg:
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-0.01
+        weight=-0.005
     )
 
     friction_constraint = RewTerm(
@@ -353,15 +353,15 @@ class NegativeRewardsCfg:
         weight=-10,
     )
 
-    # touchdown_angular_velocity_penalization = RewTerm(
-    #     func=mdp.touchdown_angular_velocity_penalization,
-    #     weight=-0.001,
-    # )
+    touchdown_angular_velocity_penalization = RewTerm(
+        func=mdp.touchdown_angular_velocity_penalization,
+        weight=-0.001,
+    )
 
     apex_z_regularization = RewTerm(
         func=mdp.apex_z_regularization,
         params={"command_name": "trunk_target", "delta": 0.2, "initial_z": initial_z, "robot_height": robot_height},
-        weight=-0.1,
+        weight=-1,
     )
 
     # a_regularization = RewTerm(
@@ -369,10 +369,10 @@ class NegativeRewardsCfg:
     #     weight=-0.01,
     # )
 
-    # t_th_total_regularization = RewTerm(
-    #     func=mdp.t_th_total_regularization,
-    #     weight=-0.1,
-    # )
+    t_th_total_regularization = RewTerm(
+        func=mdp.t_th_total_regularization,
+        weight=-1,
+    )
 
 
 @ configclass

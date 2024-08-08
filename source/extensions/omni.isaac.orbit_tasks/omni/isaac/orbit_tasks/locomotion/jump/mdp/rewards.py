@@ -130,7 +130,7 @@ def touchdown_angular_velocity_penalization(env: RLTaskEnv) -> torch.Tensor:
     return cost
 
 
-def t_th_total_regularization(env: RLTaskEnv, limit: float = 0.65) -> torch.Tensor:
+def t_th_total_regularization(env: RLTaskEnv, limit: float = 0.7) -> torch.Tensor:
 
     t_th_total = env.extras["t_th_total"].flatten()
     return torch.square(t_th_total - limit)
