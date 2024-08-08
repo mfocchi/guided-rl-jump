@@ -179,10 +179,10 @@ class ActionsCfg:
                                          theta_max=np.pi / 6,
                                          phi_min=-np.pi / 4,
                                          phi_max=np.pi / 4,
-                                         psid_min=-4,
-                                         psid_max=4,
-                                         thetad_min=-4,
-                                         thetad_max=4,
+                                         psid_min=-1,
+                                         psid_max=1,
+                                         thetad_min=-1,
+                                         thetad_max=1,
                                          phid_min=-4,
                                          phid_max=4,
                                          xd_mult_min=1,
@@ -343,7 +343,7 @@ class NegativeRewardsCfg:
 
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
-        params={"x_limit": 0.15, "y_limit": 0.15, "z_limit": 0.4, "initial_z": initial_z},
+        params={"x_limit": x_limit, "y_limit": y_limit, "z_limit": z_limit, "initial_z": initial_z},
         weight=-10,
     )
 
@@ -355,7 +355,7 @@ class NegativeRewardsCfg:
 
     touchdown_angular_velocity_penalization = RewTerm(
         func=mdp.touchdown_angular_velocity_penalization,
-        weight=-0.001,
+        weight=-0.01,
     )
 
     apex_z_regularization = RewTerm(
@@ -369,10 +369,10 @@ class NegativeRewardsCfg:
     #     weight=-0.01,
     # )
 
-    t_th_total_regularization = RewTerm(
-        func=mdp.t_th_total_regularization,
-        weight=-1,
-    )
+    # t_th_total_regularization = RewTerm(
+    #     func=mdp.t_th_total_regularization,
+    #     weight=-1,
+    # )
 
 
 @ configclass

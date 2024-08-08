@@ -198,9 +198,9 @@ def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: 
 
     # print(f"detected touchdow: {env.extras['touchdown'].keys()}")
     # try to pause the simulation for the env that are in touchdown
-    if len(env.extras['touchdown']):
-        existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
-        values = torch.stack(list(env.extras['touchdown'].values())).to(env.device)
-        asset.write_root_pose_to_sim(values[..., 0:7], env_ids=existing_touchdown_ids)
-        asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
-        asset.write_joint_state_to_sim(values[..., 13:25], torch.zeros((len(existing_touchdown_ids), 12), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
+    # if len(env.extras['touchdown']):
+    #     existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+    #     values = torch.stack(list(env.extras['touchdown'].values())).to(env.device)
+    #     asset.write_root_pose_to_sim(values[..., 0:7], env_ids=existing_touchdown_ids)
+    #     asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
+    #     asset.write_joint_state_to_sim(values[..., 13:25], torch.zeros((len(existing_touchdown_ids), 12), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
