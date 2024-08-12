@@ -171,7 +171,7 @@ class ActionsCfg:
                                          x_r_max=0.4,
                                          xd_theta_min=np.pi / 6,
                                          xd_theta_max=np.pi / 2,
-                                         xd_r_min=0.1,
+                                         xd_r_min=0.5,
                                          xd_r_max=5,
                                          psi_min=-np.pi / 6,
                                          psi_max=np.pi / 6,
@@ -185,9 +185,9 @@ class ActionsCfg:
                                          thetad_max=1,
                                          phid_min=-4,
                                          phid_max=4,
-                                         xd_mult_min=1.5,
+                                         xd_mult_min=1,
                                          xd_mult_max=3,
-                                         l_expl_min=0.1,
+                                         l_expl_min=0.0,
                                          l_expl_max=0.3,
                                          debug_vis=True)
 
@@ -364,10 +364,10 @@ class NegativeRewardsCfg:
         weight=-2,
     )
 
-    # a_regularization = RewTerm(
-    #     func=mdp.a_regularization,
-    #     weight=-0.01,
-    # )
+    a_regularization = RewTerm(
+        func=mdp.a_regularization,
+        weight=-0.01,
+    )
 
     # t_th_total_regularization = RewTerm(
     #     func=mdp.t_th_total_regularization,

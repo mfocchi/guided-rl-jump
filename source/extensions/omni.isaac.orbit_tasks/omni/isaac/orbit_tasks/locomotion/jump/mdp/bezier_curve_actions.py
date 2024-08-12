@@ -104,9 +104,9 @@ class BezierCurveAction(ActionTerm):
         self.l_expl_min = self.cfg.l_expl_min
         self.l_expl_max = self.cfg.l_expl_max
 
-        self.q_0_td = self._asset.data.default_joint_pos.clone()[0]
-        # self.q_0_lo = self._asset.data.default_joint_pos.clone()[0]
         # self.q_0_td = torch.tensor([0.1789, -0.1784, 0.1867, -0.1861, 1.2234, 1.2230, 1.4733, 1.4733, -2.2329, -2.2327, -2.1055, -2.1053], device=self.device)
+        # self.q_0_lo = self._asset.data.default_joint_pos.clone()[0]
+        self.q_0_td = self._asset.data.default_joint_pos.clone()[0]
         self.q_0_lo = torch.tensor([0.3430, -0.3425, 0.3433, -0.3424, 1.5495, 1.5490, 1.9171, 1.9173, -2.6620, -2.6618, -2.4902, -2.4901], device=self.device)
 
         self.default_stiffness = self._asset.actuators["base_legs"].stiffness[0, 0]
