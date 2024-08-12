@@ -185,9 +185,9 @@ class ActionsCfg:
                                          thetad_max=1,
                                          phid_min=-4,
                                          phid_max=4,
-                                         xd_mult_min=1,
-                                         xd_mult_max=5,
-                                         l_expl_min=0.0,
+                                         xd_mult_min=1.5,
+                                         xd_mult_max=3,
+                                         l_expl_min=0.1,
                                          l_expl_max=0.3,
                                          debug_vis=True)
 
@@ -264,18 +264,18 @@ class RunningRewardsCfg:
 
     joint_pos_limits = RewTerm(
         func=mdp.joint_pos_limits,
-        weight=-0.01
+        weight=-0.001
     )
 
     joint_vel_limits = RewTerm(
         func=mdp.joint_vel_limits,
-        weight=-0.01,
+        weight=-0.001,
         params={"soft_ratio": 1.0}
     )
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-0.005
+        weight=-0.001
     )
 
     friction_constraint = RewTerm(
@@ -361,7 +361,7 @@ class NegativeRewardsCfg:
     apex_z_regularization = RewTerm(
         func=mdp.apex_z_regularization,
         params={"command_name": "trunk_target", "delta": 0.2, "initial_z": initial_z, "robot_height": robot_height},
-        weight=-1,
+        weight=-2,
     )
 
     # a_regularization = RewTerm(
