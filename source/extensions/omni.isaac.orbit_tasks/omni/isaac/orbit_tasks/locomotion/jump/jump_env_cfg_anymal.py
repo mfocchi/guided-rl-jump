@@ -31,7 +31,7 @@ time_step = 0.005
 
 # Terrain
 mu = 1.0
-initial_z = 0.4
+initial_z = 0.
 
 # Action config
 min_action = -5
@@ -49,18 +49,18 @@ yaw = (-np.pi / 2, np.pi / 2)
 activate_curriculum = False
 
 # Robot params
-trunk_name = "trunk"
+trunk_name = "base"
 robot_height = 0.3
 foot_offset = 0.02
 
-fl_joint_names = ["FL.*"]
-fl_body_names = ["FL_foot"]
-fr_joint_names = ["FR.*"]
-fr_body_names = ["FR_foot"]
-rl_joint_names = ["RL.*"]
-rl_body_names = ["RL_foot"]
-rr_joint_names = ["RR.*"]
-rr_body_names = ["RR_foot"]
+fl_joint_names = ["LF.*"]
+fl_body_names = ["LF_FOOT"]
+fr_joint_names = ["RF.*"]
+fr_body_names = ["RF_FOOT"]
+rl_joint_names = ["LH.*"]
+rl_body_names = ["LH_FOOT"]
+rr_joint_names = ["RH.*"]
+rr_body_names = ["RH_FOOT"]
 
 x_limit = 0.15
 y_limit = 0.15
@@ -88,7 +88,7 @@ class MySceneCfg(InteractiveSceneCfg):
     robot: ArticulationCfg = MISSING
 
     # sensorsc
-    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot)$",
+    contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:FOOT)$",
                                       track_air_time=True,
                                       visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"),
                                       debug_vis=False)
@@ -242,17 +242,17 @@ class EventCfg:
                 "foot_height_offset": foot_offset,
                 "offset": 0.05,
                 "initial_z": initial_z,
-                "foot_name": ".*foot"}
+                "foot_name": ".*FOOT"}
     )
 
     detect_touchdown = EventTerm(
         func=mdp.detect_touchdown,
         mode="interval",
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*FOOT"),
                 "asset_cfg": SceneEntityCfg("robot"),
                 "foot_pos_threshold": 0.01,
                 "contact_threshold": 5.0,
-                "foot_name": ".*foot"},
+                "foot_name": ".*FOOT"},
         interval_range_s=(0., 0.)
     )
 
@@ -284,7 +284,7 @@ class RunningRewardsCfg:
         func=mdp.friction_constraint,
         weight=-0.01,
         params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*FOOT"),
             "mu": mu
         }
     )
@@ -306,7 +306,7 @@ class RewardsCfg:
                 "err_coeff": 1.,
                 "bias": 3,
                 "foot_height_offset": foot_offset,
-                "foot_name": ".*foot"},
+                "foot_name": ".*FOOT"},
     )
 
 

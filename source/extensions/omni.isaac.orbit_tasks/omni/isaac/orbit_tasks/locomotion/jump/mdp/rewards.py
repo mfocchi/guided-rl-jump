@@ -26,7 +26,7 @@ def computeActivationFunction(activationType, values, lower, upper):
         raise ValueError("Invalid activation type")
 
 
-def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, z_threshold: float = 0.1, coeff: float = 1., dist_coeff: float = 1., err_coeff: float = 1., bias: float = 1, foot_height_offset: float = 0.02) -> torch.Tensor:
+def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, z_threshold: float = 0.1, coeff: float = 1., dist_coeff: float = 1., err_coeff: float = 1., bias: float = 1, foot_height_offset: float = 0.02, foot_name: str = ".*foot") -> torch.Tensor:
     """Penalize tracking of the position error using L2-norm.
 
     The function computes the position error between the desired position (from the command) and the
@@ -42,7 +42,7 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     des_pos_w = env.extras["trunk_tg"] + env.scene.env_origins
     des_pos_w[..., 2] -= asset.data.default_root_state[..., 2]
 
-    foot_idx = asset.find_bodies(".*foot")[0]
+    foot_idx = asset.find_bodies(foot_name)[0]
 
     curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
 

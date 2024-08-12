@@ -29,7 +29,7 @@ def reset_robot_state(
     # get default root state
     root_states = asset.data.default_root_state[env_ids].clone()
     # move initial z according to params
-    root_states[...,2] += initial_z
+    root_states[..., 2] += initial_z
     root_states[..., 0:3] += env.scene.env_origins[env_ids]
 
     # set into the physics simulation
@@ -69,7 +69,7 @@ def reset_landing_platform(
 
     root_states = landing_pltform.data.default_root_state[env_ids].clone()
     # move initial z according to params
-    root_states[...,2] += initial_z
+    root_states[..., 2] += initial_z
 
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids]
     orientations = root_states[:, 3:7]
@@ -88,6 +88,7 @@ def detect_apex(
     foot_height_offset: float = 0.02,
     offset: float = 0.05,
     initial_z: float = 0.0,
+    foot_name: str = ".*foot"
 
 ):
     """Reset the asset root state to the default position and velocity.
@@ -99,7 +100,7 @@ def detect_apex(
     landing_platform: RigidObject | Articulation = env.scene[landing_platform_cfg.name]
 
     # Get foot positions
-    foot_idx = robot.find_bodies(".*foot")[0]
+    foot_idx = robot.find_bodies(foot_name)[0]
     fl_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[0], 2].clone()
     fr_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[1], 2].clone()
     rl_foot_z_pos_w = robot.data.body_state_w[:, foot_idx[2], 2].clone()
@@ -156,7 +157,7 @@ def detect_apex(
             # adding the touchdown state
             env.extras['apex'][apex_env] = True
             env.extras['apex_q'][apex_env] = robot.data.joint_pos[apex_env].clone()
-            env.extras['apex_z'][apex_env] = robot.data.root_state_w[apex_env][...,2].clone()
+            env.extras['apex_z'][apex_env] = robot.data.root_state_w[apex_env][..., 2].clone()
 
             # get if the reached foot z is greather than the saved ona but lower/equal than the target one
             if (landing_z[apex_env] > env.extras['landing_z'][apex_env]) and (landing_z[apex_env] <= foot_target_z[apex_env]):
@@ -168,18 +169,18 @@ def detect_apex(
     # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
 
 
-def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: float, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg):
+def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: float, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg, foot_name: str = ".*foot"):
     """Terminate when the contact force on the sensor exceeds the force threshold."""
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     asset: Articulation = env.scene[asset_cfg.name]
 
-    foot_idx = asset.find_bodies(".*foot")[0]
+    foot_idx = asset.find_bodies(foot_name)[0]
     net_contact_forces = contact_sensor.data.net_forces_w
 
     # near_foot_env_ids = torch.std(asset.data.body_state_w[:, foot_idx, 2], dim=1) <= foot_pos_threshold
     in_contact_env_ids = torch.all(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
-    
+
     # touchdown_env_ids = torch.nonzero(near_foot_env_ids & in_contact_env_ids).reshape(1, -1)[0]
     touchdown_env_ids = torch.nonzero(in_contact_env_ids).reshape(1, -1)[0]
 
