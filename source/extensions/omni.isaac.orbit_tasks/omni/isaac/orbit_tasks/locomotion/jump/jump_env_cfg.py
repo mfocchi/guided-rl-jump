@@ -30,7 +30,9 @@ import omni.isaac.orbit_tasks.locomotion.jump.mdp as mdp
 time_step = 0.005
 
 # Terrain
-mu = 1.0
+
+# 
+mu = 0.6
 initial_z = 0.4
 
 # Action config
@@ -97,7 +99,7 @@ class MySceneCfg(InteractiveSceneCfg):
     landing_platform: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
-            size=(0.8, 0.8, 0.05),
+            size=(2, 2, 0.05),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, kinematic_enabled=True),
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
@@ -367,10 +369,10 @@ class NegativeRewardsCfg:
         weight=-2,
     )
 
-    a_regularization = RewTerm(
-        func=mdp.a_regularization,
-        weight=-0.01,
-    )
+    # a_regularization = RewTerm(
+    #     func=mdp.a_regularization,
+    #     weight=-0.01,
+    # )
 
     # t_th_total_regularization = RewTerm(
     #     func=mdp.t_th_total_regularization,
