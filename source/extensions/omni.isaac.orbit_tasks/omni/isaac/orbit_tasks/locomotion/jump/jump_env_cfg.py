@@ -31,7 +31,7 @@ time_step = 0.005
 
 # Terrain
 
-# 
+#
 mu = 0.6
 initial_z = 0.4
 
@@ -51,22 +51,24 @@ yaw = (-np.pi / 2, np.pi / 2)
 activate_curriculum = False
 
 # Robot params
-trunk_name = "trunk"
-robot_height = 0.3
-foot_offset = 0.02
+trunk_name = ""
+foot_name = ""
+robot_height = 0.
+foot_offset = 0.
 
-fl_joint_names = ["FL.*"]
-fl_body_names = ["FL_foot"]
-fr_joint_names = ["FR.*"]
-fr_body_names = ["FR_foot"]
-rl_joint_names = ["RL.*"]
-rl_body_names = ["RL_foot"]
-rr_joint_names = ["RR.*"]
-rr_body_names = ["RR_foot"]
+fl_joint_names = []
+fl_body_names = []
+fr_joint_names = []
+fr_body_names = []
+rl_joint_names = []
+rl_body_names = []
+rr_joint_names = []
+rr_body_names = []
 
-x_limit = 0.15
-y_limit = 0.15
-z_limit = 0.4
+x_limit = 0.
+y_limit = 0.
+z_limit = 0.
+
 
 # ============================
 # Scene definition
@@ -244,17 +246,15 @@ class EventCfg:
                 "foot_height_offset": foot_offset,
                 "offset": 0.05,
                 "initial_z": initial_z,
-                "foot_name": ".*foot"}
+                "foot_name": foot_name}
     )
 
     detect_touchdown = EventTerm(
         func=mdp.detect_touchdown,
         mode="interval",
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=foot_name),
                 "asset_cfg": SceneEntityCfg("robot"),
-                "foot_pos_threshold": 0.01,
-                "contact_threshold": 5.0,
-                "foot_name": ".*foot"},
+                "contact_threshold": 5.0},
         interval_range_s=(0., 0.)
     )
 
@@ -286,7 +286,7 @@ class RunningRewardsCfg:
         func=mdp.friction_constraint,
         weight=-0.01,
         params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"),
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=foot_name),
             "mu": mu
         }
     )
@@ -308,7 +308,7 @@ class RewardsCfg:
                 "err_coeff": 1.,
                 "bias": 3,
                 "foot_height_offset": foot_offset,
-                "foot_name": ".*foot"},
+                "foot_name": foot_name},
     )
 
 

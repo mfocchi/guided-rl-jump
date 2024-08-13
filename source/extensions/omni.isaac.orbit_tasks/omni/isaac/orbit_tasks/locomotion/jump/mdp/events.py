@@ -169,13 +169,12 @@ def detect_apex(
     # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
 
 
-def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, foot_pos_threshold: float, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg, foot_name: str = ".*foot"):
+def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg):
     """Terminate when the contact force on the sensor exceeds the force threshold."""
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     asset: Articulation = env.scene[asset_cfg.name]
 
-    foot_idx = asset.find_bodies(foot_name)[0]
     net_contact_forces = contact_sensor.data.net_forces_w
 
     # near_foot_env_ids = torch.std(asset.data.body_state_w[:, foot_idx, 2], dim=1) <= foot_pos_threshold
