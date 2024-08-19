@@ -82,7 +82,7 @@ class UnitreeGo2JumpEnvCfg(LocomotionJumpEnvCfg):
 
 
 @configclass
-class UnitreeGo2JumpEnvCfg_PLAY(UnitreeGo1JumpEnvCfg):
+class UnitreeGo2JumpEnvCfg_PLAY(UnitreeGo2JumpEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
