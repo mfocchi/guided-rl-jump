@@ -54,6 +54,13 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     # print(f"Target: {des_pos_w[...,:3]}")
     # print(f"Landing: {curr_pos_w[...,:3]}")
 
+    actual_td = torch.stack(list(env.extras['touchdown'].values()))[..., :3].to(env.device)
+    actual_td[..., 2] = foot_pos_center
+
+
+    env.extras["desirerd_td"] = des_pos_w[..., :3].clone() - env.scene.env_origins
+    env.extras["actual_td"] = curr_pos_w[..., :3].clone() - env.scene.env_origins
+
     # Calculate percentual_error to normalize jump performance
     target_z_error = torch.abs(des_pos_w[..., 2] - curr_pos_w[..., 2])
     target_z_error = torch.where(target_z_error <= z_threshold, torch.tensor(0.0), target_z_error)
@@ -147,8 +154,6 @@ def singularity_penalty(env: RLTaskEnv, x_limit: float = 0.1, y_limit: float = 0
     z_cost = computeActivationFunction('linear', z, -torch.inf, z_limit)
 
     costs = x_cost + y_cost + z_cost
-
-    print(costs)
 
     return costs
 
