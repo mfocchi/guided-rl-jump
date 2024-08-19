@@ -19,7 +19,7 @@ class UnitreeGo2JumpEnvCfg(LocomotionJumpEnvCfg):
         # post init of parent
         super().__post_init__()
 
-        self.scene.robot = UNITREE_GO1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot = UNITREE_GO2_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
         # Robot params
         trunk_name = "trunk"
