@@ -54,10 +54,6 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     # print(f"Target: {des_pos_w[...,:3]}")
     # print(f"Landing: {curr_pos_w[...,:3]}")
 
-    actual_td = torch.stack(list(env.extras['touchdown'].values()))[..., :3].to(env.device)
-    actual_td[..., 2] = foot_pos_center
-
-
     env.extras["desirerd_td"] = des_pos_w[..., :3].clone() - env.scene.env_origins
     env.extras["actual_td"] = curr_pos_w[..., :3].clone() - env.scene.env_origins
 

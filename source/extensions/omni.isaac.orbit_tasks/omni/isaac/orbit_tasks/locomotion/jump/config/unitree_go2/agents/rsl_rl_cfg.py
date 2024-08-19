@@ -17,7 +17,7 @@ class UnitreeGo2PPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 5
     max_iterations = 1000
     save_interval = 100
-    experiment_name = "unitree_go1_jump"
+    experiment_name = "unitree_go2_jump"
     empirical_normalization = False
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,

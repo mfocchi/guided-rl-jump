@@ -22,7 +22,7 @@ class UnitreeGo2JumpEnvCfg(LocomotionJumpEnvCfg):
         self.scene.robot = UNITREE_GO2_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
         # Robot params
-        trunk_name = "trunk"
+        trunk_name = "base"
         foot_name = "foot"
         legs_name = "base_legs"
         robot_height = 0.3
