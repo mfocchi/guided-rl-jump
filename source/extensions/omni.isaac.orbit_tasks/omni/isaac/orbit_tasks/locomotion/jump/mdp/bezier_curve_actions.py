@@ -520,6 +520,11 @@ class BezierCurveAction(ActionTerm):
         q_des, qd_des = self.ik(x, o, self.old_q_des)
         self.old_q_des = q_des.clone()
 
+        # DEBUG: stand still
+        # q_des = self._asset.data.default_joint_pos
+        # qd_des = self._asset.data.default_joint_vel
+
+
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
 

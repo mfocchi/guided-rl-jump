@@ -2,14 +2,15 @@ import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.actuators import ActuatorNetMLPCfg, DCMotorCfg
 from omni.isaac.orbit.assets.articulation import ArticulationCfg
 import os
+import numpy as np
 
 SOLO_ACTUATOR_CFG = DCMotorCfg(
-    joint_names_expr=[".*_hip", ".*_upperleg", ".*_lowerleg"],
-    effort_limit=23.7,  # taken from spec sheet
+    joint_names_expr=[".*_haa_joint", ".*_hfe_joint", ".*_kfe_joint"],
+    effort_limit=20.0,  # taken from spec sheet
     velocity_limit=30.0,  # taken from spec sheet
-    saturation_effort=23.7,  # same as effort limit
-    stiffness=120.0,
-    damping=0.5,
+    saturation_effort=20.0,  # same as effort limit
+    stiffness=5.0,
+    damping=0.1,
     friction=0.0,
 )
 
@@ -31,13 +32,13 @@ SOLO_CFG = ArticulationCfg(
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.3),
+        pos=(0.0, 0.0, 0.24),
         joint_pos={
-            ".*L_hip": 0.1,
-            ".*R_hip": -0.1,
-            "F[L,R]_upperleg": 0.8,
-            "R[L,R]_upperleg": 1.0,
-            ".*_lowerleg": -1.5,
+            ".*haa_joint": 0.,
+            ".*f_hfe_joint": np.pi / 4,
+            ".*h_hfe_joint": -np.pi / 4,
+            ".*f_kfe_joint": -np.pi / 2,
+            ".*h_kfe_joint": np.pi / 2,
         },
         joint_vel={".*": 0.0},
     ),
