@@ -79,10 +79,9 @@ class AnymalJumpEnvCfg(LocomotionJumpEnvCfg):
         self.actions.jump_traj.q_0_lo = q_0_lo
         self.actions.jump_traj.legs_name = legs_name
 
-        self.actions.jump_traj.x_r_min = 0.55
-        self.actions.jump_traj.x_r_max = 0.55
-        self.actions.jump_traj.l_expl_min = 0
-        self.actions.jump_traj.l_expl_max = 0
+        self.actions.jump_traj.x_r_min = 0.2
+        self.actions.jump_traj.x_r_max = 0.7
+
 
 
 @configclass
