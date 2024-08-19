@@ -1,0 +1,99 @@
+seed: 42
+
+# Models are instantiated using skrl's model instantiator utility
+# https://skrl.readthedocs.io/en/develop/modules/skrl.utils.model_instantiators.html
+models:
+  policy: # see skrl.utils.model_instantiators.deterministic_model for parameter details
+    clip_actions: False
+    input_shape: "Shape.STATES"
+    hiddens: [512, 256]
+    hidden_activation: ["relu", "relu"]
+    output_shape: "Shape.ACTIONS"
+    output_activation: "tanh"
+    output_scale: 1.0
+  target_policy: # see skrl.utils.model_instantiators.deterministic_model for parameter details
+    clip_actions: False
+    input_shape: "Shape.STATES"
+    hiddens: [512, 256]
+    hidden_activation: ["relu", "relu"]
+    output_shape: "Shape.ACTIONS"
+    output_activation: "tanh"
+    output_scale: 1.0
+  critic_1:  # see skrl.utils.model_instantiators.deterministic_model for parameter details
+    clip_actions: False
+    input_shape: "Shape.STATES_ACTIONS"
+    hiddens: [512, 256]
+    hidden_activation: ["relu", "relu"]
+    output_shape: "Shape.ONE"
+    output_activation: 
+    output_scale: 1.0
+  critic_2:  # see skrl.utils.model_instantiators.deterministic_model for parameter details
+    clip_actions: False
+    input_shape: "Shape.STATES_ACTIONS"
+    hiddens: [512, 256]
+    hidden_activation: ["relu", "relu"]
+    output_shape: "Shape.ONE"
+    output_activation: 
+    output_scale: 1.0
+  target_critic_1:  # see skrl.utils.model_instantiators.deterministic_model for parameter details
+    clip_actions: False
+    input_shape: "Shape.STATES_ACTIONS"
+    hiddens: [512, 256]
+    hidden_activation: ["relu", "relu"]
+    output_shape: "Shape.ONE"
+    output_activation: 
+    output_scale: 1.0
+  target_critic_2:  # see skrl.utils.model_instantiators.deterministic_model for parameter details
+    clip_actions: False
+    input_shape: "Shape.STATES_ACTIONS"
+    hiddens: [512, 256]
+    hidden_activation: ["relu", "relu"]
+    output_shape: "Shape.ONE"
+    output_activation: 
+    output_scale: 1.0
+
+# TD#S agent configuration (field names are from TD3_DEFAULT_CONFIG)
+# https://skrl.readthedocs.io/en/latest/modules/skrl.agents.td3.html
+agent:
+  gradient_steps: 1            # gradient steps
+  batch_size: 256               # training batch size
+
+  discount_factor: 0.99        # discount factor (gamma)
+  polyak: 0.005                # soft update hyperparameter (tau)
+
+  actor_learning_rate: 0.0001    # actor learning rate
+  critic_learning_rate: 0.0001   # critic learning rate
+  learning_rate_scheduler: None        # learning rate scheduler class (see torch.optim.lr_scheduler)
+  learning_rate_scheduler_kwargs: null  # learning rate scheduler's kwargs (e.g. {step_size: 1e-3})
+
+  state_preprocessor: "RunningStandardScaler"   # state preprocessor class (see skrl.resources.preprocessors)
+  state_preprocessor_kwargs: null      # state preprocessor's kwargs (e.g. {size: env.observation_space})
+
+  random_timesteps: 1000          # random exploration steps
+  learning_starts: 1000           # learning starts after this many steps
+
+  grad_norm_clip: 0            # clipping coefficient for the norm of the gradients
+
+  exploration:
+      noise: "GaussianNoise(0, 0.4)"    # exploration noise
+      initial_scale: 1.0       # initial scale for the noise
+      final_scale: 0.001       # final scale for the noise
+      timesteps: null          # timesteps for the noise decay
+
+  policy_delay: 2                      # policy delay update with respect to critic update
+  smooth_regularization_noise: "GaussianNoise(0, 0.2)"    # smooth noise for regularization
+  smooth_regularization_clip: 0.5      # clip for smooth regularization
+
+  rewards_shaper: None         # rewards shaping function: Callable(reward timestep timesteps) -> reward
+
+  experiment:
+      directory: "unitree_go1_jump"           # experiment's parent directory
+      experiment_name: ""      # experiment name
+      write_interval: 10   # TensorBoard writing interval (timesteps)
+      checkpoint_interval: 1000      # interval for checkpoints (timesteps)
+
+# Sequential trainer
+# https://skrl.readthedocs.io/en/latest/modules/skrl.trainers.sequential.html
+trainer:
+  timesteps: 100000
+  headless: False
