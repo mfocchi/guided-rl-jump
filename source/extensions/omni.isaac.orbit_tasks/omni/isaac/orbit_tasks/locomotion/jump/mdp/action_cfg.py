@@ -6,6 +6,8 @@ from omni.isaac.orbit.utils import configclass
 
 from . import bezier_curve_actions
 
+import torch
+
 
 @configclass
 class BezierCurveActionCfg(ActionTermCfg):
@@ -86,5 +88,7 @@ class BezierCurveActionCfg(ActionTermCfg):
     l_expl_min: float = MISSING
     l_expl_max: float = MISSING
 
+    q_0_lo: torch.tensor = MISSING
+    legs_name : str = MISSING
 
     debug_vis: bool = False

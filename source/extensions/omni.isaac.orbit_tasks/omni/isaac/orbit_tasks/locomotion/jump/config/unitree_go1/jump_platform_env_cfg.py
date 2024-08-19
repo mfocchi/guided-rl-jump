@@ -2,7 +2,7 @@
 # All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
-
+import torch
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.managers import SceneEntityCfg
 
@@ -24,6 +24,7 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         # Robot params
         trunk_name = "trunk"
         foot_name = "foot"
+        legs_name = "base_legs"
         robot_height = 0.3
         foot_offset = 0.02
 
@@ -39,6 +40,9 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         x_limit = 0.15
         y_limit = 0.15
         z_limit = 0.4
+
+        q_0_lo = torch.tensor([0.3430, -0.3425, 0.3433, -0.3424, 1.5495, 1.5490, 1.9171, 1.9173, -2.6620, -2.6618, -2.4902, -2.4901])
+
 
         self.commands.trunk_target.body_name = trunk_name
         self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -70,6 +74,9 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         self.events.detect_touchdown.params["sensor_cfg"] =  SceneEntityCfg("contact_forces", body_names=".*"+foot_name)
         self.running_rewards.friction_constraint.params["sensor_cfg"] =  SceneEntityCfg("contact_forces", body_names=".*"+foot_name)
         self.rewards.target_position_error.params["foot_name"] = ".*"+foot_name
+
+        self.actions.jump_traj.q_0_lo = q_0_lo
+        self.actions.jump_traj.legs_name = legs_name
 
 
 

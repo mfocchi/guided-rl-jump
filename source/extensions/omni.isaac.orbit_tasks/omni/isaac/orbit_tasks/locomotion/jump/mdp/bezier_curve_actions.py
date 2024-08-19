@@ -104,13 +104,12 @@ class BezierCurveAction(ActionTerm):
         self.l_expl_min = self.cfg.l_expl_min
         self.l_expl_max = self.cfg.l_expl_max
 
-        # self.q_0_td = torch.tensor([0.1789, -0.1784, 0.1867, -0.1861, 1.2234, 1.2230, 1.4733, 1.4733, -2.2329, -2.2327, -2.1055, -2.1053], device=self.device)
-        # self.q_0_lo = self._asset.data.default_joint_pos.clone()[0]
         self.q_0_td = self._asset.data.default_joint_pos.clone()[0]
-        self.q_0_lo = torch.tensor([0.3430, -0.3425, 0.3433, -0.3424, 1.5495, 1.5490, 1.9171, 1.9173, -2.6620, -2.6618, -2.4902, -2.4901], device=self.device)
-        # self.q_0_lo = self.q_0_td
+        self.q_0_lo = self.cfg.q_0_lo.to(self.device)
 
-        self.default_stiffness = self._asset.actuators["base_legs"].stiffness[0, 0]
+        self.legs_name = self.cfg.legs_name
+
+        self.default_stiffness = self._asset.actuators[self.legs_name].stiffness[0, 0]
         print(self._asset.actuators)
 
         diff_ik_cfg = DifferentialIKControllerCfg(command_type="position", use_relative_mode=False, ik_method="dls")
@@ -336,7 +335,7 @@ class BezierCurveAction(ActionTerm):
             qd_des[after_t_th_total] = torch.zeros_like(self._asset.data.default_joint_vel[0])
 
             # reduce the stiffness to reduce instabilities
-            self._asset.actuators["base_legs"].stiffness[after_t_th_total] = torch.full((1, 12), self.default_stiffness / 5).to(self.device)
+            self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 12), self.default_stiffness / 5).to(self.device)
 
         apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
 
@@ -366,7 +365,7 @@ class BezierCurveAction(ActionTerm):
         self._raw_actions[:] = actions
 
         # reset stiffness
-        self._asset.actuators["base_legs"].stiffness = torch.full_like(self._asset.actuators["base_legs"].stiffness, self.default_stiffness)
+        self._asset.actuators[self.legs_name].stiffness = torch.full_like(self._asset.actuators[self.legs_name].stiffness, self.default_stiffness)
 
         # reset time counter
         self.dt = 0

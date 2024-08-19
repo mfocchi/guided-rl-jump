@@ -2,6 +2,7 @@
 # All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
+import torch
 
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.managers import SceneEntityCfg
@@ -14,6 +15,7 @@ from omni.isaac.orbit_tasks.locomotion.jump.jump_env_cfg import LocomotionJumpEn
 ##
 from omni.isaac.orbit_assets import ANYMAL_C_CFG
 
+
 @configclass
 class AnymalJumpEnvCfg(LocomotionJumpEnvCfg):
     def __post_init__(self):
@@ -25,7 +27,8 @@ class AnymalJumpEnvCfg(LocomotionJumpEnvCfg):
         # Robot params
         trunk_name = "base"
         foot_name = "FOOT"
-        robot_height = 0.3
+        legs_name = "legs"
+        robot_height = 0.55
         foot_offset = 0.02
 
         fl_joint_names = ["LF.*"]
@@ -41,6 +44,8 @@ class AnymalJumpEnvCfg(LocomotionJumpEnvCfg):
         y_limit = 0.15
         z_limit = 0.7
 
+        q_0_lo = torch.tensor([0.0000, 0.0000, 0.0000, 0.0000, 0.4000, -0.4000, 0.4000, -0.4000, -0.8000, 0.8000, -0.8000, 0.8000])
+
         self.commands.trunk_target.body_name = trunk_name
         self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
         self.rewards.target_position_error.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -51,7 +56,6 @@ class AnymalJumpEnvCfg(LocomotionJumpEnvCfg):
 
         self.events.detect_apex.params["foot_height_offset"] = foot_offset
         self.rewards.target_position_error.params["foot_height_offset"] = foot_offset
-
 
         self.actions.jump_traj.fl_joint_names = fl_joint_names
         self.actions.jump_traj.fl_body_names = fl_body_names
@@ -66,12 +70,19 @@ class AnymalJumpEnvCfg(LocomotionJumpEnvCfg):
         self.negative_rewards.singularity_penalty.params["y_limit"] = y_limit
         self.negative_rewards.singularity_penalty.params["z_limit"] = z_limit
 
-        self.scene.contact_forces.prim_path="{ENV_REGEX_NS}/Robot/.*(?:"+foot_name+")$"
-        self.events.detect_apex.params["foot_name"] = ".*"+foot_name
-        self.events.detect_touchdown.params["sensor_cfg"] =  SceneEntityCfg("contact_forces", body_names=".*"+foot_name)
-        self.running_rewards.friction_constraint.params["sensor_cfg"] =  SceneEntityCfg("contact_forces", body_names=".*"+foot_name)
-        self.rewards.target_position_error.params["foot_name"] = ".*"+foot_name
+        self.scene.contact_forces.prim_path = "{ENV_REGEX_NS}/Robot/.*(?:" + foot_name + ")$"
+        self.events.detect_apex.params["foot_name"] = ".*" + foot_name
+        self.events.detect_touchdown.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*" + foot_name)
+        self.running_rewards.friction_constraint.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*" + foot_name)
+        self.rewards.target_position_error.params["foot_name"] = ".*" + foot_name
 
+        self.actions.jump_traj.q_0_lo = q_0_lo
+        self.actions.jump_traj.legs_name = legs_name
+
+        self.actions.jump_traj.x_r_min = 0.55
+        self.actions.jump_traj.x_r_max = 0.55
+        self.actions.jump_traj.l_expl_min = 0
+        self.actions.jump_traj.l_expl_max = 0
 
 
 @configclass

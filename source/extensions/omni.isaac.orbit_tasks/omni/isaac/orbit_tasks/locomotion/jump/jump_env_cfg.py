@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import math
 import numpy as np
+import torch
 from dataclasses import MISSING
 
 import omni.isaac.orbit.sim as sim_utils
@@ -53,6 +54,7 @@ activate_curriculum = False
 # Robot params
 trunk_name = ""
 foot_name = ""
+legs_name = ""
 robot_height = 0.
 foot_offset = 0.
 
@@ -68,6 +70,8 @@ rr_body_names = []
 x_limit = 0.
 y_limit = 0.
 z_limit = 0.
+
+q_0_lo = torch.tensor([])
 
 
 # ============================
@@ -193,6 +197,8 @@ class ActionsCfg:
                                          xd_mult_max=3,
                                          l_expl_min=0.0,
                                          l_expl_max=0.3,
+                                         q_0_lo=q_0_lo,
+                                         legs_name=legs_name,
                                          debug_vis=True)
 
 
