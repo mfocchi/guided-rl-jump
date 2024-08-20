@@ -24,19 +24,19 @@ class SoloJumpEnvCfg(LocomotionJumpEnvCfg):
 
         # Robot params
         trunk_name = "base_link"
-        foot_name = "foot"
+        foot_name = "FOOT"
         legs_name = "base_legs"
         robot_height = 0.25
         foot_offset = 0.02
 
-        fl_joint_names = ["lf.*"]
-        fl_body_names = ["lf_foot"]
-        fr_joint_names = ["rf.*"]
-        fr_body_names = ["rf_foot"]
-        rl_joint_names = ["lh.*"]
-        rl_body_names = ["lh_foot"]
-        rr_joint_names = ["rh.*"]
-        rr_body_names = ["rh_foot"]
+        fl_joint_names = ["FL.*"]
+        fl_body_names = ["FL_FOOT"]
+        fr_joint_names = ["FR.*"]
+        fr_body_names = ["FR_FOOT"]
+        rl_joint_names = ["HL.*"]
+        rl_body_names = ["HL_FOOT"]
+        rr_joint_names = ["HR.*"]
+        rr_body_names = ["HR_FOOT"]
 
         x_limit = 0.15
         y_limit = 0.15

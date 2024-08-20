@@ -5,12 +5,12 @@ import os
 import numpy as np
 
 SOLO_ACTUATOR_CFG = DCMotorCfg(
-    joint_names_expr=[".*_haa_joint", ".*_hfe_joint", ".*_kfe_joint"],
-    effort_limit=20.0,  # taken from spec sheet
+    joint_names_expr=[".*_HAA", ".*_HFE", ".*_KFE"],
+    effort_limit=10.0,  # taken from spec sheet
     velocity_limit=30.0,  # taken from spec sheet
-    saturation_effort=20.0,  # same as effort limit
-    stiffness=5.0,
-    damping=0.1,
+    saturation_effort=10.0,  # same as effort limit
+    stiffness=15.0,
+    damping=0.5,
     friction=0.0,
 )
 
@@ -34,11 +34,15 @@ SOLO_CFG = ArticulationCfg(
     init_state=ArticulationCfg.InitialStateCfg(
         pos=(0.0, 0.0, 0.24),
         joint_pos={
-            ".*haa_joint": 0.,
-            ".*f_hfe_joint": np.pi / 4,
-            ".*h_hfe_joint": -np.pi / 4,
-            ".*f_kfe_joint": -np.pi / 2,
-            ".*h_kfe_joint": np.pi / 2,
+            ".*HAA": 0.,
+            'FL_HFE': np.pi / 4,
+            'FL_KFE': -np.pi / 2,
+            'HL_HFE': -np.pi / 4,
+            'HL_KFE': np.pi / 2,
+            'FR_HFE': np.pi / 4,
+            'FR_KFE': -np.pi / 2,
+            'HR_HFE': -np.pi / 4,
+            'HR_KFE': np.pi / 2,
         },
         joint_vel={".*": 0.0},
     ),
