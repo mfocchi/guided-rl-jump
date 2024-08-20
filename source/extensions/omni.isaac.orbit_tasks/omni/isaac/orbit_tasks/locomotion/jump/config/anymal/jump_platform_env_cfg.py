@@ -83,7 +83,6 @@ class AnymalJumpEnvCfg(LocomotionJumpEnvCfg):
         self.actions.jump_traj.x_r_max = 0.7
 
 
-
 @configclass
 class AnymalJumpEnvCfg_PLAY(AnymalJumpEnvCfg):
     def __post_init__(self):
@@ -92,3 +91,21 @@ class AnymalJumpEnvCfg_PLAY(AnymalJumpEnvCfg):
 
         # disable randomization for play
         self.observations.policy.enable_corruption = False
+
+        mode = "play"
+
+        self.rewards.target_position_error.params["mode"] = mode
+
+
+@configclass
+class AnymalJumpEnvCfg_TEST(AnymalJumpEnvCfg_PLAY):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        # disable randomization for play
+        self.observations.policy.enable_corruption = False
+
+        mode = "test"
+
+        self.rewards.target_position_error.params["mode"] = mode

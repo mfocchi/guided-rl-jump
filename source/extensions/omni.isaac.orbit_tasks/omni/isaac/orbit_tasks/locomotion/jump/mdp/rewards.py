@@ -26,7 +26,7 @@ def computeActivationFunction(activationType, values, lower, upper):
         raise ValueError("Invalid activation type")
 
 
-def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, z_threshold: float = 0.1, coeff: float = 1., dist_coeff: float = 1., err_coeff: float = 1., bias: float = 1, foot_height_offset: float = 0.02, foot_name: str = ".*foot") -> torch.Tensor:
+def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, z_threshold: float = 0.1, coeff: float = 1., dist_coeff: float = 1., err_coeff: float = 1., bias: float = 1, foot_height_offset: float = 0.02, foot_name: str = ".*foot", mode: str = "train") -> torch.Tensor:
     """Penalize tracking of the position error using L2-norm.
 
     The function computes the position error between the desired position (from the command) and the
@@ -51,11 +51,13 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
 
     curr_pos_w[..., 2] = foot_pos_center
 
-    # print(f"Target: {des_pos_w[...,:3]}")
-    # print(f"Landing: {curr_pos_w[...,:3]}")
+    if mode == "play":
+        print(f"Target: {des_pos_w[...,:3]}")
+        print(f"Landing: {curr_pos_w[...,:3]}")
 
-    env.extras["desirerd_td"] = des_pos_w[..., :3].clone() - env.scene.env_origins
-    env.extras["actual_td"] = curr_pos_w[..., :3].clone() - env.scene.env_origins
+    elif mode == "test":
+        env.extras["desirerd_td"] = des_pos_w[..., :3].clone() - env.scene.env_origins
+        env.extras["actual_td"] = curr_pos_w[..., :3].clone() - env.scene.env_origins
 
     # Calculate percentual_error to normalize jump performance
     target_z_error = torch.abs(des_pos_w[..., 2] - curr_pos_w[..., 2])

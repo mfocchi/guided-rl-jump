@@ -73,6 +73,8 @@ z_limit = 0.
 
 q_0_lo = torch.tensor([])
 
+mode = ""
+
 
 # ============================
 # Scene definition
@@ -314,7 +316,8 @@ class RewardsCfg:
                 "err_coeff": 1.,
                 "bias": 3,
                 "foot_height_offset": foot_offset,
-                "foot_name": foot_name},
+                "foot_name": foot_name,
+                "mode": mode},
     )
 
 

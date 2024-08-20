@@ -87,3 +87,20 @@ class SoloJumpEnvCfg_PLAY(SoloJumpEnvCfg):
 
         # disable randomization for play
         self.observations.policy.enable_corruption = False
+
+        mode = "play"
+
+        self.rewards.target_position_error.params["mode"] = mode
+
+@configclass
+class SoloJumpEnvCfg_TEST(SoloJumpEnvCfg_PLAY):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        # disable randomization for play
+        self.observations.policy.enable_corruption = False
+
+        mode = "test"
+
+        self.rewards.target_position_error.params["mode"] = mode
