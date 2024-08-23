@@ -10,9 +10,19 @@ SOLO_ACTUATOR_CFG = DCMotorCfg(
     velocity_limit=30.0,  # taken from spec sheet
     saturation_effort=10.0,  # same as effort limit
     stiffness=15.0,
-    damping=0.5,
+    damping=0.1,
     friction=0.0,
 )
+
+# SOLO_ACTUATOR_CFG = DCMotorCfg(
+#     joint_names_expr=[".*_HAA", ".*_HFE", ".*_KFE"],
+#     effort_limit=23.7,  # taken from spec sheet
+#     velocity_limit=30.0,  # taken from spec sheet
+#     saturation_effort=23.7,  # same as effort limit
+#     stiffness=120.0,
+#     damping=0.5,
+#     friction=0.0,
+# )
 
 SOLO_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(

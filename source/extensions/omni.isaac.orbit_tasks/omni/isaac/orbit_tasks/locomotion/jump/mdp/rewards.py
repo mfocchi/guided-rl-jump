@@ -46,6 +46,7 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
 
     curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
 
+
     # Calculate foot center, remove foot padding (2cm)
     foot_pos_center = (torch.mean(asset.data.body_state_w[:, foot_idx, 2], dim=1)) - foot_height_offset
 
@@ -71,6 +72,8 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     cost = 1.0 / ((coeff * target_error) + 1e-12)
     cost = torch.log(1 + cost)
     cost = torch.clip((((cost + (dist_coeff * torch.exp(target_distance))) * torch.pow((1 - target_error), err_coeff)) - bias), 0, torch.inf)
+
+    # TODO: add penalization of the cost if not touchdown detected, otherwise use the touchdown one
 
     # print(f"Avg jump_error: {target_error.mean()}")
     env.extras["avg_abs_err"] = target_error.mean()
