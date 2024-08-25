@@ -46,7 +46,6 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
 
     curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
 
-
     # Calculate foot center, remove foot padding (2cm)
     foot_pos_center = (torch.mean(asset.data.body_state_w[:, foot_idx, 2], dim=1)) - foot_height_offset
 
@@ -137,6 +136,7 @@ def touchdown_angular_velocity_penalization(env: RLTaskEnv) -> torch.Tensor:
         cost[touchdown_ids] = od_td
     return cost
 
+
 def touchdown_bounce_penalization(env: RLTaskEnv, asset_cfg: SceneEntityCfg,) -> torch.Tensor:
     # extract the asset (to enable type hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
@@ -144,13 +144,12 @@ def touchdown_bounce_penalization(env: RLTaskEnv, asset_cfg: SceneEntityCfg,) ->
     cost = torch.full((env.num_envs,), 10.0, device=env.device)
     if len(env.extras['touchdown']):
         touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
-        toruchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :3].to(env.device)
-        curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
-        print(toruchdown_pos_w, curr_pos_w)
-        bounce_dist = torch.norm(toruchdown_pos_w-curr_pos_w, dim=1)
+        toruchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
+        curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :2]  # type: ignore
+        bounce_dist = torch.norm(toruchdown_pos_w - curr_pos_w[touchdown_ids], dim=1)
         cost[touchdown_ids] = bounce_dist
-    print(cost)
     return cost
+
 
 def t_th_total_regularization(env: RLTaskEnv, limit: float = 0.7) -> torch.Tensor:
 
