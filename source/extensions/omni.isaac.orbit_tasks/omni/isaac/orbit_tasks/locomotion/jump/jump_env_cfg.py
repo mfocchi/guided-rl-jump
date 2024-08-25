@@ -201,7 +201,8 @@ class ActionsCfg:
                                          l_expl_max=0.3,
                                          q_0_lo=q_0_lo,
                                          legs_name=legs_name,
-                                         debug_vis=True)
+                                         debug_vis=True,
+                                         mode=mode)
 
 
 @configclass

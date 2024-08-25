@@ -148,6 +148,24 @@ class BezierCurveAction(ActionTerm):
                         ),
                     }))
 
+        # log variables
+        if self.cfg.mode == "play":
+
+            self.des_q = []
+            self.act_q = []
+
+            self.des_qd = []
+            self.act_qd = []
+
+            self.des_tau = []
+            self.act_tau = []
+
+            self.des_base = []
+            self.act_base = []
+
+            self.des_based = []
+            self.act_based = []
+
     """
     Properties.
     """
@@ -180,15 +198,15 @@ class BezierCurveAction(ActionTerm):
 
         w = w.reshape(-1, 4, 3)
 
-        # w_d = torch.stack((
-        #     ((3 / t_th) * (w[:, 1] - w[:, 0])).unsqueeze(1),
-        #     ((3 / t_th) * (w[:, 2] - w[:, 1])).unsqueeze(1),
-        #     ((3 / t_th) * (w[:, 3] - w[:, 2])).unsqueeze(1)), dim=2).squeeze()
+        w_d = torch.stack((
+            ((3 / t_th) * (w[:, 1] - w[:, 0])).unsqueeze(1),
+            ((3 / t_th) * (w[:, 2] - w[:, 1])).unsqueeze(1),
+            ((3 / t_th) * (w[:, 3] - w[:, 2])).unsqueeze(1)), dim=2).squeeze()
 
-        return w  # , w_d
+        return w  , w_d
 
     # def bezier_trajectory(self, w: torch.Tensor, w_d: torch.Tensor, t_ex: float, t_th: torch.Tensor):
-    def bezier_trajectory(self, w: torch.Tensor, t_ex: float, t_th: torch.Tensor):
+    def bezier_trajectory(self, w: torch.Tensor, w_d: torch.Tensor, t_ex: float, t_th: torch.Tensor):
 
         t = t_ex / t_th
 
@@ -199,23 +217,23 @@ class BezierCurveAction(ActionTerm):
             (1.0) * (t**3) * (1 - t)**(3 - 3),
         ), dim=-1)
 
-        # bezier_curve_2 = torch.cat((
-        #     (1.0) * (t**0) * (1 - t)**(2 - 0),
-        #     (2.0) * (t**1) * (1 - t)**(2 - 1),
-        #     (1.0) * (t**2) * (1 - t)**(2 - 2),
-        # ), dim=-1)
+        bezier_curve_2 = torch.cat((
+            (1.0) * (t**0) * (1 - t)**(2 - 0),
+            (2.0) * (t**1) * (1 - t)**(2 - 1),
+            (1.0) * (t**2) * (1 - t)**(2 - 2),
+        ), dim=-1)
 
         bezier_position = torch.cat((
             (w[..., 0] * bezier_curve_3).sum(dim=-1).reshape(-1, 1),
             (w[..., 1] * bezier_curve_3).sum(dim=-1).reshape(-1, 1),
             (w[..., 2] * bezier_curve_3).sum(dim=-1).reshape(-1, 1)), dim=1)
 
-        # bezier_velocity = torch.cat((
-        #     (w_d[..., 0] * bezier_curve_2).sum(dim=-1).reshape(-1, 1),
-        #     (w_d[..., 1] * bezier_curve_2).sum(dim=-1).reshape(-1, 1),
-        #     (w_d[..., 2] * bezier_curve_2).sum(dim=-1).reshape(-1, 1)), dim=1)
+        bezier_velocity = torch.cat((
+            (w_d[..., 0] * bezier_curve_2).sum(dim=-1).reshape(-1, 1),
+            (w_d[..., 1] * bezier_curve_2).sum(dim=-1).reshape(-1, 1),
+            (w_d[..., 2] * bezier_curve_2).sum(dim=-1).reshape(-1, 1)), dim=1)
 
-        return bezier_position  # , bezier_velocity
+        return bezier_position  , bezier_velocity
 
     def torch_cart2sph(self, pos: torch.Tensor, threshold: float = 1e-5):
         # Extract x, y, z components
@@ -358,6 +376,81 @@ class BezierCurveAction(ActionTerm):
     def map_range(self, x, in_min, in_max, out_min, out_max):
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
+    def plot_traj(self, actual_traj, des_traj, title=""):
+        fig, ax = plt.subplots(3, 4, figsize=(10, 8))
+        fig.suptitle(title)
+
+        actual_traj = torch.stack(actual_traj, dim=1)[0]
+        des_traj = torch.stack(des_traj, dim=1)[0]
+
+        time = np.arange(0, len(des_traj)) * 0.005
+
+        # FL
+        ax[0, 0].set_title("FL")
+        ax[0, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[0]], color="blue", label="actual", linewidth=4)
+        ax[0, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[0]], color="red", label="desired")
+
+        ax[1, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[1]], color="blue", linewidth=4)
+        ax[1, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[1]], color="red")
+
+        ax[2, 0].plot(time, actual_traj[..., self.fl_entity_cfg.joint_ids[2]], color="blue", linewidth=4)
+        ax[2, 0].plot(time, des_traj[..., self.fl_entity_cfg.joint_ids[2]], color="red")
+
+        ax[0, 0].legend()
+
+        # FR
+        ax[0, 1].set_title("FR")
+        ax[0, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[0]], color="blue", linewidth=4)
+        ax[0, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[0]], color="red")
+
+        ax[1, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[1]], color="blue", linewidth=4)
+        ax[1, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[1]], color="red")
+
+        ax[2, 1].plot(time, actual_traj[..., self.fr_entity_cfg.joint_ids[2]], color="blue", linewidth=4)
+        ax[2, 1].plot(time, des_traj[..., self.fr_entity_cfg.joint_ids[2]], color="red")
+
+        # RL
+        ax[0, 2].set_title("RL")
+        ax[0, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[0]], color="blue", linewidth=4)
+        ax[0, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[0]], color="red")
+
+        ax[1, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[1]], color="blue", linewidth=4)
+        ax[1, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[1]], color="red")
+
+        ax[2, 2].plot(time, actual_traj[..., self.rl_entity_cfg.joint_ids[2]], color="blue", linewidth=4)
+        ax[2, 2].plot(time, des_traj[..., self.rl_entity_cfg.joint_ids[2]], color="red")
+
+        # RR
+        ax[0, 3].set_title("RR")
+        ax[0, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[0]], color="blue", linewidth=4)
+        ax[0, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[0]], color="red")
+
+        ax[1, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[1]], color="blue", linewidth=4)
+        ax[1, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[1]], color="red")
+
+        ax[2, 3].plot(time, actual_traj[..., self.rr_entity_cfg.joint_ids[2]], color="blue", linewidth=4)
+        ax[2, 3].plot(time, des_traj[..., self.rr_entity_cfg.joint_ids[2]], color="red")
+
+    def plot_trunk_traj(self, actual_traj, des_traj, title=""):
+        fig, ax = plt.subplots(3, 1, figsize=(10, 8))
+        fig.suptitle(title)
+
+        actual_traj = torch.stack(actual_traj, dim=1)[0]
+        des_traj = torch.stack(des_traj, dim=1)[0]
+
+        time = np.arange(0, len(des_traj)) * 0.005
+
+        ax[0].plot(time, actual_traj[..., 0], color="blue", label="actual", linewidth=4)
+        ax[0].plot(time, des_traj[..., 0], color="red", label="desired")
+
+        ax[1].plot(time, actual_traj[..., 1], color="blue", linewidth=4)
+        ax[1].plot(time, des_traj[..., 1], color="red")
+
+        ax[2].plot(time, actual_traj[..., 2], color="blue", linewidth=4)
+        ax[2].plot(time, des_traj[..., 2], color="red")
+
+        ax[0].legend()
+
     def process_actions(self, actions: torch.Tensor):
         # clip current action
         actions = torch.clip(actions, self.min_action, self.max_action)
@@ -420,6 +513,7 @@ class BezierCurveAction(ActionTerm):
         xd_r = self.map_range(actions[..., 4], self.min_action, self.max_action, self.xd_r_min, self.xd_r_max)
 
         trunk_xd_lo = self.torch_sph2cart(torch.stack((x_xd_phi, xd_theta, xd_r), dim=1))
+        self.trunk_xd_lo = trunk_xd_lo
         self._env.extras["trunk_xd_lo"] = trunk_xd_lo
 
         # Calculate Phi_lo
@@ -471,9 +565,9 @@ class BezierCurveAction(ActionTerm):
                                     self._env.command_manager.get_command("trunk_target")[:, 3:7])
 
         # Compute the weights of bezier curve for position and orientation
-        self.w_x = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
+        self.w_x , self.w_xd = self.compute_bezier_w(trunk_x_0, trunk_xd_0, trunk_x_lo, trunk_xd_lo, self.t_th)
         # self.w_o = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th)
-        self.w_o = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th_total)
+        self.w_o, self.w_od = self.compute_bezier_w(trunk_o_0, trunk_od_0, trunk_o_lo, trunk_od_lo, self.t_th_total)
 
         # apply the affine transformations
         # self._processed_actions = torch.cat((self.t_th, trunk_x_lo, trunk_xd_lo), dim=1)
@@ -503,19 +597,47 @@ class BezierCurveAction(ActionTerm):
 
             self.trunk_lo_vis.visualize(self.trunk_x_exp + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
 
+        if self.cfg.mode == "play":
+
+            if len(self.des_q):
+                self.plot_traj(self.act_q, self.des_q, "q")
+                self.plot_traj(self.act_qd, self.des_qd, "qd")
+                self.plot_traj(self.act_tau, self.des_tau, "tau")
+                self.plot_trunk_traj(self.act_base, self.des_base, "trunk")
+                self.plot_trunk_traj(self.act_based, self.des_based, "trunk vel")
+
+                plt.show()
+
+            self.des_q = []
+            self.act_q = []
+
+            self.des_qd = []
+            self.act_qd = []
+
+            self.des_tau = []
+            self.act_tau = []
+
+            self.des_base = []
+            self.act_base = []
+
+            self.des_based = []
+            self.act_based = []
+
     def apply_actions(self):
         after_t_th = torch.where(self.dt > self.t_th)[0]
 
-        x = self.bezier_trajectory(self.w_x, self.dt, self.t_th)
+        x, xd = self.bezier_trajectory(self.w_x, self.w_xd, self.dt, self.t_th)
 
         if after_t_th.numel() > 0:
             t = self.dt - self.t_th
             t = torch.clip(t / self.t_exp, 0, 1)
             x_expl = torch.lerp(self.trunk_x_lo, self.trunk_x_exp, t)
+            xd_expl = torch.lerp(self.trunk_xd_lo, self.trunk_xd_exp, t)
 
             x[after_t_th] = x_expl[after_t_th]
+            xd[after_t_th] = xd_expl[after_t_th]
 
-        o = self.bezier_trajectory(self.w_o, self.dt, self.t_th_total)
+        o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th_total)
 
         q_des, qd_des = self.ik(x, o, self.old_q_des)
         self.old_q_des = q_des.clone()
@@ -524,8 +646,24 @@ class BezierCurveAction(ActionTerm):
         # q_des = self._asset.data.default_joint_pos
         # qd_des = self._asset.data.default_joint_vel
 
-
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
+
+        if self.cfg.mode == "play":
+
+            self.des_q.append(q_des.clone().detach().cpu())
+            self.act_q.append(self._asset.data.joint_pos.clone().detach().cpu())
+
+            self.des_qd.append(qd_des.clone().detach().cpu())
+            self.act_qd.append(self._asset.data.joint_vel.clone().detach().cpu())
+
+            self.des_tau.append(self._asset.data.computed_torque.clone().detach().cpu())
+            self.act_tau.append(self._asset.data.applied_torque.clone().detach().cpu())
+
+            self.des_base.append(x.clone().detach().cpu())
+            self.act_base.append(self._asset.data.root_state_w[..., :3].clone().detach().cpu())
+
+            self.des_based.append(xd.clone().detach().cpu())
+            self.act_based.append(self._asset.data.root_state_w[..., 7:10].clone().detach().cpu())
 
         self.dt += self.cfg.time_step

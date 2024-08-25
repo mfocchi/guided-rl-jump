@@ -84,7 +84,6 @@ class BezierCurveActionCfg(ActionTermCfg):
     xd_mult_min: float = MISSING
     xd_mult_max: float = MISSING
 
-
     l_expl_min: float = MISSING
     l_expl_max: float = MISSING
 
@@ -92,3 +91,4 @@ class BezierCurveActionCfg(ActionTermCfg):
     legs_name : str = MISSING
 
     debug_vis: bool = False
+    mode: str = MISSING

@@ -95,6 +95,7 @@ class AnymalJumpEnvCfg_PLAY(AnymalJumpEnvCfg):
         mode = "play"
 
         self.rewards.target_position_error.params["mode"] = mode
+        self.actions.jump_traj.mode = mode
 
 
 @configclass
@@ -109,3 +110,4 @@ class AnymalJumpEnvCfg_TEST(AnymalJumpEnvCfg_PLAY):
         mode = "test"
 
         self.rewards.target_position_error.params["mode"] = mode
+        self.actions.jump_traj.mode = mode
