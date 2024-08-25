@@ -149,7 +149,7 @@ class BezierCurveAction(ActionTerm):
                     }))
 
         # log variables
-        if self.cfg.mode == "play":
+        if self.cfg.mode == "play" and self.cfg.debug_vis:
 
             self.des_q = []
             self.act_q = []
@@ -597,7 +597,7 @@ class BezierCurveAction(ActionTerm):
 
             self.trunk_lo_vis.visualize(self.trunk_x_exp + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
 
-        if self.cfg.mode == "play":
+        if self.cfg.mode == "play" and self.cfg.debug_vis:
 
             if len(self.des_q):
                 self.plot_traj(self.act_q, self.des_q, "q")
@@ -649,7 +649,7 @@ class BezierCurveAction(ActionTerm):
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
 
-        if self.cfg.mode == "play":
+        if self.cfg.mode == "play" and self.cfg.debug_vis:
 
             self.des_q.append(q_des.clone().detach().cpu())
             self.act_q.append(self._asset.data.joint_pos.clone().detach().cpu())

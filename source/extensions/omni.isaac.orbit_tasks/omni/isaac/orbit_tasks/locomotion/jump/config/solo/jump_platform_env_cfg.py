@@ -49,6 +49,7 @@ class SoloJumpEnvCfg(LocomotionJumpEnvCfg):
         self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
         self.rewards.target_position_error.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
         self.negative_rewards.target_orientation_error.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
+        self.negative_rewards.touchdown_bounce_penalization.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
 
         self.actions.jump_traj.robot_height = robot_height
         self.negative_rewards.apex_z_regularization.params["robot_height"] = robot_height
