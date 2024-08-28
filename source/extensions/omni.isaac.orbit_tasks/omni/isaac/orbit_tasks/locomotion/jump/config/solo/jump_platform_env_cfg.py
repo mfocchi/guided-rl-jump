@@ -42,6 +42,9 @@ class SoloJumpEnvCfg(LocomotionJumpEnvCfg):
         y_limit = 0.15
         z_limit = 0.34
 
+        mass_range = 0.1
+        stiffness_division = 2
+
         q_0_lo = torch.tensor([0.0000, 0.0000, 0.0000, 0.0000, 0.7854, 0.7854, -0.7854, -0.7854, -1.5708, -1.5708, 1.5708, 1.5708])
         # q_0_lo = torch.tensor([0.0000, 0.0000, 0.0000, 0.0000, 1.5854, 1.5854, -1.5854, -1.5854, 1.5708, 1.5708, -1.5708, -1.5708])
 
@@ -75,12 +78,16 @@ class SoloJumpEnvCfg(LocomotionJumpEnvCfg):
         self.events.detect_touchdown.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*" + foot_name)
         self.running_rewards.friction_constraint.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*" + foot_name)
         self.rewards.target_position_error.params["foot_name"] = ".*" + foot_name
+        self.events.physics_material.params["asset_cfg"] = SceneEntityCfg("robot", body_names=".*" + foot_name)
 
         self.actions.jump_traj.q_0_lo = q_0_lo
         self.actions.jump_traj.legs_name = legs_name
 
         self.actions.jump_traj.x_r_min = 0.1
         self.actions.jump_traj.x_r_max = 0.34
+
+        self.events.add_base_mass.params["mass_range"] = (-mass_range, mass_range)
+        self.actions.jump_traj.stiffness_division = stiffness_division
 
 
 @configclass

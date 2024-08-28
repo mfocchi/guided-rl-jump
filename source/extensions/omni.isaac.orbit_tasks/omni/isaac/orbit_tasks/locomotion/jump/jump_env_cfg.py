@@ -33,7 +33,7 @@ time_step = 0.005
 # Terrain
 
 #
-mu = 0.6
+mu = 1.0
 initial_z = 0.4
 
 # Action config
@@ -72,6 +72,8 @@ y_limit = 0.
 z_limit = 0.
 
 q_0_lo = torch.tensor([])
+mass_range = 0
+stiffness_division = 1
 
 mode = ""
 
@@ -89,7 +91,7 @@ class MySceneCfg(InteractiveSceneCfg):
     ground = AssetBaseCfg(
         prim_path="/World/ground",
         spawn=sim_utils.GroundPlaneCfg(
-            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu)
+            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu, dynamic_friction=mu)
         ),
         init_state=AssetBaseCfg.InitialStateCfg(pos=(0.0, 0.0, 0.0)),
     )
@@ -112,7 +114,7 @@ class MySceneCfg(InteractiveSceneCfg):
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
             activate_contact_sensors=True,
-            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu),
+            physics_material=sim_utils.RigidBodyMaterialCfg(static_friction=mu, dynamic_friction=mu),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.85, 0.46), roughness=1),
         ),
         init_state=RigidObjectCfg.InitialStateCfg(pos=(-0.05, 0.0, -0.025))
@@ -202,7 +204,9 @@ class ActionsCfg:
                                          q_0_lo=q_0_lo,
                                          legs_name=legs_name,
                                          debug_vis=False,
-                                         mode=mode)
+                                         mode=mode,
+                                         debug_control=False,
+                                         stiffness_division=stiffness_division)
 
 
 @configclass
@@ -227,11 +231,22 @@ class ObservationsCfg:
 class EventCfg:
     """Configuration for events."""
 
+    physics_material = EventTerm(
+        func=mdp.randomize_rigid_body_material,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=foot_name),
+            "static_friction_range": (0.7, 0.7),
+            "dynamic_friction_range": (0.6, 0.6),
+            "restitution_range": (0.0, 0.0),
+            "num_buckets": 64,
+        },
+    )
+
     add_base_mass = EventTerm(
         func=mdp.randomize_rigid_body_mass,
         mode="startup",
-        # params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "mass_range": (-1.0, 1.0), "operation": "add"},
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "mass_range": (0, 0), "operation": "add"},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "mass_range": (-mass_range, mass_range), "operation": "add"},
     )
 
     reset_robot = EventTerm(
@@ -297,7 +312,7 @@ class RunningRewardsCfg:
         weight=-0.01,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=foot_name),
-            "mu": mu
+            "mu": 0.7
         }
     )
 
@@ -443,7 +458,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.episode_length_s = 1.5
+        self.episode_length_s = 2.5
         self.sim.dt = time_step
         self.decimation = 1
         # simulation settings

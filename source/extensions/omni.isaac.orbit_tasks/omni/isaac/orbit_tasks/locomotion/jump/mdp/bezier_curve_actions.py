@@ -353,7 +353,8 @@ class BezierCurveAction(ActionTerm):
             qd_des[after_t_th_total] = torch.zeros_like(self._asset.data.default_joint_vel[0])
 
             # reduce the stiffness to reduce instabilities
-            self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 12), self.default_stiffness / 5).to(self.device)
+            if not self.cfg.debug_control:
+                self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 12), self.default_stiffness / self.cfg.stiffness_division).to(self.device)
 
         apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
 
@@ -458,7 +459,9 @@ class BezierCurveAction(ActionTerm):
         self._raw_actions[:] = actions
 
         # reset stiffness
+        print(self._asset.actuators[self.legs_name].stiffness)
         self._asset.actuators[self.legs_name].stiffness = torch.full_like(self._asset.actuators[self.legs_name].stiffness, self.default_stiffness)
+        print(self._asset.actuators[self.legs_name].stiffness)
 
         # reset time counter
         self.dt = 0
@@ -577,6 +580,7 @@ class BezierCurveAction(ActionTerm):
         # arg = torch.clip(trunk_xd_lo[..., 2] * trunk_xd_lo[..., 2] - 2 * 9.81 * (trunk_tg[..., 2] - trunk_x_lo[..., 2]), 0, torch.inf)
         # self.t_fl = (trunk_xd_lo[..., 2] + torch.sqrt(arg)) / 9.81
         # print("t_fl", self.t_fl)
+        print(f"Mass: {torch.sum(self._asset.root_physx_view.get_masses())}")
 
         if self.cfg.debug_vis:
             print(f"Command: {self._env.command_manager.get_command('trunk_target')}")
@@ -642,9 +646,9 @@ class BezierCurveAction(ActionTerm):
         q_des, qd_des = self.ik(x, o, self.old_q_des)
         self.old_q_des = q_des.clone()
 
-        # DEBUG: stand still
-        # q_des = self._asset.data.default_joint_pos
-        # qd_des = self._asset.data.default_joint_vel
+        if self.cfg.debug_control:
+            q_des = self._asset.data.default_joint_pos
+            qd_des = self._asset.data.default_joint_vel
 
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)

@@ -90,5 +90,8 @@ class BezierCurveActionCfg(ActionTermCfg):
     q_0_lo: torch.tensor = MISSING
     legs_name : str = MISSING
 
-    debug_vis: bool = False
+    debug_vis: bool = MISSING
     mode: str = MISSING
+    debug_control : bool = MISSING
+
+    stiffness_division : float = MISSING

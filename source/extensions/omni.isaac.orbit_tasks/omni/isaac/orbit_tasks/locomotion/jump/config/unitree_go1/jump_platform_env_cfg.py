@@ -44,6 +44,9 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
 
         q_0_lo = torch.tensor([0.3430, -0.3425, 0.3433, -0.3424, 1.5495, 1.5490, 1.9171, 1.9173, -2.6620, -2.6618, -2.4902, -2.4901])
 
+        mass_range = 1
+        stiffness_division = 5
+
         self.commands.trunk_target.body_name = trunk_name
         self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
         self.rewards.target_position_error.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -74,9 +77,13 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         self.events.detect_touchdown.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*" + foot_name)
         self.running_rewards.friction_constraint.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*" + foot_name)
         self.rewards.target_position_error.params["foot_name"] = ".*" + foot_name
+        self.events.physics_material.params["asset_cfg"] = SceneEntityCfg("robot", body_names=".*"+foot_name)
 
         self.actions.jump_traj.q_0_lo = q_0_lo
         self.actions.jump_traj.legs_name = legs_name
+
+        self.events.add_base_mass.params["mass_range"] = (-mass_range, mass_range)
+        self.actions.jump_traj.stiffness_division = stiffness_division
 
 
 @configclass
