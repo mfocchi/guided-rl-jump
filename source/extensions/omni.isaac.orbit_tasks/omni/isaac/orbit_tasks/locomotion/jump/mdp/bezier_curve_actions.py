@@ -655,11 +655,10 @@ class BezierCurveAction(ActionTerm):
             # half second stationary
             t = np.clip(self.dt - 0.5, 0, np.inf)
 
-            # x[:, 2] += (0.05 * torch.sin(torch.tensor(2 * np.pi * t) + np.pi))
-            x[:, 2] -= (0.2 * t)
-            x[:, 2] = torch.clip(x[:, 2], 0.4+0.15, 0.4+0.7)
-
-            print(self._asset.data.root_pos_w[..., 2] - 0.4, self._asset.data.joint_pos)
+            x[:, 2] += (0.05 * torch.sin(torch.tensor(2 * np.pi * t) + np.pi))
+            # x[:, 2] -= (0.2 * t)
+            # x[:, 2] = torch.clip(x[:, 2], 0.4+0.15, 0.4+0.7)
+            # print(self._asset.data.root_pos_w[..., 2] - 0.4, self._asset.data.joint_pos)
 
             q_des, qd_des = self.ik(x, o, self.old_q_des)
             self.old_q_des = q_des.clone()

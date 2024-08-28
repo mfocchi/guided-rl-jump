@@ -46,7 +46,7 @@ class UnitreeA1JumpEnvCfg(LocomotionJumpEnvCfg):
         q_0_lo = torch.tensor([0.2867, -0.2870, 0.2488, -0.2475, 1.4799, 1.4788, 1.8103, 1.8094, -2.6072, -2.6055, -2.4796, -2.4787])
 
         mass_range = 1
-        stiffness_division = 2.5
+        stiffness_division = 3
 
         self.commands.trunk_target.body_name = trunk_name
         self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
