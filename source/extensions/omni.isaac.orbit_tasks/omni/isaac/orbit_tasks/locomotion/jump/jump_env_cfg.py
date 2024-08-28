@@ -42,12 +42,19 @@ max_action = 5
 
 
 # Target config
-pos_x = (-1.2, 1.2)
-pos_y = (-0.6, 0.6)
-pos_z = (-0.4, 0.4)
-roll = (-np.pi / 9, np.pi / 9)
-pitch = (-np.pi / 9, np.pi / 9)
-yaw = (-np.pi / 2, np.pi / 2)
+# pos_x = (-1.2, 1.2)
+# pos_y = (-0.6, 0.6)
+# pos_z = (-0.4, 0.4)
+# roll = (-np.pi / 9, np.pi / 9)
+# pitch = (-np.pi / 9, np.pi / 9)
+# yaw = (-np.pi / 2, np.pi / 2)
+
+pos_x = (0.5, 0.5)
+pos_y = (0., 0.)
+pos_z = (0., 0.)
+roll = (0., 0.)
+pitch = (0., 0.)
+yaw = (0., 0.)
 
 activate_curriculum = False
 
@@ -203,7 +210,8 @@ class ActionsCfg:
                                          l_expl_max=0.3,
                                          q_0_lo=q_0_lo,
                                          legs_name=legs_name,
-                                         debug_vis=False,
+                                         debug_vis=True,
+                                         debug_plot=True,
                                          mode=mode,
                                          debug_control=False,
                                          stiffness_division=stiffness_division)

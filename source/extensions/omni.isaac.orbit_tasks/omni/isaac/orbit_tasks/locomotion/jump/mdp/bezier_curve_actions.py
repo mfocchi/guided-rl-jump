@@ -149,7 +149,7 @@ class BezierCurveAction(ActionTerm):
                     }))
 
         # log variables
-        if self.cfg.mode == "play" and self.cfg.debug_vis:
+        if self.cfg.mode == "play" and self.cfg.debug_plot:
 
             self.des_q = []
             self.act_q = []
@@ -330,47 +330,49 @@ class BezierCurveAction(ActionTerm):
 
         qd_des = (q_des - old_q_des) / self.cfg.time_step
 
-        after_t_th_total = torch.where(self.dt > self.t_th_total)[0]
+        if not self.cfg.debug_control:
 
-        if after_t_th_total.numel() > 0:
+            after_t_th_total = torch.where(self.dt > self.t_th_total)[0]
 
-            new_lo = after_t_th_total[~torch.isin(after_t_th_total, self._env.extras['after_t_th_total'])]
-            if new_lo.numel() > 0:
+            if after_t_th_total.numel() > 0:
 
-                self._env.extras['actual_lo_config'][new_lo] = self._asset.data.root_state_w[new_lo].clone()
-                self._env.extras['t_th_q'][new_lo] = self._asset.data.joint_pos[new_lo].clone()
+                new_lo = after_t_th_total[~torch.isin(after_t_th_total, self._env.extras['after_t_th_total'])]
+                if new_lo.numel() > 0:
 
-            self._env.extras['after_t_th_total'] = after_t_th_total
+                    self._env.extras['actual_lo_config'][new_lo] = self._asset.data.root_state_w[new_lo].clone()
+                    self._env.extras['t_th_q'][new_lo] = self._asset.data.joint_pos[new_lo].clone()
 
-            elapsed_time = (torch.full_like(self.t_th, self.dt) - self.t_th)[after_t_th_total]
-            elapsed_ratio = torch.clip(elapsed_time / torch.full_like(elapsed_time, self.lerp_time), 0, 1)
+                self._env.extras['after_t_th_total'] = after_t_th_total
 
-            q_0_lo_lerp = self.cerp(self._env.extras['t_th_q'][after_t_th_total],
-                                    torch.expand_copy(self.q_0_lo, (len(after_t_th_total), len(self.q_0_td))),
-                                    elapsed_ratio)
+                elapsed_time = (torch.full_like(self.t_th, self.dt) - self.t_th)[after_t_th_total]
+                elapsed_ratio = torch.clip(elapsed_time / torch.full_like(elapsed_time, self.lerp_time), 0, 1)
 
-            q_des[after_t_th_total] = q_0_lo_lerp
-            qd_des[after_t_th_total] = torch.zeros_like(self._asset.data.default_joint_vel[0])
+                q_0_lo_lerp = self.cerp(self._env.extras['t_th_q'][after_t_th_total],
+                                        torch.expand_copy(self.q_0_lo, (len(after_t_th_total), len(self.q_0_td))),
+                                        elapsed_ratio)
 
-            # reduce the stiffness to reduce instabilities
-            if not self.cfg.debug_control:
-                self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 12), self.default_stiffness / self.cfg.stiffness_division).to(self.device)
+                q_des[after_t_th_total] = q_0_lo_lerp
+                qd_des[after_t_th_total] = torch.zeros_like(self._asset.data.default_joint_vel[0])
 
-        apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
+                # reduce the stiffness to reduce instabilities
+                if not self.cfg.debug_control:
+                    self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 12), self.default_stiffness / self.cfg.stiffness_division).to(self.device)
 
-        if len(apex_env_ids) > 0:
-            apex_elapsed_time = self._env.extras['apex_dt'][apex_env_ids]
-            apex_elapsed_ratio = torch.clip(apex_elapsed_time / torch.full_like(apex_elapsed_time, self.lerp_time), 0, 1).reshape(-1, 1)
+            apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
 
-            q_0_extended = torch.expand_copy(self.q_0_td, (len(apex_env_ids), len(self.q_0_td)))
+            if len(apex_env_ids) > 0:
+                apex_elapsed_time = self._env.extras['apex_dt'][apex_env_ids]
+                apex_elapsed_ratio = torch.clip(apex_elapsed_time / torch.full_like(apex_elapsed_time, self.lerp_time), 0, 1).reshape(-1, 1)
 
-            q_0_lerp = self.cerp(self._env.extras['apex_q'][apex_env_ids],
-                                 q_0_extended,
-                                 apex_elapsed_ratio)
+                q_0_extended = torch.expand_copy(self.q_0_td, (len(apex_env_ids), len(self.q_0_td)))
 
-            q_des[apex_env_ids] = q_0_lerp
+                q_0_lerp = self.cerp(self._env.extras['apex_q'][apex_env_ids],
+                                     q_0_extended,
+                                     apex_elapsed_ratio)
 
-            self._env.extras['apex_dt'][apex_env_ids] += self.cfg.time_step
+                q_des[apex_env_ids] = q_0_lerp
+
+                self._env.extras['apex_dt'][apex_env_ids] += self.cfg.time_step
 
         return q_des, qd_des
 
@@ -601,7 +603,7 @@ class BezierCurveAction(ActionTerm):
 
             self.trunk_lo_vis.visualize(self.trunk_x_exp + self._env.scene.env_origins, quat_from_euler_xyz(trunk_o_lo[..., 0], trunk_o_lo[..., 1], trunk_o_lo[..., 2]))
 
-        if self.cfg.mode == "play" and self.cfg.debug_vis:
+        if self.cfg.mode == "play" and self.cfg.debug_plot:
 
             if len(self.des_q):
                 self.plot_traj(self.act_q, self.des_q, "q")
@@ -643,17 +645,33 @@ class BezierCurveAction(ActionTerm):
 
         o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th_total)
 
-        q_des, qd_des = self.ik(x, o, self.old_q_des)
-        self.old_q_des = q_des.clone()
+        if not self.cfg.debug_control:
+            q_des, qd_des = self.ik(x, o, self.old_q_des)
+            self.old_q_des = q_des.clone()
+        else:
+            x = torch.tensor([[0, 0, 0.4 + self.robot_height]], device=self.device)
+            o = torch.tensor([[0, 0, 0]], device=self.device)
 
-        if self.cfg.debug_control:
-            q_des = self._asset.data.default_joint_pos
-            qd_des = self._asset.data.default_joint_vel
+            # half second stationary
+            t = np.clip(self.dt - 0.5, 0, np.inf)
+
+            # x[:, 2] += (0.05 * torch.sin(torch.tensor(2 * np.pi * t) + np.pi))
+            x[:, 2] -= (0.2 * t)
+            x[:, 2] = torch.clip(x[:, 2], 0.4+0.15, 0.4+0.7)
+
+            print(self._asset.data.root_pos_w[..., 2] - 0.4, self._asset.data.joint_pos)
+
+            q_des, qd_des = self.ik(x, o, self.old_q_des)
+            self.old_q_des = q_des.clone()
+
+            # Decomment to have no ik
+            # q_des = self._asset.data.default_joint_pos
+            # qd_des = self._asset.data.default_joint_vel
 
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
 
-        if self.cfg.mode == "play" and self.cfg.debug_vis:
+        if self.cfg.mode == "play" and self.cfg.debug_plot:
 
             self.des_q.append(q_des.clone().detach().cpu())
             self.act_q.append(self._asset.data.joint_pos.clone().detach().cpu())

@@ -42,11 +42,11 @@ class SoloJumpEnvCfg(LocomotionJumpEnvCfg):
         y_limit = 0.15
         z_limit = 0.34
 
-        mass_range = 0.1
-        stiffness_division = 2
-
         q_0_lo = torch.tensor([0.0000, 0.0000, 0.0000, 0.0000, 0.7854, 0.7854, -0.7854, -0.7854, -1.5708, -1.5708, 1.5708, 1.5708])
         # q_0_lo = torch.tensor([0.0000, 0.0000, 0.0000, 0.0000, 1.5854, 1.5854, -1.5854, -1.5854, 1.5708, 1.5708, -1.5708, -1.5708])
+        
+        mass_range = 0.1
+        stiffness_division = 2
 
         self.commands.trunk_target.body_name = trunk_name
         self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -102,7 +102,7 @@ class SoloJumpEnvCfg_PLAY(SoloJumpEnvCfg):
         mode = "play"
 
         self.rewards.target_position_error.params["mode"] = mode
-
+        self.actions.jump_traj.mode = mode
 
 @configclass
 class SoloJumpEnvCfg_TEST(SoloJumpEnvCfg_PLAY):
@@ -116,3 +116,4 @@ class SoloJumpEnvCfg_TEST(SoloJumpEnvCfg_PLAY):
         mode = "test"
 
         self.rewards.target_position_error.params["mode"] = mode
+        self.actions.jump_traj.mode = mode

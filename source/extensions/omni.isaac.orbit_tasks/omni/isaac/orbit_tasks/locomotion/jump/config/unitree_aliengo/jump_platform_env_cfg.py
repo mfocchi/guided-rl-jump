@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 import torch
+
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.managers import SceneEntityCfg
 
@@ -11,22 +12,22 @@ from omni.isaac.orbit_tasks.locomotion.jump.jump_env_cfg import LocomotionJumpEn
 ##
 # Pre-defined configs
 ##
-from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG  # isort: skip
+from omni.isaac.orbit_assets.unitree import UNITREE_ALIENGO_CFG  # isort: skip
 
 
 @configclass
-class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
+class UnitreeA1JumpEnvCfg(LocomotionJumpEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
 
-        self.scene.robot = UNITREE_GO1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+        self.scene.robot = UNITREE_ALIENGO_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
         # Robot params
-        trunk_name = "trunk"
+        trunk_name = "base"
         foot_name = "foot"
         legs_name = "base_legs"
-        robot_height = 0.31
+        robot_height = 0.37
         foot_offset = 0.02
 
         fl_joint_names = ["FL.*"]
@@ -40,12 +41,12 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
 
         x_limit = 0.15
         y_limit = 0.15
-        z_limit = 0.4
+        z_limit = 0.45
 
-        q_0_lo = torch.tensor([0.2316, -0.2316, 0.2343, -0.2338, 1.3818, 1.3816, 1.6860, 1.6858, -2.4620, -2.4617, -2.3162, -2.3163])
+        q_0_lo = torch.tensor([0.2867, -0.2870, 0.2488, -0.2475, 1.4799, 1.4788, 1.8103, 1.8094, -2.6072, -2.6055, -2.4796, -2.4787])
 
         mass_range = 1
-        stiffness_division = 5
+        stiffness_division = 2.5
 
         self.commands.trunk_target.body_name = trunk_name
         self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -85,9 +86,11 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         self.events.add_base_mass.params["mass_range"] = (-mass_range, mass_range)
         self.actions.jump_traj.stiffness_division = stiffness_division
 
+        self.actions.jump_traj.x_r_max = 0.45
+
 
 @configclass
-class UnitreeGo1JumpEnvCfg_PLAY(UnitreeGo1JumpEnvCfg):
+class UnitreeA1JumpEnvCfg_PLAY(UnitreeA1JumpEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -102,7 +105,7 @@ class UnitreeGo1JumpEnvCfg_PLAY(UnitreeGo1JumpEnvCfg):
 
 
 @configclass
-class UnitreeGo1JumpEnvCfg_TEST(UnitreeGo1JumpEnvCfg_PLAY):
+class UnitreeA1JumpEnvCfg_TEST(UnitreeA1JumpEnvCfg_PLAY):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()

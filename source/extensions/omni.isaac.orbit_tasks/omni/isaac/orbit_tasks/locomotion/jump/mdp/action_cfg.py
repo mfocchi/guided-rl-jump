@@ -91,6 +91,7 @@ class BezierCurveActionCfg(ActionTermCfg):
     legs_name : str = MISSING
 
     debug_vis: bool = MISSING
+    debug_plot: bool = MISSING
     mode: str = MISSING
     debug_control : bool = MISSING
 

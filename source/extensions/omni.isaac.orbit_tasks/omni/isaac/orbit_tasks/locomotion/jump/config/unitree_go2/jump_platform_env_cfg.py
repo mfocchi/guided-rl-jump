@@ -13,6 +13,7 @@ from omni.isaac.orbit_tasks.locomotion.jump.jump_env_cfg import LocomotionJumpEn
 ##
 from omni.isaac.orbit_assets.unitree import UNITREE_GO2_CFG  # isort: skip
 
+
 @configclass
 class UnitreeGo2JumpEnvCfg(LocomotionJumpEnvCfg):
     def __post_init__(self):
@@ -25,7 +26,7 @@ class UnitreeGo2JumpEnvCfg(LocomotionJumpEnvCfg):
         trunk_name = "base"
         foot_name = "foot"
         legs_name = "base_legs"
-        robot_height = 0.3
+        robot_height = 0.31
         foot_offset = 0.02
 
         fl_joint_names = ["FL.*"]
@@ -41,11 +42,10 @@ class UnitreeGo2JumpEnvCfg(LocomotionJumpEnvCfg):
         y_limit = 0.15
         z_limit = 0.4
 
-        q_0_lo = torch.tensor([0.3430, -0.3425, 0.3433, -0.3424, 1.5495, 1.5490, 1.9171, 1.9173, -2.6620, -2.6618, -2.4902, -2.4901])
+        q_0_lo = torch.tensor([0.2327, -0.2332, 0.2272, -0.2274, 1.3914, 1.3911, 1.6872, 1.6870, -2.4664, -2.4660, -2.3259, -2.3258])
 
         mass_range = 1
         stiffness_division = 2.5
-
 
         self.commands.trunk_target.body_name = trunk_name
         self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -58,7 +58,6 @@ class UnitreeGo2JumpEnvCfg(LocomotionJumpEnvCfg):
 
         self.events.detect_apex.params["foot_height_offset"] = foot_offset
         self.rewards.target_position_error.params["foot_height_offset"] = foot_offset
-
 
         self.actions.jump_traj.fl_joint_names = fl_joint_names
         self.actions.jump_traj.fl_body_names = fl_body_names
@@ -73,20 +72,18 @@ class UnitreeGo2JumpEnvCfg(LocomotionJumpEnvCfg):
         self.negative_rewards.singularity_penalty.params["y_limit"] = y_limit
         self.negative_rewards.singularity_penalty.params["z_limit"] = z_limit
 
-        self.scene.contact_forces.prim_path="{ENV_REGEX_NS}/Robot/.*(?:"+foot_name+")$"
-        self.events.detect_apex.params["foot_name"] = ".*"+foot_name
-        self.events.detect_touchdown.params["sensor_cfg"] =  SceneEntityCfg("contact_forces", body_names=".*"+foot_name)
-        self.running_rewards.friction_constraint.params["sensor_cfg"] =  SceneEntityCfg("contact_forces", body_names=".*"+foot_name)
-        self.rewards.target_position_error.params["foot_name"] = ".*"+foot_name
-        self.events.physics_material.params["asset_cfg"] = SceneEntityCfg("robot", body_names=".*"+foot_name)
+        self.scene.contact_forces.prim_path = "{ENV_REGEX_NS}/Robot/.*(?:" + foot_name + ")$"
+        self.events.detect_apex.params["foot_name"] = ".*" + foot_name
+        self.events.detect_touchdown.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*" + foot_name)
+        self.running_rewards.friction_constraint.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*" + foot_name)
+        self.rewards.target_position_error.params["foot_name"] = ".*" + foot_name
+        self.events.physics_material.params["asset_cfg"] = SceneEntityCfg("robot", body_names=".*" + foot_name)
 
         self.actions.jump_traj.q_0_lo = q_0_lo
         self.actions.jump_traj.legs_name = legs_name
 
         self.events.add_base_mass.params["mass_range"] = (-mass_range, mass_range)
         self.actions.jump_traj.stiffness_division = stiffness_division
-
-
 
 
 @configclass
@@ -102,6 +99,7 @@ class UnitreeGo2JumpEnvCfg_PLAY(UnitreeGo2JumpEnvCfg):
 
         self.rewards.target_position_error.params["mode"] = mode
         self.actions.jump_traj.mode = mode
+
 
 @configclass
 class UnitreeGo2JumpEnvCfg_TEST(UnitreeGo2JumpEnvCfg_PLAY):
