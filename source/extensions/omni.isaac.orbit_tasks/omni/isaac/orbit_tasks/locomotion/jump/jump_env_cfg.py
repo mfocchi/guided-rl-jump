@@ -34,7 +34,7 @@ time_step = 0.005
 
 #
 mu = 1.0
-initial_z = 0.4
+initial_z = 0.5
 
 # Action config
 min_action = -5
@@ -42,19 +42,12 @@ max_action = 5
 
 
 # Target config
-# pos_x = (-1.2, 1.2)
-# pos_y = (-0.6, 0.6)
-# pos_z = (-0.4, 0.4)
-# roll = (-np.pi / 9, np.pi / 9)
-# pitch = (-np.pi / 9, np.pi / 9)
-# yaw = (-np.pi / 2, np.pi / 2)
-
-pos_x = (0.5, 0.5)
-pos_y = (0., 0.)
-pos_z = (0., 0.)
-roll = (0., 0.)
-pitch = (0., 0.)
-yaw = (0., 0.)
+pos_x = (-1.2, 1.2)
+pos_y = (-0.6, 0.6)
+pos_z = (-0.4, 0.4)
+roll = (0, np.pi / 12)
+pitch = (0, np.pi / 12)
+yaw = (-np.pi / 2, np.pi / 2)
 
 activate_curriculum = False
 
@@ -116,7 +109,7 @@ class MySceneCfg(InteractiveSceneCfg):
     landing_platform: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
-            size=(2, 2, 0.05),
+            size=(1.5, 1.5, 0.05),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, kinematic_enabled=True),
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
@@ -211,7 +204,7 @@ class ActionsCfg:
                                          q_0_lo=q_0_lo,
                                          legs_name=legs_name,
                                          debug_vis=True,
-                                         debug_plot=True,
+                                         debug_plot=False,
                                          mode=mode,
                                          debug_control=False,
                                          stiffness_division=stiffness_division)
