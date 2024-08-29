@@ -459,7 +459,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.episode_length_s = 2.5
+        self.episode_length_s = 1.5
         self.sim.dt = time_step
         self.decimation = 1
         # simulation settings
