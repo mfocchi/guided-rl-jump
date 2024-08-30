@@ -94,6 +94,8 @@ def main():
         obs, _, _, extras = env.step(actions)
         data = np.stack((extras["desirerd_td"].cpu().numpy(), extras["actual_td"].cpu().numpy()), axis=0)
         joblib.dump(data, os.path.join(log_root_path, 'test.bin'))
+        joblib.dump(extras['fail_det'].cpu().numpy(), os.path.join(log_root_path, 'failed.bin'))
+        
 
     # close the simulator.tolist()
     env.close()

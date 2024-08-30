@@ -51,6 +51,7 @@ def reset_robot_state(
     env.extras['apex_dt'] = torch.zeros(env.num_envs, device=env.device)
     env.extras['apex_z'] = torch.zeros(env.num_envs, device=env.device)
     env.extras['landing_z'] = torch.zeros(env.num_envs, device=env.device)
+    env.extras['fail'] = torch.zeros(env.num_envs, device=env.device, dtype=torch.bool)
 
 
 def reset_landing_platform(
@@ -204,3 +205,15 @@ def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, contact_threshold: f
     #     asset.write_root_pose_to_sim(values[..., 0:7], env_ids=existing_touchdown_ids)
     #     asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
     #     asset.write_joint_state_to_sim(values[..., 13:25], torch.zeros((len(existing_touchdown_ids), 12), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)
+
+
+def detect_fail(env: RLTaskEnv, env_ids: torch.Tensor, contact_threshold: float, sensor_cfg: SceneEntityCfg):
+    """Terminate when the contact force on the sensor exceeds the force threshold."""
+    # extract the used quantities (to enable type-hinting)
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+
+    net_contact_forces = contact_sensor.data.net_forces_w
+
+    # near_foot_env_ids = torch.std(asset.data.body_state_w[:, foot_idx, 2], dim=1) <= foot_pos_threshold
+    in_contact_env_ids = torch.any(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
+    env.extras['fail'] = env.extras['fail'] | in_contact_env_ids

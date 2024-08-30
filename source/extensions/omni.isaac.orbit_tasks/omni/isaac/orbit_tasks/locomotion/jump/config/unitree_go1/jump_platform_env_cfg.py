@@ -26,7 +26,8 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         trunk_name = "trunk"
         foot_name = "foot"
         legs_name = "base_legs"
-        robot_height = 0.31
+        thigh_name = "thigh"
+        robot_height = 0.3
         foot_offset = 0.02
 
         fl_joint_names = ["FL.*"]
@@ -45,7 +46,7 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         q_0_lo = torch.tensor([0.2316, -0.2316, 0.2343, -0.2338, 1.3818, 1.3816, 1.6860, 1.6858, -2.4620, -2.4617, -2.3162, -2.3163])
 
         mass_range = 1
-        stiffness_division = 5
+        stiffness_division = 4
 
         self.commands.trunk_target.body_name = trunk_name
         self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -73,11 +74,13 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         self.negative_rewards.singularity_penalty.params["z_limit"] = z_limit
 
         self.scene.contact_forces.prim_path = "{ENV_REGEX_NS}/Robot/.*(?:" + foot_name + ")$"
+        self.scene.nonfoot_forces.prim_path = "{ENV_REGEX_NS}/Robot/.*?(" + thigh_name + "|" + trunk_name + ").*"
         self.events.detect_apex.params["foot_name"] = ".*" + foot_name
-        self.events.detect_touchdown.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*" + foot_name)
-        self.running_rewards.friction_constraint.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*" + foot_name)
+        self.events.detect_touchdown.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*")
+        self.events.detect_fail.params["sensor_cfg"] = SceneEntityCfg("nonfoot_forces", body_names=".*")
+        self.running_rewards.friction_constraint.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*")
         self.rewards.target_position_error.params["foot_name"] = ".*" + foot_name
-        self.events.physics_material.params["asset_cfg"] = SceneEntityCfg("robot", body_names=".*" + foot_name)
+        self.events.physics_material.params["asset_cfg"] = SceneEntityCfg("robot", body_names=".*")
 
         self.actions.jump_traj.q_0_lo = q_0_lo
         self.actions.jump_traj.legs_name = legs_name
@@ -99,6 +102,7 @@ class UnitreeGo1JumpEnvCfg_PLAY(UnitreeGo1JumpEnvCfg):
 
         self.rewards.target_position_error.params["mode"] = mode
         self.actions.jump_traj.mode = mode
+        self.episode_length_s = 2
 
 
 @configclass
@@ -114,3 +118,4 @@ class UnitreeGo1JumpEnvCfg_TEST(UnitreeGo1JumpEnvCfg_PLAY):
 
         self.rewards.target_position_error.params["mode"] = mode
         self.actions.jump_traj.mode = mode
+        self.episode_length_s = 2

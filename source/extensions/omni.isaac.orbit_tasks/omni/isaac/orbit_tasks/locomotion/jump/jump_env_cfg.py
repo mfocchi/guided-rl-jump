@@ -42,19 +42,33 @@ max_action = 5
 
 
 # Target config
-pos_x = (-1.2, 1.2)
-pos_y = (-0.6, 0.6)
-pos_z = (-0.4, 0.4)
-roll = (0, np.pi / 12)
-pitch = (0, np.pi / 12)
-yaw = (-np.pi / 2, np.pi / 2)
+# pos_x = (-1.2, 1.2)
+# pos_y = (-0.6, 0.6)
+# pos_z = (-0.4, 0.4)
+# roll = (0, 0)
+# pitch = (0, 0)
+# yaw = (0, 0)
+# roll = (0, np.pi / 12)
+# pitch = (0, np.pi / 12)
+# yaw = (-np.pi / 2, np.pi / 2)
 
+pos_x = (0, 1.2)
+pos_y = (-0.3, 0.3)
+pos_z = (0, 0)
+roll = (0, 0)
+pitch = (0, 0)
+yaw = (0, 0)
+
+# enable extusion of roll or pitch (no uniform random)
+roll_yaw_shufle = True
 activate_curriculum = False
 
 # Robot params
 trunk_name = ""
 foot_name = ""
 legs_name = ""
+thigh_name = ""
+
 robot_height = 0.
 foot_offset = 0.
 
@@ -105,11 +119,16 @@ class MySceneCfg(InteractiveSceneCfg):
                                       visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/ContactSensor"),
                                       debug_vis=False)
 
+    nonfoot_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/^(?=.*hip)(?=.*trunk).*",
+                                      track_air_time=False,
+                                      visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/NonFootContactSensor"),
+                                      debug_vis=True)
+
     # add landing_platform
     landing_platform: RigidObjectCfg = RigidObjectCfg(
         prim_path="{ENV_REGEX_NS}/landing_platform",
         spawn=sim_utils.CuboidCfg(
-            size=(1.5, 1.5, 0.05),
+            size=(2, 2, 0.05),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(disable_gravity=True, kinematic_enabled=True),
             mass_props=sim_utils.MassPropertiesCfg(),
             collision_props=sim_utils.CollisionPropertiesCfg(collision_enabled=True),
@@ -141,6 +160,7 @@ class CommandsCfg:
     trunk_target = mdp.UniformTargetCommandCfgJump(
         asset_name="robot",
         body_name=trunk_name,
+        roll_yaw_shufle=roll_yaw_shufle,
         # command is sampled on a new episodejoint_pos
         # resampling_time > episode_length_s = no target change during episode
         resampling_time_range=(5, 5),
@@ -174,7 +194,7 @@ class ActionsCfg:
                                          min_action=min_action,
                                          max_action=max_action,
                                          robot_height=robot_height,
-                                         lerp_time=0.1,
+                                         lerp_time=0.2,
                                          t_th_min=0.4,
                                          t_th_max=0.8,
                                          x_theta_min=np.pi / 4,
@@ -280,6 +300,14 @@ class EventCfg:
         mode="interval",
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=foot_name),
                 "asset_cfg": SceneEntityCfg("robot"),
+                "contact_threshold": 5.0},
+        interval_range_s=(0., 0.)
+    )
+
+    detect_fail = EventTerm(
+        func=mdp.detect_fail,
+        mode="interval",
+        params={"sensor_cfg": SceneEntityCfg("nonfoot_forces", body_names=foot_name),
                 "contact_threshold": 5.0},
         interval_range_s=(0., 0.)
     )

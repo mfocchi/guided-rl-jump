@@ -273,6 +273,9 @@ def no_touchdown(env: RLTaskEnv) -> torch.Tensor:
     touchdown_end_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
     no_touchdown_penalty[touchdown_end_ids] = 0
 
+    
+    env.extras['fail_det'] = env.extras['fail'].clone()
+    
     return no_touchdown_penalty
 
 

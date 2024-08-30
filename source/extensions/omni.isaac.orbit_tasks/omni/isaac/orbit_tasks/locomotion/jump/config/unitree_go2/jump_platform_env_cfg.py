@@ -26,7 +26,7 @@ class UnitreeGo2JumpEnvCfg(LocomotionJumpEnvCfg):
         trunk_name = "base"
         foot_name = "foot"
         legs_name = "base_legs"
-        robot_height = 0.31
+        robot_height = 0.3
         foot_offset = 0.02
 
         fl_joint_names = ["FL.*"]

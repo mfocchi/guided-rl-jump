@@ -23,6 +23,8 @@ class UniformTargetCommandCfgJump(CommandTermCfg):
     body_name: str = MISSING
     """Name of the body in the asset for which the commands are generated."""
 
+    roll_yaw_shufle: bool = MISSING
+
     @configclass
     class Ranges:
         """Uniform distribution ranges for the pose commands."""

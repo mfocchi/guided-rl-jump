@@ -115,22 +115,23 @@ class UniformTargetCommandJump(CommandTerm):
         euler_angles[:, 1] = euler_angles[:, 1]
 
         # Gewnerate random mask for roll or pitch
+        if self.cfg.roll_yaw_shufle:
 
-        mask = torch.rand((self.num_envs,1))
+            mask = torch.rand((self.num_envs, 1))
 
-        roll_idx = torch.where(mask >= 0.5)[0]
-        pitch_idx = torch.where(mask < 0.5)[0]
+            roll_idx = torch.where(mask >= 0.5)[0]
+            pitch_idx = torch.where(mask < 0.5)[0]
 
-        euler_angles[pitch_idx, 0] = 0.0
-        euler_angles[roll_idx, 1] = 0.0
+            euler_angles[pitch_idx, 0] = 0.0
+            euler_angles[roll_idx, 1] = 0.0
 
-        mask_sign = torch.rand((self.num_envs,1))
+            mask_sign = torch.rand((self.num_envs, 1))
 
-        pitch_sign = torch.sign(self.pose_command_o[pitch_idx, 0]) * -1 #sign has to be the inverse of x
-        roll_sign = torch.sign(self.pose_command_o[roll_idx, 1])
+            pitch_sign = torch.sign(self.pose_command_o[pitch_idx, 0]) * -1  # sign has to be the inverse of x
+            roll_sign = torch.sign(self.pose_command_o[roll_idx, 1])
 
-        euler_angles[pitch_idx, 1] *= pitch_sign
-        euler_angles[roll_idx, 0] *= roll_sign
+            euler_angles[pitch_idx, 1] *= pitch_sign
+            euler_angles[roll_idx, 0] *= roll_sign
 
         self.pose_command_o[env_ids, 3:] = quat_from_euler_xyz(
             euler_angles[:, 0], euler_angles[:, 1], euler_angles[:, 2]
