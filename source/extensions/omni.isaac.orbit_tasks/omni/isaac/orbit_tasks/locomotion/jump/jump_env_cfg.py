@@ -42,26 +42,19 @@ max_action = 5
 
 
 # Target config
-# pos_x = (-1.2, 1.2)
-# pos_y = (-0.6, 0.6)
-# pos_z = (-0.4, 0.4)
-# roll = (0, 0)
-# pitch = (0, 0)
+pos_x = (-1.2, 1.2)
+pos_y = (-0.6, 0.6)
+pos_z = (-0.4, 0.4)
+roll = (0, 0)
+pitch = (0, 0)
 # yaw = (0, 0)
 # roll = (0, np.pi / 12)
 # pitch = (0, np.pi / 12)
-# yaw = (-np.pi / 2, np.pi / 2)
-
-pos_x = (0, 1.2)
-pos_y = (-0.3, 0.3)
-pos_z = (0, 0)
-roll = (0, 0)
-pitch = (0, 0)
-yaw = (0, 0)
+yaw = (-np.pi / 2, np.pi / 2)
 
 # enable extusion of roll or pitch (no uniform random)
-roll_yaw_shufle = True
-activate_curriculum = False
+roll_yaw_shufle = False
+activate_curriculum = True
 
 # Robot params
 trunk_name = ""
@@ -122,7 +115,7 @@ class MySceneCfg(InteractiveSceneCfg):
     nonfoot_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/^(?=.*hip)(?=.*trunk).*",
                                       track_air_time=False,
                                       visualizer_cfg=CONTACT_SENSOR_JUMP_MARKER_CFG.replace(prim_path="/Visuals/NonFootContactSensor"),
-                                      debug_vis=True)
+                                      debug_vis=False)
 
     # add landing_platform
     landing_platform: RigidObjectCfg = RigidObjectCfg(
@@ -224,7 +217,7 @@ class ActionsCfg:
                                          q_0_lo=q_0_lo,
                                          legs_name=legs_name,
                                          debug_vis=True,
-                                         debug_plot=False,
+                                         debug_plot=True,
                                          mode=mode,
                                          debug_control=False,
                                          stiffness_division=stiffness_division)
@@ -487,7 +480,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.episode_length_s = 1.5
+        self.episode_length_s = 2
         self.sim.dt = time_step
         self.decimation = 1
         # simulation settings
