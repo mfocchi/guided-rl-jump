@@ -42,19 +42,27 @@ max_action = 5
 
 
 # Target config
-pos_x = (-1.2, 1.2)
-pos_y = (-0.6, 0.6)
-pos_z = (-0.4, 0.4)
-roll = (0, 0)
-pitch = (0, 0)
+# pos_x = (-1.2, 1.2)
+# pos_y = (-0.6, 0.6)
+# pos_z = (-0.4, 0.4)
+# roll = (0, 0)
+# pitch = (0, 0)
 # yaw = (0, 0)
 # roll = (0, np.pi / 12)
 # pitch = (0, np.pi / 12)
-yaw = (-np.pi / 2, np.pi / 2)
+# yaw = (-np.pi / 2, np.pi / 2)
+
+pos_x = (0, 1.2)
+pos_y = (-0.3, 0.3)
+pos_z = (0.0, 0.0)
+roll = (0, 0)
+pitch = (0, 0)
+yaw = (0, 0)
 
 # enable extusion of roll or pitch (no uniform random)
 roll_yaw_shufle = False
-activate_curriculum = True
+# activate_curriculum = True
+activate_curriculum = False
 
 # Robot params
 trunk_name = ""
@@ -217,7 +225,7 @@ class ActionsCfg:
                                          q_0_lo=q_0_lo,
                                          legs_name=legs_name,
                                          debug_vis=True,
-                                         debug_plot=True,
+                                         debug_plot=False,
                                          mode=mode,
                                          debug_control=False,
                                          stiffness_division=stiffness_division)
@@ -417,11 +425,11 @@ class NegativeRewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
-    apex_z_regularization = RewTerm(
-        func=mdp.apex_z_regularization,
-        params={"command_name": "trunk_target", "delta": 0.2, "initial_z": initial_z, "robot_height": robot_height},
-        weight=-2,
-    )
+    # apex_z_regularization = RewTerm(
+    #     func=mdp.apex_z_regularization,
+    #     params={"command_name": "trunk_target", "delta": 0.2, "initial_z": initial_z, "robot_height": robot_height},
+    #     weight=-2,
+    # )
 
     # a_regularization = RewTerm(
     #     func=mdp.a_regularization,
