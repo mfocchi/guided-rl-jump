@@ -55,7 +55,7 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         self.negative_rewards.touchdown_bounce_penalization.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
 
         self.actions.jump_traj.robot_height = robot_height
-        self.negative_rewards.apex_z_regularization.params["robot_height"] = robot_height
+        # self.negative_rewards.apex_z_regularization.params["robot_height"] = robot_height
 
         self.events.detect_apex.params["foot_height_offset"] = foot_offset
         self.rewards.target_position_error.params["foot_height_offset"] = foot_offset
