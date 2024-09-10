@@ -87,15 +87,17 @@ def main():
     # simulate one environment step
 
     # run everything in inference mode
-    with torch.inference_mode():
-        # agent stepping
-        actions = policy(obs)
-        # env stepping
-        obs, _, _, extras = env.step(actions)
-        data = np.stack((extras["desirerd_td"].cpu().numpy(), extras["actual_td"].cpu().numpy()), axis=0)
-        joblib.dump(data, os.path.join(log_root_path, 'test.bin'))
-        joblib.dump(extras['fail_det'].cpu().numpy(), os.path.join(log_root_path, 'failed.bin'))
-        
+    for i in range(2):
+        with torch.inference_mode():
+            # agent stepping
+            actions = policy(obs)
+            # env stepping
+            obs, _, _, extras = env.step(actions)
+            if i == 1:
+                data = np.stack((extras["desirerd_td"].cpu().numpy(), extras["actual_td"].cpu().numpy()), axis=0)
+                joblib.dump(data, os.path.join(log_root_path, 'test.bin'))
+                joblib.dump(extras['fail_det'].cpu().numpy(), os.path.join(log_root_path, 'failed.bin'))
+            
 
     # close the simulator.tolist()
     env.close()
