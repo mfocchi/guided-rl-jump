@@ -46,7 +46,7 @@ class UnitreeA1JumpEnvCfg(LocomotionJumpEnvCfg):
 
         q_0_lo = torch.tensor([0.2360, -0.2365, 0.1991, -0.1982, 1.3576, 1.3563, 1.6283, 1.6276, -2.4003, -2.3987, -2.3123, -2.3115])
 
-        mass_range = 1
+        mass_range = 0
         stiffness_division = 5
 
         self.commands.trunk_target.body_name = trunk_name
@@ -56,7 +56,7 @@ class UnitreeA1JumpEnvCfg(LocomotionJumpEnvCfg):
         self.negative_rewards.touchdown_bounce_penalization.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
 
         self.actions.jump_traj.robot_height = robot_height
-        self.negative_rewards.apex_z_regularization.params["robot_height"] = robot_height
+        # self.negative_rewards.apex_z_regularization.params["robot_height"] = robot_height
 
         self.events.detect_apex.params["foot_height_offset"] = foot_offset
         self.rewards.target_position_error.params["foot_height_offset"] = foot_offset
