@@ -461,9 +461,7 @@ class BezierCurveAction(ActionTerm):
         self._raw_actions[:] = actions
 
         # reset stiffness
-        print(self._asset.actuators[self.legs_name].stiffness)
         self._asset.actuators[self.legs_name].stiffness = torch.full_like(self._asset.actuators[self.legs_name].stiffness, self.default_stiffness)
-        print(self._asset.actuators[self.legs_name].stiffness)
 
         # reset time counter
         self.dt = 0
@@ -582,7 +580,7 @@ class BezierCurveAction(ActionTerm):
         # arg = torch.clip(trunk_xd_lo[..., 2] * trunk_xd_lo[..., 2] - 2 * 9.81 * (trunk_tg[..., 2] - trunk_x_lo[..., 2]), 0, torch.inf)
         # self.t_fl = (trunk_xd_lo[..., 2] + torch.sqrt(arg)) / 9.81
         # print("t_fl", self.t_fl)
-        print(f"Mass: {torch.sum(self._asset.root_physx_view.get_masses())}")
+        # print(f"Mass: {torch.sum(self._asset.root_physx_view.get_masses())}")
 
         if self.cfg.debug_vis:
             print(f"Command: {self._env.command_manager.get_command('trunk_target')}")

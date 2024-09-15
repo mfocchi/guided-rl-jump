@@ -103,6 +103,8 @@ class UnitreeGo1JumpEnvCfg_PLAY(UnitreeGo1JumpEnvCfg):
         self.rewards.target_position_error.params["mode"] = mode
         self.actions.jump_traj.mode = mode
         self.episode_length_s = 2
+        self.curriculum.jump_complexity.params["activate"] = False
+        self.commands.trunk_target.roll_yaw_shufle = False
 
 
 @configclass
@@ -119,3 +121,5 @@ class UnitreeGo1JumpEnvCfg_TEST(UnitreeGo1JumpEnvCfg_PLAY):
         self.rewards.target_position_error.params["mode"] = mode
         self.actions.jump_traj.mode = mode
         self.episode_length_s = 2
+        self.curriculum.jump_complexity.params["activate"] = False
+        self.commands.trunk_target.roll_yaw_shufle = False

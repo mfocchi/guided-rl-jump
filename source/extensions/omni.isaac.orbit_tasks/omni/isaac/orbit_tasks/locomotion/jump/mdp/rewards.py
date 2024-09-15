@@ -51,6 +51,12 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
 
     curr_pos_w[..., 2] = foot_pos_center
 
+    # if toudown is detected, use the detected one
+    if len(env.extras['touchdown']):
+        touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+        touchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
+        curr_pos_w[..., :2][touchdown_ids] = touchdown_pos_w
+
     if mode == "play":
         print(f"Target: {des_pos_w[...,:3]}")
         print(f"Landing: {curr_pos_w[...,:3]}")
@@ -141,13 +147,14 @@ def touchdown_bounce_penalization(env: RLTaskEnv, asset_cfg: SceneEntityCfg,) ->
     # extract the asset (to enable type hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
 
-    cost = torch.full((env.num_envs,), 10.0, device=env.device)
+    cost = torch.full((env.num_envs,), 1.0, device=env.device)
     if len(env.extras['touchdown']):
         touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
-        toruchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
+        touchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
         curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :2]  # type: ignore
-        bounce_dist = torch.norm(toruchdown_pos_w - curr_pos_w[touchdown_ids], dim=1)
+        bounce_dist = torch.norm(touchdown_pos_w - curr_pos_w[touchdown_ids], dim=1)
         cost[touchdown_ids] = bounce_dist
+
     return cost
 
 

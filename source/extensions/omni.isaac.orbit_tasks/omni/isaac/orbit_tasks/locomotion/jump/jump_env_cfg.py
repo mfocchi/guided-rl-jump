@@ -42,27 +42,16 @@ max_action = 5
 
 
 # Target config
-# pos_x = (-1.2, 1.2)
-# pos_y = (-0.6, 0.6)
-# pos_z = (-0.4, 0.4)
-# roll = (0, 0)
-# pitch = (0, 0)
-# yaw = (0, 0)
-# roll = (0, np.pi / 12)
-# pitch = (0, np.pi / 12)
-# yaw = (-np.pi / 2, np.pi / 2)
-
-pos_x = (0, 1.2)
-pos_y = (-0.3, 0.3)
-pos_z = (0.0, 0.0)
-roll = (0, 0)
-pitch = (0, 0)
-yaw = (0, 0)
+pos_x = (-0.6, 1.2)
+pos_y = (-0.6, 0.6)
+pos_z = (-0.4, 0.4)
+roll = (0, np.pi / 12)
+pitch = (0, np.pi / 12)
+yaw = (-np.pi, np.pi)
 
 # enable extusion of roll or pitch (no uniform random)
-roll_yaw_shufle = False
-# activate_curriculum = True
-activate_curriculum = False
+roll_yaw_shufle = True
+activate_curriculum = True
 
 # Robot params
 trunk_name = ""
@@ -379,12 +368,12 @@ class NegativeRewardsCfg:
 
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight=-0.5,
+        weight=-2,
     )
 
     liftoff_position_error = RewTerm(
         func=mdp.liftoff_position_error,
-        weight=-10,
+        weight=-5,
     )
 
     liftoff_orientation_error = RewTerm(
@@ -405,41 +394,14 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": x_limit, "y_limit": y_limit, "z_limit": z_limit, "initial_z": initial_z},
-        weight=-10,
-    )
-
-    action_limit_penalization = RewTerm(
-        func=mdp.action_limit_penalization,
-        params={"min_action": min_action, "max_action": max_action},
-        weight=-10,
-    )
-
-    touchdown_angular_velocity_penalization = RewTerm(
-        func=mdp.touchdown_angular_velocity_penalization,
-        weight=-0.01,
+        weight=-50,
     )
 
     touchdown_bounce_penalization = RewTerm(
         func=mdp.touchdown_bounce_penalization,
-        weight=-0.1,
+        weight=-1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
-
-    # apex_z_regularization = RewTerm(
-    #     func=mdp.apex_z_regularization,
-    #     params={"command_name": "trunk_target", "delta": 0.2, "initial_z": initial_z, "robot_height": robot_height},
-    #     weight=-2,
-    # )
-
-    # a_regularization = RewTerm(
-    #     func=mdp.a_regularization,
-    #     weight=-0.01,
-    # )
-
-    # t_th_total_regularization = RewTerm(
-    #     func=mdp.t_th_total_regularization,
-    #     weight=-1,
-    # )
 
 
 @ configclass
@@ -453,17 +415,18 @@ class TerminationsCfg:
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
 
-    action_rate = CurrTerm(
-        func=mdp.modify_maximum_distance, params={"term_name": "trunk_target",
-                                                  "start": 0.2,
-                                                  "num_steps": 500,
-                                                  "pos_x": pos_x,
-                                                  "pos_y": pos_y,
-                                                  "pos_z": pos_z,
-                                                  "roll": roll,
-                                                  "pitch": pitch,
-                                                  "yaw": yaw,
-                                                  "activate": activate_curriculum}
+    jump_complexity = CurrTerm(
+        func=mdp.jump_curriculum, params={"term_name": "trunk_target",
+                                          "start": 0.2,
+                                          "num_steps": 500,
+                                          "num_steps_rp": 1000,
+                                          "pos_x": pos_x,
+                                          "pos_y": pos_y,
+                                          "pos_z": pos_z,
+                                          "roll": roll,
+                                          "pitch": pitch,
+                                          "yaw": yaw,
+                                          "activate": activate_curriculum}
     )
 
 
