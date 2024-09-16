@@ -42,12 +42,19 @@ max_action = 5
 
 
 # Target config
+# pos_x = (-0.6, 1.2)
+# pos_y = (-0.6, 0.6)
+# pos_z = (-0.4, 0.4)
+# roll = (0, np.pi / 12)
+# pitch = (0, np.pi / 12)
+# yaw = (-np.pi, np.pi)
+
 pos_x = (-0.6, 1.2)
 pos_y = (-0.6, 0.6)
 pos_z = (-0.4, 0.4)
-roll = (0, np.pi / 12)
-pitch = (0, np.pi / 12)
-yaw = (-np.pi, np.pi)
+roll = (0, 0)
+pitch = (0, 0)
+yaw = (-np.pi / 2, np.pi / 2)
 
 # enable extusion of roll or pitch (no uniform random)
 roll_yaw_shufle = True
@@ -184,7 +191,7 @@ class ActionsCfg:
                                          min_action=min_action,
                                          max_action=max_action,
                                          robot_height=robot_height,
-                                         lerp_time=0.2,
+                                         lerp_time=0.1,
                                          t_th_min=0.4,
                                          t_th_max=0.8,
                                          x_theta_min=np.pi / 4,
@@ -368,7 +375,7 @@ class NegativeRewardsCfg:
 
     no_touchdown = RewTerm(
         func=mdp.no_touchdown,
-        weight=-2,
+        weight=-1,
     )
 
     liftoff_position_error = RewTerm(
@@ -394,13 +401,24 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": x_limit, "y_limit": y_limit, "z_limit": z_limit, "initial_z": initial_z},
-        weight=-50,
+        weight=-10,
     )
 
     touchdown_bounce_penalization = RewTerm(
         func=mdp.touchdown_bounce_penalization,
         weight=-1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
+    )
+
+    touchdown_angular_velocity_penalization = RewTerm(
+        func=mdp.touchdown_angular_velocity_penalization,
+        weight=-0.05,
+    )
+
+    action_limit_penalization = RewTerm(
+        func=mdp.action_limit_penalization,
+        params={"min_action": min_action, "max_action": max_action},
+        weight=-10,
     )
 
 
