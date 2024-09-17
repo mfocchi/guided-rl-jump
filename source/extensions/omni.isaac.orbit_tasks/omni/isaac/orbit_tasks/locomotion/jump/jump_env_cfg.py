@@ -49,25 +49,18 @@ max_action = 5
 # pitch = (0, np.pi / 12)
 # yaw = (-np.pi, np.pi)
 
-# pos_x = (-0.6, 1.2)
-# pos_y = (-0.6, 0.6)
-# pos_z = (-0.4, 0.4)
-# roll = (0, 0)
-# pitch = (0, 0)
-# yaw = (-np.pi / 2, np.pi / 2)
-
-pos_x = (0., 1.2)
-pos_y = (-0.3, 0.3)
-pos_z = (0., 0.)
+pos_x = (-0.6, 1.2)
+pos_y = (-0.6, 0.6)
+pos_z = (-0.4, 0.4)
 roll = (0, 0)
 pitch = (0, 0)
-yaw = (0,0)
+yaw = (-np.pi / 2, np.pi / 2)
 
 # enable extusion of roll or pitch (no uniform random)
 # roll_yaw_shufle = True
-# activate_curriculum = True
-ll_yaw_shufle = False
-activate_curriculum = False
+activate_curriculum = True
+roll_yaw_shufle = False
+# activate_curriculum = False
 
 # Robot params
 trunk_name = ""
@@ -415,7 +408,7 @@ class NegativeRewardsCfg:
 
     touchdown_bounce_penalization = RewTerm(
         func=mdp.touchdown_bounce_penalization,
-        weight=-0.2,
+        weight=-0.5,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
@@ -444,7 +437,7 @@ class CurriculumCfg:
 
     jump_complexity = CurrTerm(
         func=mdp.jump_curriculum, params={"term_name": "trunk_target",
-                                          "start": 0.2,
+                                          "start": 1.0,
                                           "num_steps": 500,
                                           "num_steps_rp": 1000,
                                           "pos_x": pos_x,

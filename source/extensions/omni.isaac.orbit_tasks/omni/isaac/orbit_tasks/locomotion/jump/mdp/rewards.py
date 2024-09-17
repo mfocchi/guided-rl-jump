@@ -59,11 +59,11 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
         env.extras["desirerd_td"] = des_pos_w[..., :3].clone() - env.scene.env_origins
         env.extras["actual_td"] = curr_pos_w[..., :3].clone() - env.scene.env_origins
         
-    # if toudown is detected, use the detected one
-    if len(env.extras['touchdown']):
-        touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
-        touchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
-        curr_pos_w[..., :2][touchdown_ids] = touchdown_pos_w
+    # # if toudown is detected, use the detected one
+    # if len(env.extras['touchdown']):
+    #     touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+    #     touchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
+    #     curr_pos_w[..., :2][touchdown_ids] = touchdown_pos_w
 
 
     # Calculate percentual_error to normalize jump performance
