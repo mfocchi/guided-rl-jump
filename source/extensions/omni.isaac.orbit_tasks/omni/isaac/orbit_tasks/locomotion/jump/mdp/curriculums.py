@@ -39,7 +39,17 @@ def jump_curriculum(env: RLTaskEnv, env_ids: Sequence[int], term_name: str, star
             env.command_manager.get_term(term_name).cfg.ranges.pos_y = tuple(curr_pos_y)
             env.command_manager.get_term(term_name).cfg.ranges.pos_z = tuple(curr_pos_z)
 
-        elif env.common_step_counter <= num_steps_rp:
+
+            curr_roll = 0 * np.array(roll)
+            curr_pitch = 0 * np.array(pitch)
+            curr_yaw = 0 * np.array(yaw)
+
+            env.command_manager.get_term(term_name).cfg.ranges.roll = tuple(curr_roll)
+            env.command_manager.get_term(term_name).cfg.ranges.pitch = tuple(curr_pitch)
+            env.command_manager.get_term(term_name).cfg.ranges.yaw = tuple(curr_yaw)
+
+
+        elif  env.common_step_counter <= num_steps_rp:
 
             coeff = np.clip(((env.common_step_counter - num_steps) / (num_steps_rp - num_steps)), 0, 1)
             
