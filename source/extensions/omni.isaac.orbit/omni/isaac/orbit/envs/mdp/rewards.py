@@ -228,6 +228,7 @@ def applied_torque_limits(env: RLTaskEnv, asset_cfg: SceneEntityCfg = SceneEntit
     out_of_limits = torch.abs(
         asset.data.applied_torque[:, asset_cfg.joint_ids] - asset.data.computed_torque[:, asset_cfg.joint_ids]
     )
+    # print(asset.data.applied_torque[:, asset_cfg.joint_ids])
     return torch.sum(out_of_limits, dim=1)
 
 

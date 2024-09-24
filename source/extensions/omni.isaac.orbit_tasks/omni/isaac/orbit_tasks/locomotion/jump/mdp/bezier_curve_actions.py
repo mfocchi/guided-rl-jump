@@ -62,6 +62,7 @@ class BezierCurveAction(ActionTerm):
         self.max_action = self.cfg.max_action
 
         self.robot_height = self.cfg.robot_height
+        self.contact_sensor = env.scene.sensors[self.cfg.sensor_cfg.name]
 
         self.lerp_time = self.cfg.lerp_time
 
@@ -108,8 +109,10 @@ class BezierCurveAction(ActionTerm):
         self.q_0_lo = self.cfg.q_0_lo.to(self.device)
 
         self.legs_name = self.cfg.legs_name
+        self.legs_name_calf = self.cfg.legs_name_calf
 
         self.default_stiffness = self._asset.actuators[self.legs_name].stiffness[0, 0]
+        self.default_stiffness_calf = self._asset.actuators[self.legs_name_calf].stiffness[0, 0]
         print(self._asset.actuators)
 
         diff_ik_cfg = DifferentialIKControllerCfg(command_type="position", use_relative_mode=False, ik_method="dls")
@@ -119,6 +122,10 @@ class BezierCurveAction(ActionTerm):
         self.rl_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self.device)
         self.rr_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self.device)
 
+        m = 13.10  # TODO:send this as param
+        g = 9.81
+
+        self.wd = torch.tensor([0, 0, m * g, 0, 0, 0]).repeat(self.num_envs, 1, 1).to(self.device)
         # time passed from the start of the action
         self.dt = 0
 
@@ -282,6 +289,17 @@ class BezierCurveAction(ActionTerm):
         # Interpolation
         return (h00 * start) + (h10 * start_tangent) + (h01 * end) + (h11 * end_tangent)
 
+    def skew(self, v):
+        batch_size = v.shape[0]
+        result = torch.zeros((batch_size, 3, 3))
+        result[:, 0, 1] = -v[:, 2]
+        result[:, 0, 2] = v[:, 1]
+        result[:, 1, 0] = v[:, 2]
+        result[:, 1, 2] = -v[:, 0]
+        result[:, 2, 0] = -v[:, 1]
+        result[:, 2, 1] = v[:, 0]
+        return result
+
     def ik(self, x, o, old_q_des):
 
         # Add the origin to get the position for each robot environment
@@ -330,6 +348,42 @@ class BezierCurveAction(ActionTerm):
 
         qd_des = (q_des - old_q_des) / self.cfg.time_step
 
+        # compute g com with wbc
+        eye_batch = torch.eye(3).repeat(self.num_envs, 1, 1).to(self.device)
+
+        net_contact_forces = self.contact_sensor.data.net_forces_w
+        stance_mask = (torch.norm(net_contact_forces[:, self.cfg.sensor_cfg.body_ids], dim=-1) > self.cfg.contact_threshold).to(torch.int8)
+
+        fl_skew = self.skew(fl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        fr_skew = self.skew(fr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        rl_skew = self.skew(rl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        rr_skew = self.skew(rr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+
+        fl_block = torch.cat((eye_batch, fl_skew), dim=1)
+        fr_block = torch.cat((eye_batch, fr_skew), dim=1)
+        rl_block = torch.cat((eye_batch, rl_skew), dim=1)
+        rr_block = torch.cat((eye_batch, rr_skew), dim=1)
+
+        stance_mask_expanded = stance_mask.unsqueeze(-1).expand(self.num_envs, 4, 3)
+        stance_mask_for_jb_t = stance_mask_expanded.reshape(self.num_envs, 1, 12)
+        stance_mask_for_jb_t = stance_mask_for_jb_t.expand(self.num_envs, 6, 12)
+
+        Jb_t = torch.cat((fl_block, fr_block, rl_block, rr_block), dim=2)
+        Jb_t_masked = Jb_t * stance_mask_for_jb_t
+        f = torch.linalg.pinv(Jb_t_masked) @ self.wd.squeeze(1).unsqueeze(2)
+        f = f.squeeze(-1).view(self.num_envs, 4, 3)
+
+        fl_tau = (-fl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 0].unsqueeze(-1)).squeeze(-1)
+        fr_tau = (-fr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 1].unsqueeze(-1)).squeeze(-1)
+        rl_tau = (-rl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 2].unsqueeze(-1)).squeeze(-1)
+        rr_tau = (-rr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 3].unsqueeze(-1)).squeeze(-1)
+
+        tau_ff = torch.cat((fl_tau, fr_tau, rl_tau, rr_tau), dim=1)
+
+        # print(f)
+        print(tau_ff)
+        # print(torch.cat((fl_tau, rl_tau, fr_tau,rr_tau), dim=1))
+
         if not self.cfg.debug_control:
 
             after_t_th_total = torch.where(self.dt > self.t_th_total)[0]
@@ -356,7 +410,8 @@ class BezierCurveAction(ActionTerm):
 
                 # reduce the stiffness to reduce instabilities
                 if not self.cfg.debug_control:
-                    self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 12), self.default_stiffness / self.cfg.stiffness_division).to(self.device)
+                    self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 8), self.default_stiffness / self.cfg.stiffness_division).to(self.device)
+                    self._asset.actuators[self.legs_name_calf].stiffness[after_t_th_total] = torch.full((1, 4), self.default_stiffness_calf / self.cfg.stiffness_division).to(self.device)
 
             apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
 
@@ -374,7 +429,7 @@ class BezierCurveAction(ActionTerm):
 
                 self._env.extras['apex_dt'][apex_env_ids] += self.cfg.time_step
 
-        return q_des, qd_des
+        return q_des, qd_des, tau_ff * 0
 
     def map_range(self, x, in_min, in_max, out_min, out_max):
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
@@ -644,21 +699,22 @@ class BezierCurveAction(ActionTerm):
         o, od = self.bezier_trajectory(self.w_o, self.w_od, self.dt, self.t_th_total)
 
         if not self.cfg.debug_control:
-            q_des, qd_des = self.ik(x, o, self.old_q_des)
+            q_des, qd_des, tau_ff = self.ik(x, o, self.old_q_des)
             self.old_q_des = q_des.clone()
         else:
-            x = torch.tensor([[0, 0, 0.4 + self.robot_height]], device=self.device)
+            # NOTE: add initial height
+            x = torch.tensor([[0, 0, 0. + self.robot_height]], device=self.device)
             o = torch.tensor([[0, 0, 0]], device=self.device)
 
             # half second stationary
-            t = np.clip(self.dt - 0.5, 0, np.inf)
+            t = np.clip(self.dt - 1, 0, np.inf)
 
-            x[:, 2] += (0.05 * torch.sin(torch.tensor(2 * np.pi * t) + np.pi))
+            # x[:, 2] += (0.05 * torch.sin(torch.tensor(2 * np.pi * t) + np.pi))
             # x[:, 2] -= (0.2 * t)
             # x[:, 2] = torch.clip(x[:, 2], 0.4+0.15, 0.4+0.7)
             # print(self._asset.data.root_pos_w[..., 2] - 0.4, self._asset.data.joint_pos)
 
-            q_des, qd_des = self.ik(x, o, self.old_q_des)
+            q_des, qd_des, tau_ff = self.ik(x, o, self.old_q_des)
             self.old_q_des = q_des.clone()
 
             # Decomment to have no ik
@@ -667,6 +723,7 @@ class BezierCurveAction(ActionTerm):
 
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
+        self._asset.set_joint_effort_target(tau_ff)
 
         if self.cfg.mode == "play" and self.cfg.debug_plot:
 

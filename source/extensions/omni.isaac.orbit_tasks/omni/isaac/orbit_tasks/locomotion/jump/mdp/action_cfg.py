@@ -2,6 +2,7 @@ from dataclasses import MISSING
 
 from omni.isaac.orbit.controllers import DifferentialIKControllerCfg
 from omni.isaac.orbit.managers.action_manager import ActionTerm, ActionTermCfg
+from omni.isaac.orbit.managers import SceneEntityCfg
 from omni.isaac.orbit.utils import configclass
 
 from . import bezier_curve_actions
@@ -38,6 +39,9 @@ class BezierCurveActionCfg(ActionTermCfg):
     max_action: float = MISSING
 
     robot_height: float = MISSING
+
+    contact_threshold: float = MISSING
+    sensor_cfg: SceneEntityCfg = MISSING
 
     lerp_time: float = MISSING
 
@@ -89,6 +93,7 @@ class BezierCurveActionCfg(ActionTermCfg):
 
     q_0_lo: torch.tensor = MISSING
     legs_name : str = MISSING
+    legs_name_calf : str = MISSING
 
     debug_vis: bool = MISSING
     debug_plot: bool = MISSING

@@ -43,6 +43,11 @@ class RLPlanningTaskEnv(RLTaskEnv):
         self.action_manager.process_action(action)
         self.running_reward_buf = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
 
+        # print(f"Stabylizing")
+        # for _ in range(10):
+        #     # initial step to stabylize the sim
+        #     self.sim.step(render=True)
+        #     self.scene.update(dt=self.physics_dt)
         print(f"Executing")
         # perform physics stepping until the timeout
         for i in range(self.max_episode_length):
@@ -52,7 +57,7 @@ class RLPlanningTaskEnv(RLTaskEnv):
             self.scene.write_data_to_sim()
             # simulate
             # Enable rendering once every 5 steps
-            self.sim.step(render=i % 5 == 0)
+            self.sim.step(render=i % 2 == 0)
 
             # update buffers at sim dt
             self.scene.update(dt=self.physics_dt)

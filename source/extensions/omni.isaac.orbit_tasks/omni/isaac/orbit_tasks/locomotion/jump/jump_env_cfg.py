@@ -66,6 +66,7 @@ roll_yaw_shufle = False
 trunk_name = ""
 foot_name = ""
 legs_name = ""
+legs_name_calf = ""
 thigh_name = ""
 
 robot_height = 0.
@@ -193,6 +194,8 @@ class ActionsCfg:
                                          min_action=min_action,
                                          max_action=max_action,
                                          robot_height=robot_height,
+                                         contact_threshold=5,
+                                         sensor_cfg=SceneEntityCfg("contact_forces", body_names=foot_name),
                                          lerp_time=0.1,
                                          t_th_min=0.4,
                                          t_th_max=0.8,
@@ -222,6 +225,7 @@ class ActionsCfg:
                                          l_expl_max=0.3,
                                          q_0_lo=q_0_lo,
                                          legs_name=legs_name,
+                                         legs_name_calf=legs_name_calf,
                                          debug_vis=True,
                                          debug_plot=False,
                                          mode=mode,

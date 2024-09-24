@@ -40,16 +40,38 @@ from omni.isaac.orbit.utils.assets import ISAAC_ORBIT_NUCLEUS_DIR
 
 # DCMotor Actuatr configuration
 
-GO1_ACTUATOR_CFG = DCMotorCfg(
-    joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
-    effort_limit=23.7,  # taken from spec sheet
-    velocity_limit=30.0,  # taken from spec sheet
-    saturation_effort=23.7,  # same as effort limit
+GO1_ACTUATOR_CALF_CFG = DCMotorCfg(
+    joint_names_expr=[".*_calf_joint"],
+    effort_limit=35.5,  # taken from spec sheet
+    velocity_limit=20.0,  # taken from spec sheet
+    saturation_effort=35.5,  # same as effort limit
     stiffness=120.0,
+    # stiffness=30.0,
     damping=0.5,
     friction=0.0,
 )
 
+GO1_ACTUATOR_CFG = DCMotorCfg(
+    joint_names_expr=[".*_hip_joint", ".*_thigh_joint"],
+    effort_limit=23.7,  # taken from spec sheet
+    velocity_limit=30.0,  # taken from spec sheet
+    saturation_effort=23.7,  # same as effort limit
+    stiffness=120.0,
+    # stiffness=30.0,
+    damping=0.5,
+    friction=0.0,
+)
+
+
+# GO1_ACTUATOR_CFG = DCMotorCfg(
+#     joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
+#     effort_limit=500,  # taken from spec sheet
+#     velocity_limit=500,  # taken from spec sheet
+#     saturation_effort=500,  # same as effort limit
+#     stiffness=120.0,
+#     damping=0.5,
+#     friction=0.0,
+# )
 
 """Configuration of Go1 actuators using MLP model.
 
@@ -144,6 +166,7 @@ UNITREE_GO1_CFG = ArticulationCfg(
     soft_joint_pos_limit_factor=0.9,
     actuators={
         "base_legs": GO1_ACTUATOR_CFG,
+        "base_legs_calf": GO1_ACTUATOR_CALF_CFG,
     },
 )
 """Configuration of Unitree Go1 using MLP-based actuator model."""

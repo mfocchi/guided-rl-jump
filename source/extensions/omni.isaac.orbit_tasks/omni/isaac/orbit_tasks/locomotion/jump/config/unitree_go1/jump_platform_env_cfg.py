@@ -26,6 +26,7 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         trunk_name = "trunk"
         foot_name = "foot"
         legs_name = "base_legs"
+        legs_name_calf = "base_legs_calf"
         thigh_name = "thigh"
         robot_height = 0.3
         foot_offset = 0.02
@@ -46,7 +47,7 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         q_0_lo = torch.tensor([0.2316, -0.2316, 0.2343, -0.2338, 1.3818, 1.3816, 1.6860, 1.6858, -2.4620, -2.4617, -2.3162, -2.3163])
 
         mass_range = 0
-        stiffness_division = 4
+        stiffness_division = 2
 
         self.commands.trunk_target.body_name = trunk_name
         self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -75,6 +76,7 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
 
         self.scene.contact_forces.prim_path = "{ENV_REGEX_NS}/Robot/.*(?:" + foot_name + ")$"
         self.scene.nonfoot_forces.prim_path = "{ENV_REGEX_NS}/Robot/.*?(" + thigh_name + "|" + trunk_name + ").*"
+        self.actions.jump_traj.sensor_cfg = SceneEntityCfg("contact_forces", body_names=".*")
         self.events.detect_apex.params["foot_name"] = ".*" + foot_name
         self.events.detect_touchdown.params["sensor_cfg"] = SceneEntityCfg("contact_forces", body_names=".*")
         self.events.detect_fail.params["sensor_cfg"] = SceneEntityCfg("nonfoot_forces", body_names=".*")
@@ -84,6 +86,7 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
 
         self.actions.jump_traj.q_0_lo = q_0_lo
         self.actions.jump_traj.legs_name = legs_name
+        self.actions.jump_traj.legs_name_calf = legs_name_calf
 
         self.events.add_base_mass.params["mass_range"] = (-mass_range, mass_range)
         self.actions.jump_traj.stiffness_division = stiffness_division
