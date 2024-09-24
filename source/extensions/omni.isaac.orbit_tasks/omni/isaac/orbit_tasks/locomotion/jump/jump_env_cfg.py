@@ -56,8 +56,8 @@ max_action = 5
 # pitch = (0, 0)
 # yaw = (-np.pi / 2, np.pi / 2)
 
-pos_x = (0., 1.2)
-pos_y = (-0.3, 0.3)
+pos_x = (0.8, 0.8)
+pos_y = (0., 0.)
 pos_z = (0., 0.)
 roll = (0, 0)
 pitch = (0, 0)
@@ -421,10 +421,10 @@ class NegativeRewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
-    touchdown_angular_velocity_penalization = RewTerm(
-        func=mdp.touchdown_angular_velocity_penalization,
-        weight=-0.01,
-    )
+    # touchdown_angular_velocity_penalization = RewTerm(
+    #     func=mdp.touchdown_angular_velocity_penalization,
+    #     weight=-0.01,
+    # )
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,

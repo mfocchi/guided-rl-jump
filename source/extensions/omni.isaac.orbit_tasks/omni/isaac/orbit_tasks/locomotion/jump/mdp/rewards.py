@@ -40,30 +40,35 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     target_distance = torch.norm(env.command_manager.get_command(command_name)[:, 0:3], dim=1) + 1e-12
 
     des_pos_w = env.extras["trunk_tg"] + env.scene.env_origins
-    des_pos_w[..., 2] -= asset.data.default_root_state[..., 2]
+    des_pos_w[..., 2] -= asset.data.default_root_state[..., 2].clone()
 
     foot_idx = asset.find_bodies(foot_name)[0]
 
-    curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3]  # type: ignore
+    curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :3].clone()  # type: ignore
 
     # Calculate foot center, remove foot padding (2cm)
-    foot_pos_center = (torch.mean(asset.data.body_state_w[:, foot_idx, 2], dim=1)) - foot_height_offset
+    foot_pos_center = (torch.mean(asset.data.body_state_w[:, foot_idx, 2].clone(), dim=1)) - foot_height_offset
 
     curr_pos_w[..., 2] = foot_pos_center
 
-    if mode == "play":
+    # In test use the position at the end of the episode
+    if mode == "test":
+        env.extras["desirerd_td"] = des_pos_w[..., :3].clone() - env.scene.env_origins
+        env.extras["actual_td"] = curr_pos_w[..., :3].clone() - env.scene.env_origins
+
+    elif mode == "play":
         print(f"Target: {des_pos_w[...,:3]}")
         print(f"Landing: {curr_pos_w[...,:3]}")
 
-    elif mode == "test":
-        env.extras["desirerd_td"] = des_pos_w[..., :3].clone() - env.scene.env_origins
-        env.extras["actual_td"] = curr_pos_w[..., :3].clone() - env.scene.env_origins
-        
-    # # if toudown is detected, use the detected one
-    # if len(env.extras['touchdown']):
-    #     touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
-    #     touchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
-    #     curr_pos_w[..., :2][touchdown_ids] = touchdown_pos_w
+    # in training if toudown is detected, use the detected one
+    if len(env.extras['touchdown']):
+        touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+        touchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
+        curr_pos_w[..., :2][touchdown_ids] = touchdown_pos_w
+
+    if mode == "play":
+        print(f"Landing td: {curr_pos_w[...,:3]}")
+
 
 
     # Calculate percentual_error to normalize jump performance
@@ -105,7 +110,7 @@ def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: Scene
     # obtain the desired and current orientations
 
     des_quat_w = command[:, 3:7]
-    curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7]  # type: ignore
+    curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7].clone()  # type: ignore
 
     target_error = quat_error_magnitude(curr_quat_w, des_quat_w)
 
@@ -152,7 +157,7 @@ def touchdown_bounce_penalization(env: RLTaskEnv, asset_cfg: SceneEntityCfg,) ->
     if len(env.extras['touchdown']):
         touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
         touchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
-        curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :2]  # type: ignore
+        curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :2].clone()  # type: ignore
         bounce_dist = torch.norm(touchdown_pos_w - curr_pos_w[touchdown_ids], dim=1)
         cost[touchdown_ids] = bounce_dist
 
