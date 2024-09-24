@@ -40,7 +40,7 @@ def reset_robot_state(
     asset.reset()
     asset.set_joint_position_target(asset.data.default_joint_pos.clone())
     asset.set_joint_velocity_target(asset.data.default_joint_vel.clone())
-    asset.set_joint_effort_target(torch.zeros_like(asset.data.default_joint_pos))
+    # asset.set_joint_effort_target(torch.zeros_like(asset.data.default_joint_pos))
 
     # reset apex, touchdown info
     env.extras['apex'] = {}

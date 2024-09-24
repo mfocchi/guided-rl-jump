@@ -349,39 +349,40 @@ class BezierCurveAction(ActionTerm):
         qd_des = (q_des - old_q_des) / self.cfg.time_step
 
         # compute g com with wbc
-        eye_batch = torch.eye(3).repeat(self.num_envs, 1, 1).to(self.device)
+        # eye_batch = torch.eye(3).repeat(self.num_envs, 1, 1).to(self.device)
 
-        net_contact_forces = self.contact_sensor.data.net_forces_w
-        stance_mask = (torch.norm(net_contact_forces[:, self.cfg.sensor_cfg.body_ids], dim=-1) > self.cfg.contact_threshold).to(torch.int8)
+        # net_contact_forces = self.contact_sensor.data.net_forces_w
+        # stance_mask = (torch.norm(net_contact_forces[:, self.cfg.sensor_cfg.body_ids], dim=-1) > self.cfg.contact_threshold).to(torch.int8)
 
-        fl_skew = self.skew(fl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
-        fr_skew = self.skew(fr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
-        rl_skew = self.skew(rl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
-        rr_skew = self.skew(rr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        # fl_skew = self.skew(fl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        # fr_skew = self.skew(fr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        # rl_skew = self.skew(rl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        # rr_skew = self.skew(rr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
 
-        fl_block = torch.cat((eye_batch, fl_skew), dim=1)
-        fr_block = torch.cat((eye_batch, fr_skew), dim=1)
-        rl_block = torch.cat((eye_batch, rl_skew), dim=1)
-        rr_block = torch.cat((eye_batch, rr_skew), dim=1)
+        # fl_block = torch.cat((eye_batch, fl_skew), dim=1)
+        # fr_block = torch.cat((eye_batch, fr_skew), dim=1)
+        # rl_block = torch.cat((eye_batch, rl_skew), dim=1)
+        # rr_block = torch.cat((eye_batch, rr_skew), dim=1)
 
-        stance_mask_expanded = stance_mask.unsqueeze(-1).expand(self.num_envs, 4, 3)
-        stance_mask_for_jb_t = stance_mask_expanded.reshape(self.num_envs, 1, 12)
-        stance_mask_for_jb_t = stance_mask_for_jb_t.expand(self.num_envs, 6, 12)
+        # stance_mask_expanded = stance_mask.unsqueeze(-1).expand(self.num_envs, 4, 3)
+        # stance_mask_for_jb_t = stance_mask_expanded.reshape(self.num_envs, 1, 12)
+        # stance_mask_for_jb_t = stance_mask_for_jb_t.expand(self.num_envs, 6, 12)
 
-        Jb_t = torch.cat((fl_block, fr_block, rl_block, rr_block), dim=2)
-        Jb_t_masked = Jb_t * stance_mask_for_jb_t
-        f = torch.linalg.pinv(Jb_t_masked) @ self.wd.squeeze(1).unsqueeze(2)
-        f = f.squeeze(-1).view(self.num_envs, 4, 3)
+        # Jb_t = torch.cat((fl_block, fr_block, rl_block, rr_block), dim=2)
+        # Jb_t_masked = Jb_t * stance_mask_for_jb_t
+        # f = torch.linalg.pinv(Jb_t_masked) @ self.wd.squeeze(1).unsqueeze(2)
+        # f = f.squeeze(-1).view(self.num_envs, 4, 3)
 
-        fl_tau = (-fl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 0].unsqueeze(-1)).squeeze(-1)
-        fr_tau = (-fr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 1].unsqueeze(-1)).squeeze(-1)
-        rl_tau = (-rl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 2].unsqueeze(-1)).squeeze(-1)
-        rr_tau = (-rr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 3].unsqueeze(-1)).squeeze(-1)
+        # fl_tau = (-fl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 0].unsqueeze(-1)).squeeze(-1)
+        # fr_tau = (-fr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 1].unsqueeze(-1)).squeeze(-1)
+        # rl_tau = (-rl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 2].unsqueeze(-1)).squeeze(-1)
+        # rr_tau = (-rr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 3].unsqueeze(-1)).squeeze(-1)
 
-        tau_ff = torch.cat((fl_tau, fr_tau, rl_tau, rr_tau), dim=1)
+        # tau_ff = torch.cat((fl_tau, fr_tau, rl_tau, rr_tau), dim=1)
+        tau_ff = torch.zeros_like(self._asset.data.default_joint_pos)
 
         # print(f)
-        print(tau_ff)
+        # print(tau_ff)
         # print(torch.cat((fl_tau, rl_tau, fr_tau,rr_tau), dim=1))
 
         if not self.cfg.debug_control:
@@ -517,6 +518,7 @@ class BezierCurveAction(ActionTerm):
 
         # reset stiffness
         self._asset.actuators[self.legs_name].stiffness = torch.full_like(self._asset.actuators[self.legs_name].stiffness, self.default_stiffness)
+        self._asset.actuators[self.legs_name_calf].stiffness = torch.full_like(self._asset.actuators[self.legs_name_calf].stiffness, self.default_stiffness_calf)
 
         # reset time counter
         self.dt = 0
@@ -723,7 +725,7 @@ class BezierCurveAction(ActionTerm):
 
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
-        self._asset.set_joint_effort_target(tau_ff)
+        # self._asset.set_joint_effort_target(tau_ff)
 
         if self.cfg.mode == "play" and self.cfg.debug_plot:
 
