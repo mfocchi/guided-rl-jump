@@ -85,8 +85,6 @@ def detect_apex(
     robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     landing_platform_cfg: SceneEntityCfg = SceneEntityCfg("landing_platform"),
     base_lin_vel_threshold: float = -0.2,
-    foot_z_threshold: float = 0.03,
-    base_z_threshold: float = 0.3,
     foot_height_offset: float = 0.02,
     offset: float = 0.05,
     initial_z: float = 0.0,
@@ -126,17 +124,13 @@ def detect_apex(
     # Get trunk_target command
     trunk_target = env.command_manager.get_command("trunk_target")
 
-    # Obtain env ids of robot with foots heigher than the threshold
-    foot_lifted_off_env_ids = torch.nonzero(torch.all(foots_z_pos_w > foot_z_threshold + initial_z, dim=1)).reshape(1, -1)[0]
-    # Obtain env ids of robot with base heigher than the threshold
-    base_lifted_off_env_ids = torch.nonzero(base_pose_w[:, 2] > base_z_threshold + initial_z).reshape(1, -1)[0]
     # Obtain env ids of robot that are experiencing a negative z linear velocity
     base_negative_lin_vel_env_ids = torch.nonzero(base_lin_vel_w[:, 2] < base_lin_vel_threshold).reshape(1, -1)[0]
 
+    after_t_th_total_ids = env.extras.get('after_t_th_total')
+
     # Get the apex apex_env_ids from intersections of all conditions
-    apex_env_ids = foot_lifted_off_env_ids[(foot_lifted_off_env_ids.view(1, -1) == base_lifted_off_env_ids.view(-1, 1)).any(dim=0)]
-    apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == base_negative_lin_vel_env_ids.view(-1, 1)).any(dim=0)]
-    apex_env_ids = apex_env_ids[(apex_env_ids.view(1, -1) == env.extras['after_t_th_total'].view(-1, 1)).any(dim=0)]
+    apex_env_ids = base_negative_lin_vel_env_ids[(base_negative_lin_vel_env_ids.view(1, -1) == after_t_th_total_ids.view(-1, 1)).any(dim=0)]
 
     foot_target_z = trunk_target[..., 2] + initial_z
 
@@ -169,7 +163,6 @@ def detect_apex(
     landing_platform.write_root_pose_to_sim(torch.cat([positions[existing_apex_ids], orientations[existing_apex_ids]], dim=-1), env_ids=existing_apex_ids)
 
     # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
-
 
 def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg):
     """Terminate when the contact force on the sensor exceeds the force threshold."""

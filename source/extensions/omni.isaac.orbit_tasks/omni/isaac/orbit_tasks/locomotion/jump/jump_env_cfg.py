@@ -297,8 +297,6 @@ class EventCfg:
         mode="interval",
         interval_range_s=(0., 0.),
         params={"base_lin_vel_threshold": -0.2,
-                "foot_z_threshold": 0.03,
-                "base_z_threshold": 0.3,
                 "foot_height_offset": foot_offset,
                 "offset": 0.05,
                 "initial_z": initial_z,
