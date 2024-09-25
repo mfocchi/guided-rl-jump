@@ -56,8 +56,8 @@ max_action = 5
 # pitch = (0, 0)
 # yaw = (-np.pi / 2, np.pi / 2)
 
-pos_x = (0.8, 0.8)
-pos_y = (0., 0.)
+pos_x = (0., 1.2)
+pos_y = (-0.3, 0.3)
 pos_z = (0., 0.)
 roll = (0, 0)
 pitch = (0, 0)
@@ -341,12 +341,12 @@ class RunningRewardsCfg:
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-0.001
+        weight=-0.0005
     )
 
     friction_constraint = RewTerm(
         func=mdp.friction_constraint,
-        weight=-0.01,
+        weight=-0.005,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=foot_name),
             "mu": 0.7
@@ -380,7 +380,7 @@ class NegativeRewardsCfg:
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=-2,
+        weight=-1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "command_name": "trunk_target"},
     )
 
@@ -417,7 +417,7 @@ class NegativeRewardsCfg:
 
     touchdown_bounce_penalization = RewTerm(
         func=mdp.touchdown_bounce_penalization,
-        weight=-0.5,
+        weight=-1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
