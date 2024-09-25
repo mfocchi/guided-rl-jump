@@ -65,7 +65,7 @@ yaw = (0, 0)
 
 # enable extusion of roll or pitch (no uniform random)
 # roll_yaw_shufle = True
-activate_curriculum = True
+activate_curriculum = False
 roll_yaw_shufle = False
 # activate_curriculum = False
 
@@ -380,7 +380,7 @@ class NegativeRewardsCfg:
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=-1,
+        weight=-2,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "command_name": "trunk_target"},
     )
 
@@ -421,10 +421,10 @@ class NegativeRewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
-    # touchdown_angular_velocity_penalization = RewTerm(
-    #     func=mdp.touchdown_angular_velocity_penalization,
-    #     weight=-0.01,
-    # )
+    touchdown_angular_velocity_penalization = RewTerm(
+        func=mdp.touchdown_angular_velocity_penalization,
+        weight=-0.01,
+    )
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,
