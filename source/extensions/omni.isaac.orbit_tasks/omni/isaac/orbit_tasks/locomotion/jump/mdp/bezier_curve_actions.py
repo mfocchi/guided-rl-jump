@@ -62,7 +62,6 @@ class BezierCurveAction(ActionTerm):
         self.max_action = self.cfg.max_action
 
         self.robot_height = self.cfg.robot_height
-        self.contact_sensor = env.scene.sensors[self.cfg.sensor_cfg.name]
 
         self.lerp_time = self.cfg.lerp_time
 
@@ -349,41 +348,33 @@ class BezierCurveAction(ActionTerm):
         qd_des = (q_des - old_q_des) / self.cfg.time_step
 
         # compute g com with wbc
-        # eye_batch = torch.eye(3).repeat(self.num_envs, 1, 1).to(self.device)
+        eye_batch = torch.eye(3).repeat(self.num_envs, 1, 1).to(self.device)
 
-        # net_contact_forces = self.contact_sensor.data.net_forces_w
-        # stance_mask = (torch.norm(net_contact_forces[:, self.cfg.sensor_cfg.body_ids], dim=-1) > self.cfg.contact_threshold).to(torch.int8)
+        fl_skew = self.skew(fl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        fr_skew = self.skew(fr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        rl_skew = self.skew(rl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        rr_skew = self.skew(rr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
 
-        # fl_skew = self.skew(fl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
-        # fr_skew = self.skew(fr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
-        # rl_skew = self.skew(rl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
-        # rr_skew = self.skew(rr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        fl_block = torch.cat((eye_batch, fl_skew), dim=1)
+        fr_block = torch.cat((eye_batch, fr_skew), dim=1)
+        rl_block = torch.cat((eye_batch, rl_skew), dim=1)
+        rr_block = torch.cat((eye_batch, rr_skew), dim=1)
 
-        # fl_block = torch.cat((eye_batch, fl_skew), dim=1)
-        # fr_block = torch.cat((eye_batch, fr_skew), dim=1)
-        # rl_block = torch.cat((eye_batch, rl_skew), dim=1)
-        # rr_block = torch.cat((eye_batch, rr_skew), dim=1)
+        Jb_t = torch.cat((fl_block, fr_block, rl_block, rr_block), dim=2)
+        f = torch.linalg.pinv(Jb_t) @ self.wd.squeeze(1).unsqueeze(2)
+        f = f.squeeze(-1).view(self.num_envs, 4, 3)
 
-        # stance_mask_expanded = stance_mask.unsqueeze(-1).expand(self.num_envs, 4, 3)
-        # stance_mask_for_jb_t = stance_mask_expanded.reshape(self.num_envs, 1, 12)
-        # stance_mask_for_jb_t = stance_mask_for_jb_t.expand(self.num_envs, 6, 12)
+        fl_tau = (-fl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 0].unsqueeze(-1)).squeeze(-1)
+        fr_tau = (-fr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 1].unsqueeze(-1)).squeeze(-1)
+        rl_tau = (-rl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 2].unsqueeze(-1)).squeeze(-1)
+        rr_tau = (-rr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 3].unsqueeze(-1)).squeeze(-1)
 
-        # Jb_t = torch.cat((fl_block, fr_block, rl_block, rr_block), dim=2)
-        # Jb_t_masked = Jb_t * stance_mask_for_jb_t
-        # f = torch.linalg.pinv(Jb_t_masked) @ self.wd.squeeze(1).unsqueeze(2)
-        # f = f.squeeze(-1).view(self.num_envs, 4, 3)
-
-        # fl_tau = (-fl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 0].unsqueeze(-1)).squeeze(-1)
-        # fr_tau = (-fr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 1].unsqueeze(-1)).squeeze(-1)
-        # rl_tau = (-rl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 2].unsqueeze(-1)).squeeze(-1)
-        # rr_tau = (-rr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 3].unsqueeze(-1)).squeeze(-1)
-
-        # tau_ff = torch.cat((fl_tau, fr_tau, rl_tau, rr_tau), dim=1)
         tau_ff = torch.zeros_like(self._asset.data.default_joint_pos)
+        tau_ff[:, self.fl_entity_cfg.joint_ids] = fl_tau
+        tau_ff[:, self.fr_entity_cfg.joint_ids] = fr_tau
+        tau_ff[:, self.rl_entity_cfg.joint_ids] = rl_tau
+        tau_ff[:, self.rr_entity_cfg.joint_ids] = rr_tau
 
-        # print(f)
-        # print(tau_ff)
-        # print(torch.cat((fl_tau, rl_tau, fr_tau,rr_tau), dim=1))
 
         if not self.cfg.debug_control:
 
@@ -408,6 +399,9 @@ class BezierCurveAction(ActionTerm):
 
                 q_des[after_t_th_total] = q_0_lo_lerp
                 qd_des[after_t_th_total] = torch.zeros_like(self._asset.data.default_joint_vel[0])
+                
+                # filter torque in case of fly or touchdown
+                tau_ff[after_t_th_total] *= self._env.extras['wbc'][after_t_th_total]
 
                 # reduce the stiffness to reduce instabilities
                 if not self.cfg.debug_control:
@@ -430,7 +424,7 @@ class BezierCurveAction(ActionTerm):
 
                 self._env.extras['apex_dt'][apex_env_ids] += self.cfg.time_step
 
-        return q_des, qd_des, tau_ff * 0
+        return q_des, qd_des, tau_ff
 
     def map_range(self, x, in_min, in_max, out_min, out_max):
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
@@ -705,13 +699,13 @@ class BezierCurveAction(ActionTerm):
             self.old_q_des = q_des.clone()
         else:
             # NOTE: add initial height
-            x = torch.tensor([[0, 0, 0. + self.robot_height]], device=self.device)
+            x = torch.tensor([[0, 0, 0.5 + self.robot_height]], device=self.device)
             o = torch.tensor([[0, 0, 0]], device=self.device)
 
             # half second stationary
-            t = np.clip(self.dt - 1, 0, np.inf)
+            t = np.clip(self.dt - 0.5, 0, np.inf)
 
-            # x[:, 2] += (0.05 * torch.sin(torch.tensor(2 * np.pi * t) + np.pi))
+            x[:, 2] += (0.05 * torch.sin(torch.tensor(2 * np.pi * t) + np.pi))
             # x[:, 2] -= (0.2 * t)
             # x[:, 2] = torch.clip(x[:, 2], 0.4+0.15, 0.4+0.7)
             # print(self._asset.data.root_pos_w[..., 2] - 0.4, self._asset.data.joint_pos)
@@ -725,23 +719,24 @@ class BezierCurveAction(ActionTerm):
 
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)
-        # self._asset.set_joint_effort_target(tau_ff)
+        self._asset.set_joint_effort_target(tau_ff)
 
         if self.cfg.mode == "play" and self.cfg.debug_plot:
+            # the first step J = 0
+            if self.dt > 0.005:
+                self.des_q.append(q_des.clone().detach().cpu())
+                self.act_q.append(self._asset.data.joint_pos.clone().detach().cpu())
 
-            self.des_q.append(q_des.clone().detach().cpu())
-            self.act_q.append(self._asset.data.joint_pos.clone().detach().cpu())
+                self.des_qd.append(qd_des.clone().detach().cpu())
+                self.act_qd.append(self._asset.data.joint_vel.clone().detach().cpu())
 
-            self.des_qd.append(qd_des.clone().detach().cpu())
-            self.act_qd.append(self._asset.data.joint_vel.clone().detach().cpu())
+                self.des_tau.append(self._asset.data.computed_torque.clone().detach().cpu())
+                self.act_tau.append(self._asset.data.applied_torque.clone().detach().cpu())
 
-            self.des_tau.append(self._asset.data.computed_torque.clone().detach().cpu())
-            self.act_tau.append(self._asset.data.applied_torque.clone().detach().cpu())
+                self.des_base.append(x.clone().detach().cpu())
+                self.act_base.append(self._asset.data.root_state_w[..., :3].clone().detach().cpu())
 
-            self.des_base.append(x.clone().detach().cpu())
-            self.act_base.append(self._asset.data.root_state_w[..., :3].clone().detach().cpu())
-
-            self.des_based.append(xd.clone().detach().cpu())
-            self.act_based.append(self._asset.data.root_state_w[..., 7:10].clone().detach().cpu())
+                self.des_based.append(xd.clone().detach().cpu())
+                self.act_based.append(self._asset.data.root_state_w[..., 7:10].clone().detach().cpu())
 
         self.dt += self.cfg.time_step

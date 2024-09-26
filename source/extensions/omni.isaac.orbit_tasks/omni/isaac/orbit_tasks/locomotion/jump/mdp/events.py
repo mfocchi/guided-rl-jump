@@ -40,7 +40,7 @@ def reset_robot_state(
     asset.reset()
     asset.set_joint_position_target(asset.data.default_joint_pos.clone())
     asset.set_joint_velocity_target(asset.data.default_joint_vel.clone())
-    # asset.set_joint_effort_target(torch.zeros_like(asset.data.default_joint_pos))
+    asset.set_joint_effort_target(torch.zeros_like(asset.data.default_joint_pos))
 
     # reset apex, touchdown info
     env.extras['apex'] = {}
@@ -52,6 +52,7 @@ def reset_robot_state(
     env.extras['apex_dt'] = torch.zeros(env.num_envs, device=env.device)
     env.extras['apex_z'] = torch.zeros(env.num_envs, device=env.device)
     env.extras['landing_z'] = torch.zeros(env.num_envs, device=env.device)
+    env.extras['wbc'] = torch.zeros((env.num_envs,1), device=env.device)
     env.extras['fail'] = torch.zeros(env.num_envs, device=env.device, dtype=torch.bool)
 
 
@@ -193,8 +194,10 @@ def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, contact_threshold: f
 
     # print(f"detected touchdow: {env.extras['touchdown'].keys()}")
     # try to pause the simulation for the env that are in touchdown
-    # if len(env.extras['touchdown']):
-    #     existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+    # enable wbc if touchdown is detected
+    if len(env.extras['touchdown']):
+        existing_touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+        env.extras['wbc'][existing_touchdown_ids] = 1
     #     values = torch.stack(list(env.extras['touchdown'].values())).to(env.device)
     #     asset.write_root_pose_to_sim(values[..., 0:7], env_ids=existing_touchdown_ids)
     #     asset.write_root_velocity_to_sim(torch.zeros((len(existing_touchdown_ids), 6), device=env.device, dtype=torch.float), env_ids=existing_touchdown_ids)

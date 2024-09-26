@@ -341,12 +341,12 @@ class RunningRewardsCfg:
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-0.0005
+        weight=-0.001
     )
 
     friction_constraint = RewTerm(
         func=mdp.friction_constraint,
-        weight=-0.005,
+        weight=-0.01,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=foot_name),
             "mu": 0.7
@@ -362,13 +362,13 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=2.0,
+        weight=1.0,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name),
                 "command_name": "trunk_target",
-                "coeff": 5.,
+                "coeff": 1e-5,
                 "dist_coeff": 1.,
-                "err_coeff": 10.,
-                "bias": 1,
+                "err_coeff": 7.,
+                "bias": 0,
                 "foot_height_offset": foot_offset,
                 "foot_name": foot_name,
                 "mode": mode},
@@ -421,10 +421,10 @@ class NegativeRewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
-    touchdown_angular_velocity_penalization = RewTerm(
-        func=mdp.touchdown_angular_velocity_penalization,
-        weight=-0.01,
-    )
+    # touchdown_angular_velocity_penalization = RewTerm(
+    #     func=mdp.touchdown_angular_velocity_penalization,
+    #     weight=-0.01,
+    # )
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,
