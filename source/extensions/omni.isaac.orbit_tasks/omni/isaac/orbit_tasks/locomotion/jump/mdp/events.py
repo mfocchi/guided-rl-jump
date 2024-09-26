@@ -35,9 +35,7 @@ def reset_robot_state(
     # set into the physics simulation
     asset.write_root_pose_to_sim(root_states[..., 0:7])
     asset.write_root_velocity_to_sim(root_states[..., 7:])
-
     asset.write_joint_state_to_sim(asset.data.default_joint_pos.clone(), asset.data.default_joint_vel.clone())
-    asset.reset()
     asset.set_joint_position_target(asset.data.default_joint_pos.clone())
     asset.set_joint_velocity_target(asset.data.default_joint_vel.clone())
     asset.set_joint_effort_target(torch.zeros_like(asset.data.default_joint_pos))
@@ -69,6 +67,7 @@ def reset_landing_platform(
     """
     # extract the used quantities (to enable type-hinting)
     landing_pltform: RigidObject = env.scene[landing_pltform_cfg.name]
+    landing_pltform.reset()
 
     root_states = landing_pltform.data.default_root_state[env_ids].clone()
     # move initial z according to params
@@ -115,11 +114,9 @@ def detect_apex(
 
     foots_z_pos_w -= foot_height_offset
 
-    # Get base z position
-    base_pose_w = robot.data.root_state_w[:, 0:3]
 
     # Get base z linear velocity
-    base_lin_vel_w = robot.data.root_state_w[env_ids, 7:10]
+    base_lin_vel_w = robot.data.root_state_w[env_ids, 7:10].clone()
 
     root_states = landing_platform.data.default_root_state[env_ids].clone()
     # Get trunk_target command
@@ -171,7 +168,7 @@ def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, contact_threshold: f
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     asset: Articulation = env.scene[asset_cfg.name]
 
-    net_contact_forces = contact_sensor.data.net_forces_w
+    net_contact_forces = contact_sensor.data.net_forces_w.clone()
 
     # near_foot_env_ids = torch.std(asset.data.body_state_w[:, foot_idx, 2], dim=1) <= foot_pos_threshold
     in_contact_env_ids = torch.all(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)
@@ -209,7 +206,7 @@ def detect_fail(env: RLTaskEnv, env_ids: torch.Tensor, contact_threshold: float,
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
 
-    net_contact_forces = contact_sensor.data.net_forces_w
+    net_contact_forces = contact_sensor.data.net_forces_w.clone()
 
     # near_foot_env_ids = torch.std(asset.data.body_state_w[:, foot_idx, 2], dim=1) <= foot_pos_threshold
     in_contact_env_ids = torch.any(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1)

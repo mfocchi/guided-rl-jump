@@ -50,9 +50,9 @@ def main():
     sim.reset()
     print("[INFO]: Setup complete...")
 
-    # env = Env(simulation_app, sim, scene)
+    env = Env(simulation_app, sim, scene)
     # env = EnvPos(simulation_app, sim, scene)
-    env = EnvBezier(simulation_app, sim, scene)
+    # env = EnvBezier(simulation_app, sim, scene)
 
     # Run the simulator
     env.run_simulator()

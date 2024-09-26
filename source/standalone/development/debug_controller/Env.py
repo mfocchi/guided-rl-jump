@@ -172,15 +172,18 @@ class Env():
                 robot.write_root_pose_to_sim(trunk_air_state[..., 0:7])
                 robot.write_root_velocity_to_sim(trunk_air_state[..., 7:14])
 
-                q_des = robot.data.default_joint_pos.clone()
-                q_des = q_des.clone() + 0.1 * torch.sin(torch.tensor(3 * 2 * np.pi * sim_time))
+                # q_des = robot.data.default_joint_pos.clone()
+                # q_des = q_des.clone() + 0.1 * torch.sin(torch.tensor(3 * 2 * np.pi * sim_time))
 
-                qd_des = (q_des.clone() - old_q_des) / self.sim_dt
-                old_q_des = q_des.clone()
+                # qd_des = (q_des.clone() - old_q_des) / self.sim_dt
+                # old_q_des = q_des.clone()
+                q_des = torch.zeros_like(robot.data.default_joint_pos)
+                qd_des = robot.data.default_joint_vel
 
                 # write data to sim
-                robot.set_joint_position_target(q_des)
-                robot.set_joint_velocity_target(qd_des)
+                # robot.write(q_des)
+                # robot.set_joint_velocity_target(qd_des)
+                robot.write_joint_state_to_sim(q_des, qd_des)
 
                 robot.write_data_to_sim()
 

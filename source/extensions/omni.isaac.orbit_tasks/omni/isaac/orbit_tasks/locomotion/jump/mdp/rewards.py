@@ -234,7 +234,7 @@ def friction_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, mu: float = 
     """
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    net_contact_forces = contact_sensor.data.net_forces_w
+    net_contact_forces = contact_sensor.data.net_forces_w.clone()
 
     # From jumpleg -> residual = np.linalg.norm(self.contactForceW[:2]) - p.mu * p.contactForceW[2]
     residuals = torch.norm(net_contact_forces[:, sensor_cfg.body_ids, :2], dim=-1) - mu * net_contact_forces[:, sensor_cfg.body_ids, 2]
@@ -251,7 +251,7 @@ def contact_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, contact_thres
 
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    net_contact_forces = contact_sensor.data.net_forces_w
+    net_contact_forces = contact_sensor.data.net_forces_w.clone()
 
     costs = ~torch.all(torch.norm(net_contact_forces[:, sensor_cfg.body_ids], dim=-1) > contact_threshold, dim=1).reshape(-1, 1)
     costs = torch.sum(costs, dim=1)
@@ -268,7 +268,7 @@ def unilateral_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.T
     """
     # extract the used quantities (to enable type-hinting)
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    net_contact_forces = contact_sensor.data.net_forces_w
+    net_contact_forces = contact_sensor.data.net_forces_w.clone()
 
     # sum along each robot to get the total violation cost
     costs = torch.sum(computeActivationFunction('linear', net_contact_forces[:, sensor_cfg.body_ids, 2], 0.0, torch.inf), dim=1)

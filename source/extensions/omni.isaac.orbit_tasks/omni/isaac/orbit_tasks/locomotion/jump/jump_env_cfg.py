@@ -274,12 +274,6 @@ class EventCfg:
         },
     )
 
-    add_base_mass = EventTerm(
-        func=mdp.randomize_rigid_body_mass,
-        mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "mass_range": (-mass_range, mass_range), "operation": "add"},
-    )
-
     reset_robot = EventTerm(
         func=mdp.reset_robot_state,
         mode="reset",
@@ -341,12 +335,12 @@ class RunningRewardsCfg:
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-0.001
+        weight=-0.0005
     )
 
     friction_constraint = RewTerm(
         func=mdp.friction_constraint,
-        weight=-0.01,
+        weight=-0.001,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=foot_name),
             "mu": 0.7
@@ -362,12 +356,12 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=1.0,
+        weight=0.5,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name),
                 "command_name": "trunk_target",
                 "coeff": 1e-5,
-                "dist_coeff": 1.,
-                "err_coeff": 7.,
+                "dist_coeff": 2.,
+                "err_coeff": 5.,
                 "bias": 0,
                 "foot_height_offset": foot_offset,
                 "foot_name": foot_name,

@@ -350,10 +350,10 @@ class BezierCurveAction(ActionTerm):
         # compute g com with wbc
         eye_batch = torch.eye(3).repeat(self.num_envs, 1, 1).to(self.device)
 
-        fl_skew = self.skew(fl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
-        fr_skew = self.skew(fr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
-        rl_skew = self.skew(rl_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
-        rr_skew = self.skew(rr_pose_w[:, 0:3] - root_pose_w[:, 0:3]).to(self.device)
+        fl_skew = self.skew(fl_pose_w[:, 0:3].clone() - root_pose_w[:, 0:3].clone()).to(self.device)
+        fr_skew = self.skew(fr_pose_w[:, 0:3].clone() - root_pose_w[:, 0:3].clone()).to(self.device)
+        rl_skew = self.skew(rl_pose_w[:, 0:3].clone() - root_pose_w[:, 0:3].clone()).to(self.device)
+        rr_skew = self.skew(rr_pose_w[:, 0:3].clone() - root_pose_w[:, 0:3].clone()).to(self.device)
 
         fl_block = torch.cat((eye_batch, fl_skew), dim=1)
         fr_block = torch.cat((eye_batch, fr_skew), dim=1)
@@ -364,16 +364,16 @@ class BezierCurveAction(ActionTerm):
         f = torch.linalg.pinv(Jb_t) @ self.wd.squeeze(1).unsqueeze(2)
         f = f.squeeze(-1).view(self.num_envs, 4, 3)
 
-        fl_tau = (-fl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 0].unsqueeze(-1)).squeeze(-1)
-        fr_tau = (-fr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 1].unsqueeze(-1)).squeeze(-1)
-        rl_tau = (-rl_jacobian[:, 0:3].transpose(1, 2) @ f[:, 2].unsqueeze(-1)).squeeze(-1)
-        rr_tau = (-rr_jacobian[:, 0:3].transpose(1, 2) @ f[:, 3].unsqueeze(-1)).squeeze(-1)
+        fl_tau = (-fl_jacobian[:, 0:3].clone().transpose(1, 2) @ f[:, 0].unsqueeze(-1)).squeeze(-1)
+        fr_tau = (-fr_jacobian[:, 0:3].clone().transpose(1, 2) @ f[:, 1].unsqueeze(-1)).squeeze(-1)
+        rl_tau = (-rl_jacobian[:, 0:3].clone().transpose(1, 2) @ f[:, 2].unsqueeze(-1)).squeeze(-1)
+        rr_tau = (-rr_jacobian[:, 0:3].clone().transpose(1, 2) @ f[:, 3].unsqueeze(-1)).squeeze(-1)
 
         tau_ff = torch.zeros_like(self._asset.data.default_joint_pos)
-        tau_ff[:, self.fl_entity_cfg.joint_ids] = fl_tau
-        tau_ff[:, self.fr_entity_cfg.joint_ids] = fr_tau
-        tau_ff[:, self.rl_entity_cfg.joint_ids] = rl_tau
-        tau_ff[:, self.rr_entity_cfg.joint_ids] = rr_tau
+        tau_ff[:, self.fl_entity_cfg.joint_ids] = fl_tau.clone()
+        tau_ff[:, self.fr_entity_cfg.joint_ids] = fr_tau.clone()
+        tau_ff[:, self.rl_entity_cfg.joint_ids] = rl_tau.clone()
+        tau_ff[:, self.rr_entity_cfg.joint_ids] = rr_tau.clone()
 
 
         if not self.cfg.debug_control:
@@ -404,9 +404,9 @@ class BezierCurveAction(ActionTerm):
                 tau_ff[after_t_th_total] *= self._env.extras['wbc'][after_t_th_total]
 
                 # reduce the stiffness to reduce instabilities
-                if not self.cfg.debug_control:
-                    self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 8), self.default_stiffness / self.cfg.stiffness_division).to(self.device)
-                    self._asset.actuators[self.legs_name_calf].stiffness[after_t_th_total] = torch.full((1, 4), self.default_stiffness_calf / self.cfg.stiffness_division).to(self.device)
+                # if not self.cfg.debug_control:
+                #     self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 8), self.default_stiffness / self.cfg.stiffness_division).to(self.device)
+                #     self._asset.actuators[self.legs_name_calf].stiffness[after_t_th_total] = torch.full((1, 4), self.default_stiffness_calf / self.cfg.stiffness_division).to(self.device)
 
             apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
 
@@ -511,8 +511,8 @@ class BezierCurveAction(ActionTerm):
         self._raw_actions[:] = actions
 
         # reset stiffness
-        self._asset.actuators[self.legs_name].stiffness = torch.full_like(self._asset.actuators[self.legs_name].stiffness, self.default_stiffness)
-        self._asset.actuators[self.legs_name_calf].stiffness = torch.full_like(self._asset.actuators[self.legs_name_calf].stiffness, self.default_stiffness_calf)
+        # self._asset.actuators[self.legs_name].stiffness = torch.full_like(self._asset.actuators[self.legs_name].stiffness, self.default_stiffness)
+        # self._asset.actuators[self.legs_name_calf].stiffness = torch.full_like(self._asset.actuators[self.legs_name_calf].stiffness, self.default_stiffness_calf)
 
         # reset time counter
         self.dt = 0

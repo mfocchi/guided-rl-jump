@@ -28,7 +28,7 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         legs_name = "base_legs"
         legs_name_calf = "base_legs_calf"
         thigh_name = "thigh"
-        robot_height = 0.3
+        robot_height = 0.31
         foot_offset = 0.02
 
         fl_joint_names = ["FL.*"]
@@ -50,7 +50,7 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         stiffness_division = 1
 
         self.commands.trunk_target.body_name = trunk_name
-        self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
+        # self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
         self.rewards.target_position_error.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
         self.negative_rewards.target_orientation_error.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
         self.negative_rewards.touchdown_bounce_penalization.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -88,7 +88,7 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         self.actions.jump_traj.legs_name = legs_name
         self.actions.jump_traj.legs_name_calf = legs_name_calf
 
-        self.events.add_base_mass.params["mass_range"] = (-mass_range, mass_range)
+        # self.events.add_base_mass.params["mass_range"] = (-mass_range, mass_range)
         self.actions.jump_traj.stiffness_division = stiffness_division
 
 
