@@ -65,7 +65,7 @@ yaw = (0, 0)
 
 # enable extusion of roll or pitch (no uniform random)
 # roll_yaw_shufle = True
-activate_curriculum = False
+activate_curriculum = True
 roll_yaw_shufle = False
 # activate_curriculum = False
 
@@ -406,7 +406,7 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": x_limit, "y_limit": y_limit, "z_limit": z_limit, "initial_z": initial_z},
-        weight=-20,
+        weight=-10,
     )
 
     touchdown_bounce_penalization = RewTerm(
@@ -417,7 +417,7 @@ class NegativeRewardsCfg:
 
     touchdown_angular_velocity_penalization = RewTerm(
         func=mdp.touchdown_angular_velocity_penalization,
-        weight=-0.05,
+        weight=-0.02,
     )
 
     action_limit_penalization = RewTerm(
