@@ -102,7 +102,8 @@ class RLPlanningTaskEnv(RLTaskEnv):
         self.reward_buf = self.reward_manager.compute(dt=1)
         self.negative_reward_buf = self.negative_rewards_manager.compute(dt=1)
 
-        self.final_reward_buff = self.reward_buf * torch.exp(-torch.pow(self.running_reward_buf + self.negative_reward_buf, 2))
+        # \5 is a hyperparam
+        self.final_reward_buff = self.reward_buf * torch.exp(-torch.pow(self.running_reward_buf + self.negative_reward_buf, 2)/5)
 
         # TODO: test if leaving the reward like that allow you to have better results
         # self.reward_buf = torch.clip(self.reward_buf, 0)

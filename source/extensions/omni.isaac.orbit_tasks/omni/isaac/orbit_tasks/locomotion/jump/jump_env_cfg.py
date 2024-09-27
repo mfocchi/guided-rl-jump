@@ -302,7 +302,7 @@ class EventCfg:
         mode="interval",
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=foot_name),
                 "asset_cfg": SceneEntityCfg("robot"),
-                "contact_threshold": 5.0},
+                "contact_threshold": 10.0},
         interval_range_s=(0., 0.)
     )
 
@@ -310,7 +310,7 @@ class EventCfg:
         func=mdp.detect_fail,
         mode="interval",
         params={"sensor_cfg": SceneEntityCfg("nonfoot_forces", body_names=foot_name),
-                "contact_threshold": 5.0},
+                "contact_threshold": 10.0},
         interval_range_s=(0., 0.)
     )
 
@@ -335,12 +335,12 @@ class RunningRewardsCfg:
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-0.0005
+        weight=-0.001
     )
 
     friction_constraint = RewTerm(
         func=mdp.friction_constraint,
-        weight=-0.001,
+        weight=-0.01,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=foot_name),
             "mu": 0.7
@@ -356,7 +356,7 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=0.5,
+        weight=1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name),
                 "command_name": "trunk_target",
                 "coeff": 1e-5,
@@ -406,7 +406,7 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": x_limit, "y_limit": y_limit, "z_limit": z_limit, "initial_z": initial_z},
-        weight=-10,
+        weight=-20,
     )
 
     touchdown_bounce_penalization = RewTerm(
@@ -415,10 +415,10 @@ class NegativeRewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
-    # touchdown_angular_velocity_penalization = RewTerm(
-    #     func=mdp.touchdown_angular_velocity_penalization,
-    #     weight=-0.01,
-    # )
+    touchdown_angular_velocity_penalization = RewTerm(
+        func=mdp.touchdown_angular_velocity_penalization,
+        weight=-0.05,
+    )
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,
