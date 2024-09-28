@@ -112,6 +112,12 @@ def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: Scene
     des_quat_w = command[:, 3:7]
     curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7].clone()  # type: ignore
 
+    # in training if toudown is detected, use the detected one
+    if len(env.extras['touchdown']):
+        touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+        touchdown_quat_w = torch.stack(list(env.extras['touchdown'].values()))[..., 3:7].to(env.device)
+        curr_quat_w[touchdown_ids] = touchdown_quat_w
+
     target_error = quat_error_magnitude(curr_quat_w, des_quat_w)
 
     return target_error

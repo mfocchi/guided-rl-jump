@@ -411,7 +411,7 @@ class NegativeRewardsCfg:
 
     touchdown_bounce_penalization = RewTerm(
         func=mdp.touchdown_bounce_penalization,
-        weight=-1,
+        weight=-2,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
@@ -440,7 +440,7 @@ class CurriculumCfg:
 
     jump_complexity = CurrTerm(
         func=mdp.jump_curriculum, params={"term_name": "trunk_target",
-                                          "start": 1.0,
+                                          "start": 0.3,
                                           "num_steps": 500,
                                           "num_steps_rp": 1000,
                                           "pos_x": pos_x,
