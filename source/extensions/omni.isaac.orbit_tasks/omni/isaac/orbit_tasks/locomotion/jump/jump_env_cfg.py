@@ -65,9 +65,9 @@ yaw = (0, 0)
 
 # enable extusion of roll or pitch (no uniform random)
 # roll_yaw_shufle = True
-activate_curriculum = True
+# activate_curriculum = True
 roll_yaw_shufle = False
-# activate_curriculum = False
+activate_curriculum = False
 
 # Robot params
 trunk_name = ""
@@ -359,9 +359,9 @@ class RewardsCfg:
         weight=1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name),
                 "command_name": "trunk_target",
-                "coeff": 1e-5,
+                "coeff": 1e-1,
                 "dist_coeff": 2.,
-                "err_coeff": 5.,
+                "err_coeff": 10.,
                 "bias": 0,
                 "foot_height_offset": foot_offset,
                 "foot_name": foot_name,

@@ -159,7 +159,7 @@ def touchdown_bounce_penalization(env: RLTaskEnv, asset_cfg: SceneEntityCfg,) ->
     # extract the asset (to enable type hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
 
-    cost = torch.full((env.num_envs,), 1.0, device=env.device)
+    cost = torch.zeros(env.num_envs, device=env.device)
     if len(env.extras['touchdown']):
         touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
         touchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
