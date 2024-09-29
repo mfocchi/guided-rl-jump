@@ -404,9 +404,9 @@ class BezierCurveAction(ActionTerm):
                 tau_ff[after_t_th_total] *= self._env.extras['wbc'][after_t_th_total]
 
                 # reduce the stiffness to reduce instabilities
-                # if not self.cfg.debug_control:
-                #     self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 8), self.default_stiffness / self.cfg.stiffness_division).to(self.device)
-                #     self._asset.actuators[self.legs_name_calf].stiffness[after_t_th_total] = torch.full((1, 4), self.default_stiffness_calf / self.cfg.stiffness_division).to(self.device)
+                if not self.cfg.debug_control:
+                    self._asset.actuators[self.legs_name].stiffness[after_t_th_total] = torch.full((1, 8), self.default_stiffness / self.cfg.stiffness_division).to(self.device)
+                    self._asset.actuators[self.legs_name_calf].stiffness[after_t_th_total] = torch.full((1, 4), self.default_stiffness_calf / self.cfg.stiffness_division).to(self.device)
 
             apex_env_ids = torch.tensor(list(self._env.extras['apex'].keys()), device=self.device, dtype=torch.int)
 
@@ -424,7 +424,7 @@ class BezierCurveAction(ActionTerm):
 
                 self._env.extras['apex_dt'][apex_env_ids] += self.cfg.time_step
 
-        return q_des, qd_des, tau_ff
+        return q_des, qd_des, tau_ff * 0
 
     def map_range(self, x, in_min, in_max, out_min, out_max):
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
@@ -511,8 +511,8 @@ class BezierCurveAction(ActionTerm):
         self._raw_actions[:] = actions
 
         # reset stiffness
-        # self._asset.actuators[self.legs_name].stiffness = torch.full_like(self._asset.actuators[self.legs_name].stiffness, self.default_stiffness)
-        # self._asset.actuators[self.legs_name_calf].stiffness = torch.full_like(self._asset.actuators[self.legs_name_calf].stiffness, self.default_stiffness_calf)
+        self._asset.actuators[self.legs_name].stiffness = torch.full_like(self._asset.actuators[self.legs_name].stiffness, self.default_stiffness)
+        self._asset.actuators[self.legs_name_calf].stiffness = torch.full_like(self._asset.actuators[self.legs_name_calf].stiffness, self.default_stiffness_calf)
 
         # reset time counter
         self.dt = 0
