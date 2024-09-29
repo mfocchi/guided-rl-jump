@@ -58,6 +58,8 @@ max_action = 5
 
 pos_x = (0., 1.2)
 pos_y = (-0.3, 0.3)
+# pos_x = (0.8, 0.8)
+# pos_y = (0., 0.)
 pos_z = (0., 0.)
 roll = (0, 0)
 pitch = (0, 0)
@@ -356,7 +358,7 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=1,
+        weight=0.5,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name),
                 "command_name": "trunk_target",
                 "coeff": 1e-1,
@@ -406,12 +408,12 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": x_limit, "y_limit": y_limit, "z_limit": z_limit, "initial_z": initial_z},
-        weight=-10,
+        weight=-20,
     )
 
     touchdown_bounce_penalization = RewTerm(
         func=mdp.touchdown_bounce_penalization,
-        weight=-2,
+        weight=-5,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
