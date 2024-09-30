@@ -269,7 +269,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names=foot_name),
-            "static_friction_range": (0.7, 0.7),
+            "static_friction_range": (0.8, 0.8),
             "dynamic_friction_range": (0.6, 0.6),
             "restitution_range": (0.0, 0.0),
             "num_buckets": 64,
@@ -344,9 +344,13 @@ class RunningRewardsCfg:
         func=mdp.friction_constraint,
         weight=-0.01,
         params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=foot_name),
-            "mu": 0.7
+            "mu": 0.8
         }
+    )
+
+    unilateral_constraint = RewTerm(
+        func=mdp.unilateral_constraint,
+        weight=-0.01
     )
 
 

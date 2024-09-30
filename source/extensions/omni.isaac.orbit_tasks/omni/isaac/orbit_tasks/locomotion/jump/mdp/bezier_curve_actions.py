@@ -334,18 +334,15 @@ class BezierCurveAction(ActionTerm):
         rr_foot_pos_b, rr_foot_orient_b = subtract_frame_transforms(root_pose_w[:, 0:3], root_pose_w[:, 3:7], rr_pose_w[:, 0:3], rr_pose_w[:, 3:7])
         rr_foot_pos_des_b, rr_foot_orient_des_b = subtract_frame_transforms(x, o_quat, rr_pose_w[:, 0:3])
 
-        # Orientation is just for visualization (ignore)
-        self.fl_diff_ik_controller.set_command(fl_foot_pos_des_b, ee_quat=fl_foot_orient_des_b)
-        self.fr_diff_ik_controller.set_command(fr_foot_pos_des_b, ee_quat=fr_foot_orient_des_b)
-        self.rl_diff_ik_controller.set_command(rl_foot_pos_des_b, ee_quat=rl_foot_orient_des_b)
-        self.rr_diff_ik_controller.set_command(rr_foot_pos_des_b, ee_quat=rr_foot_orient_des_b)
+        tau_meas = self._asset.data.applied_torque.clone()
 
-        q_des[:, self.fl_entity_cfg.joint_ids] = self.fl_diff_ik_controller.compute(fl_foot_pos_b, fl_foot_orient_b, fl_jacobian, fl_joint_pos)
-        q_des[:, self.fr_entity_cfg.joint_ids] = self.fr_diff_ik_controller.compute(fr_foot_pos_b, fr_foot_orient_b, fr_jacobian, fr_joint_pos)
-        q_des[:, self.rl_entity_cfg.joint_ids] = self.rl_diff_ik_controller.compute(rl_foot_pos_b, rl_foot_orient_b, rl_jacobian, rl_joint_pos)
-        q_des[:, self.rr_entity_cfg.joint_ids] = self.rr_diff_ik_controller.compute(rr_foot_pos_b, rr_foot_orient_b, rr_jacobian, rr_joint_pos)
+        f_fl = (-torch.linalg.pinv(fl_jacobian[:, 0:3].clone().transpose(1, 2)) @ tau_meas[:, self.fl_entity_cfg.joint_ids].unsqueeze(-1))
+        f_fr = (-torch.linalg.pinv(fr_jacobian[:, 0:3].clone().transpose(1, 2)) @ tau_meas[:, self.fr_entity_cfg.joint_ids].unsqueeze(-1))
+        f_rl = (- torch.linalg.pinv(rl_jacobian[:, 0:3].clone().transpose(1, 2)) @ tau_meas[:, self.rl_entity_cfg.joint_ids].unsqueeze(-1))
+        f_rr = (-torch.linalg.pinv(rr_jacobian[:, 0:3].clone().transpose(1, 2)) @ tau_meas[:, self.rr_entity_cfg.joint_ids].unsqueeze(-1))
 
-        qd_des = (q_des - old_q_des) / self.cfg.time_step
+        forces = torch.cat((f_fl, f_fr, f_rl, f_rr), dim=1).reshape(-1,4,3)
+        self._env.extras['forces'] = forces
 
         # compute g com with wbc
         eye_batch = torch.eye(3).repeat(self.num_envs, 1, 1).to(self.device)
@@ -361,8 +358,9 @@ class BezierCurveAction(ActionTerm):
         rr_block = torch.cat((eye_batch, rr_skew), dim=1)
 
         Jb_t = torch.cat((fl_block, fr_block, rl_block, rr_block), dim=2)
-        f = torch.linalg.pinv(Jb_t) @ self.wd.squeeze(1).unsqueeze(2)
+        f = torch.linalg.pinv(Jb_t, atol=1e-4) @ self.wd.squeeze(1).unsqueeze(2)
         f = f.squeeze(-1).view(self.num_envs, 4, 3)
+        # print(f)
 
         fl_tau = (-fl_jacobian[:, 0:3].clone().transpose(1, 2) @ f[:, 0].unsqueeze(-1)).squeeze(-1)
         fr_tau = (-fr_jacobian[:, 0:3].clone().transpose(1, 2) @ f[:, 1].unsqueeze(-1)).squeeze(-1)
@@ -374,6 +372,19 @@ class BezierCurveAction(ActionTerm):
         tau_ff[:, self.fr_entity_cfg.joint_ids] = fr_tau.clone()
         tau_ff[:, self.rl_entity_cfg.joint_ids] = rl_tau.clone()
         tau_ff[:, self.rr_entity_cfg.joint_ids] = rr_tau.clone()
+
+        # Orientation is just for visualization (ignore)
+        self.fl_diff_ik_controller.set_command(fl_foot_pos_des_b, ee_quat=fl_foot_orient_des_b)
+        self.fr_diff_ik_controller.set_command(fr_foot_pos_des_b, ee_quat=fr_foot_orient_des_b)
+        self.rl_diff_ik_controller.set_command(rl_foot_pos_des_b, ee_quat=rl_foot_orient_des_b)
+        self.rr_diff_ik_controller.set_command(rr_foot_pos_des_b, ee_quat=rr_foot_orient_des_b)
+
+        q_des[:, self.fl_entity_cfg.joint_ids] = self.fl_diff_ik_controller.compute(fl_foot_pos_b, fl_foot_orient_b, fl_jacobian, fl_joint_pos)
+        q_des[:, self.fr_entity_cfg.joint_ids] = self.fr_diff_ik_controller.compute(fr_foot_pos_b, fr_foot_orient_b, fr_jacobian, fr_joint_pos)
+        q_des[:, self.rl_entity_cfg.joint_ids] = self.rl_diff_ik_controller.compute(rl_foot_pos_b, rl_foot_orient_b, rl_jacobian, rl_joint_pos)
+        q_des[:, self.rr_entity_cfg.joint_ids] = self.rr_diff_ik_controller.compute(rr_foot_pos_b, rr_foot_orient_b, rr_jacobian, rr_joint_pos)
+
+        qd_des = (q_des - old_q_des) / self.cfg.time_step
 
 
         if not self.cfg.debug_control:
@@ -399,7 +410,7 @@ class BezierCurveAction(ActionTerm):
 
                 q_des[after_t_th_total] = q_0_lo_lerp
                 qd_des[after_t_th_total] = torch.zeros_like(self._asset.data.default_joint_vel[0])
-                
+
                 # filter torque in case of fly or touchdown
                 tau_ff[after_t_th_total] *= self._env.extras['wbc'][after_t_th_total]
 
@@ -424,7 +435,9 @@ class BezierCurveAction(ActionTerm):
 
                 self._env.extras['apex_dt'][apex_env_ids] += self.cfg.time_step
 
-        return q_des, qd_des, tau_ff * 0
+        # print(tau_ff)
+
+        return q_des, qd_des, tau_ff
 
     def map_range(self, x, in_min, in_max, out_min, out_max):
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min

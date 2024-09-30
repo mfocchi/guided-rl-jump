@@ -50,8 +50,9 @@ def reset_robot_state(
     env.extras['apex_dt'] = torch.zeros(env.num_envs, device=env.device)
     env.extras['apex_z'] = torch.zeros(env.num_envs, device=env.device)
     env.extras['landing_z'] = torch.zeros(env.num_envs, device=env.device)
-    env.extras['wbc'] = torch.zeros((env.num_envs,1), device=env.device)
+    env.extras['wbc'] = torch.zeros((env.num_envs, 1), device=env.device)
     env.extras['fail'] = torch.zeros(env.num_envs, device=env.device, dtype=torch.bool)
+    env.extras['forces'] = torch.zeros((env.num_envs, 4, 3), device=env.device)
 
 
 def reset_landing_platform(
@@ -114,7 +115,6 @@ def detect_apex(
 
     foots_z_pos_w -= foot_height_offset
 
-
     # Get base z linear velocity
     base_lin_vel_w = robot.data.root_state_w[env_ids, 7:10].clone()
 
@@ -161,6 +161,7 @@ def detect_apex(
     landing_platform.write_root_pose_to_sim(torch.cat([positions[existing_apex_ids], orientations[existing_apex_ids]], dim=-1), env_ids=existing_apex_ids)
 
     # print('apex', torch.tensor(list(env.extras['apex'].keys()), device=env.device, dtype=torch.int))
+
 
 def detect_touchdown(env: RLTaskEnv, env_ids: torch.Tensor, contact_threshold: float, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg):
     """Terminate when the contact force on the sensor exceeds the force threshold."""

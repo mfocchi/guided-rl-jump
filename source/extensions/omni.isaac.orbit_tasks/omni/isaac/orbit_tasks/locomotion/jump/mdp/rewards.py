@@ -69,8 +69,6 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     if mode == "play":
         print(f"Landing td: {curr_pos_w[...,:3]}")
 
-
-
     # Calculate percentual_error to normalize jump performance
     target_z_error = torch.abs(des_pos_w[..., 2] - curr_pos_w[..., 2])
     target_z_error = torch.where(target_z_error <= z_threshold, torch.tensor(0.0), target_z_error)
@@ -231,7 +229,7 @@ def liftoff_angular_velocity_error(env: RLTaskEnv) -> torch.Tensor:
     return torch.norm(des_lo_lvel_w - curr_lo_lvel_w, dim=1)
 
 
-def friction_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, mu: float = 0.8) -> torch.Tensor:
+def friction_constraint(env: RLTaskEnv, mu: float = 0.8) -> torch.Tensor:
     """Penalize contact forces out of the friction cone
 
     Args:
@@ -239,11 +237,10 @@ def friction_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, mu: float = 
         mu: the friction coefficient
     """
     # extract the used quantities (to enable type-hinting)
-    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    net_contact_forces = contact_sensor.data.net_forces_w.clone()
+    net_contact_forces = env.extras["forces"].clone()
 
     # From jumpleg -> residual = np.linalg.norm(self.contactForceW[:2]) - p.mu * p.contactForceW[2]
-    residuals = torch.norm(net_contact_forces[:, sensor_cfg.body_ids, :2], dim=-1) - mu * net_contact_forces[:, sensor_cfg.body_ids, 2]
+    residuals = torch.norm(net_contact_forces[..., :2], dim=-1) - mu * net_contact_forces[..., 2]
 
     # Compute the violation values of friction cone constraint
     #  #evns,#sensors (n, 4)
@@ -265,7 +262,7 @@ def contact_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg, contact_thres
     return costs
 
 
-def unilateral_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.Tensor:
+def unilateral_constraint(env: RLTaskEnv) -> torch.Tensor:
     """Penalize contact forces out of the friction cone
 
     Args:
@@ -273,11 +270,10 @@ def unilateral_constraint(env: RLTaskEnv, sensor_cfg: SceneEntityCfg) -> torch.T
         mu: the friction coefficient
     """
     # extract the used quantities (to enable type-hinting)
-    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    net_contact_forces = contact_sensor.data.net_forces_w.clone()
+    net_contact_forces = env.extras["forces"].clone()
 
     # sum along each robot to get the total violation cost
-    costs = torch.sum(computeActivationFunction('linear', net_contact_forces[:, sensor_cfg.body_ids, 2], 0.0, torch.inf), dim=1)
+    costs = torch.sum(computeActivationFunction('linear', net_contact_forces[..., 2], 0.0, torch.inf), dim=1)
 
     return costs
 
@@ -292,9 +288,8 @@ def no_touchdown(env: RLTaskEnv) -> torch.Tensor:
     touchdown_end_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
     no_touchdown_penalty[touchdown_end_ids] = 0
 
-    
     env.extras['fail_det'] = env.extras['fail'].clone()
-    
+
     return no_touchdown_penalty
 
 

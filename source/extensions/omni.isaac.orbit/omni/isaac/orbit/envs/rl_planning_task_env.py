@@ -49,6 +49,9 @@ class RLPlanningTaskEnv(RLTaskEnv):
         #     self.sim.step(render=True)
         #     self.scene.update(dt=self.physics_dt)
         print(f"Executing")
+        # THIS IS NEEDED FOR JACOBIAN COMPUTATION
+        self.sim.step(render=False)
+        self.scene.update(dt=self.physics_dt)
         # perform physics stepping until the timeout
         for i in range(self.max_episode_length):
             # set actions into buffers
