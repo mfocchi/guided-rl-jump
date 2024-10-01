@@ -210,7 +210,8 @@ class ActionsCfg:
                                          t_th_max=1.0,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
-                                         x_r_min=0.1,
+                                        #  TODO: augment this to push the robot to use all the extension!
+                                         x_r_min=0.25,
                                          x_r_max=0.4,
                                          xd_theta_min=np.pi / 6,
                                          xd_theta_max=np.pi / 2,
@@ -384,10 +385,10 @@ class NegativeRewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "command_name": "trunk_target"},
     )
 
-    no_touchdown = RewTerm(
-        func=mdp.no_touchdown,
-        weight=-0.5,
-    )
+    # no_touchdown = RewTerm(
+    #     func=mdp.no_touchdown,
+    #     weight=-0.5,
+    # )
 
     liftoff_position_error = RewTerm(
         func=mdp.liftoff_position_error,
@@ -412,7 +413,7 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": x_limit, "y_limit": y_limit, "z_limit": z_limit, "initial_z": initial_z},
-        weight=-50,
+        weight=-30,
     )
 
     touchdown_bounce_penalization = RewTerm(
