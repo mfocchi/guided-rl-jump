@@ -342,7 +342,7 @@ class RunningRewardsCfg:
 
     friction_constraint = RewTerm(
         func=mdp.friction_constraint,
-        weight=-0.01,
+        weight=-0.001,
         params={
             "mu": 0.8
         }
@@ -350,7 +350,7 @@ class RunningRewardsCfg:
 
     unilateral_constraint = RewTerm(
         func=mdp.unilateral_constraint,
-        weight=-0.01
+        weight=-0.001
     )
 
 

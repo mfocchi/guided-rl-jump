@@ -61,13 +61,13 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
         print(f"Landing: {curr_pos_w[...,:3]}")
 
     # in training if toudown is detected, use the detected one
-    if len(env.extras['touchdown']):
-        touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
-        touchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
-        curr_pos_w[..., :2][touchdown_ids] = touchdown_pos_w
+    # if len(env.extras['touchdown']):
+    #     touchdown_ids = torch.tensor(list(env.extras['touchdown'].keys()), device=env.device, dtype=torch.int)
+    #     touchdown_pos_w = torch.stack(list(env.extras['touchdown'].values()))[..., :2].to(env.device)
+    #     curr_pos_w[..., :2][touchdown_ids] = touchdown_pos_w
 
-    if mode == "play":
-        print(f"Landing td: {curr_pos_w[...,:3]}")
+    # if mode == "play":
+    #     print(f"Landing td: {curr_pos_w[...,:3]}")
 
     # Calculate percentual_error to normalize jump performance
     target_z_error = torch.abs(des_pos_w[..., 2] - curr_pos_w[..., 2])
