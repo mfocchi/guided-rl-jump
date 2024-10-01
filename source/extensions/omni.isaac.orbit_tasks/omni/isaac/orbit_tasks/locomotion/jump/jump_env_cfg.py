@@ -205,9 +205,9 @@ class ActionsCfg:
                                          robot_height=robot_height,
                                          contact_threshold=5,
                                          sensor_cfg=SceneEntityCfg("contact_forces", body_names=foot_name),
-                                         lerp_time=0.1,
-                                         t_th_min=0.4,
-                                         t_th_max=0.8,
+                                         lerp_time=0.2,
+                                         t_th_min=0.5,
+                                         t_th_max=1.0,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
                                          x_r_min=0.1,
@@ -412,12 +412,12 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": x_limit, "y_limit": y_limit, "z_limit": z_limit, "initial_z": initial_z},
-        weight=-20,
+        weight=-50,
     )
 
     touchdown_bounce_penalization = RewTerm(
         func=mdp.touchdown_bounce_penalization,
-        weight=-5,
+        weight=-10,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 

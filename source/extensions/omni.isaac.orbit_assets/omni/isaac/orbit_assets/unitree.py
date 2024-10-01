@@ -46,8 +46,8 @@ GO1_ACTUATOR_CALF_CFG = DCMotorCfg(
     velocity_limit=20.0,  # taken from spec sheet
     saturation_effort=35.5,  # same as effort limit
     # stiffness=120.0,
-    stiffness=30.0,
-    damping=0.5,
+    stiffness=50.0,
+    damping=0.8,
     friction=0.0,
 )
 
@@ -57,8 +57,8 @@ GO1_ACTUATOR_CFG = DCMotorCfg(
     velocity_limit=30.0,  # taken from spec sheet
     saturation_effort=23.7,  # same as effort limit
     # stiffness=120.0,
-    stiffness=30.0,
-    damping=0.5,
+    stiffness=50.0,
+    damping=0.8,
     friction=0.0,
 )
 
