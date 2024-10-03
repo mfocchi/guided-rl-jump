@@ -58,7 +58,7 @@ max_action = 5
 
 pos_x = (0., 1.2)
 pos_y = (-0.3, 0.3)
-# pos_x = (0.8, 0.8)
+# pos_x = (0.5, 0.5)
 # pos_y = (0., 0.)
 pos_z = (0., 0.)
 roll = (0, 0)
@@ -205,13 +205,12 @@ class ActionsCfg:
                                          robot_height=robot_height,
                                          contact_threshold=5,
                                          sensor_cfg=SceneEntityCfg("contact_forces", body_names=foot_name),
-                                         lerp_time=0.2,
-                                         t_th_min=0.5,
+                                         lerp_time=0.1,
+                                         t_th_min=0.4,
                                          t_th_max=1.0,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
-                                        #  TODO: augment this to push the robot to use all the extension!
-                                         x_r_min=0.25,
+                                         x_r_min=0.15,
                                          x_r_max=0.4,
                                          xd_theta_min=np.pi / 6,
                                          xd_theta_max=np.pi / 2,
@@ -343,7 +342,7 @@ class RunningRewardsCfg:
 
     friction_constraint = RewTerm(
         func=mdp.friction_constraint,
-        weight=-0.001,
+        weight=-0.0001,
         params={
             "mu": 0.8
         }
@@ -351,7 +350,7 @@ class RunningRewardsCfg:
 
     unilateral_constraint = RewTerm(
         func=mdp.unilateral_constraint,
-        weight=-0.001
+        weight=-0.0001
     )
 
 
@@ -363,11 +362,11 @@ class RewardsCfg:
 
     target_position_error = RewTerm(
         func=mdp.target_position_error,
-        weight=0.5,
+        weight=1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name),
                 "command_name": "trunk_target",
                 "coeff": 1e-1,
-                "dist_coeff": 2.,
+                "dist_coeff": 3.,
                 "err_coeff": 10.,
                 "bias": 0,
                 "foot_height_offset": foot_offset,
@@ -413,12 +412,12 @@ class NegativeRewardsCfg:
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
         params={"x_limit": x_limit, "y_limit": y_limit, "z_limit": z_limit, "initial_z": initial_z},
-        weight=-30,
+        weight=-10,
     )
 
     touchdown_bounce_penalization = RewTerm(
         func=mdp.touchdown_bounce_penalization,
-        weight=-10,
+        weight=-2,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
