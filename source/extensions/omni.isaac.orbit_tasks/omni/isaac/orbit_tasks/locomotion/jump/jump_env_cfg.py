@@ -58,7 +58,7 @@ max_action = 5
 
 pos_x = (0., 1.2)
 pos_y = (-0.3, 0.3)
-# pos_x = (0.5, 0.5)
+# pos_x = (0.6, 0.6)
 # pos_y = (0., 0.)
 pos_z = (0., 0.)
 roll = (0, 0)
@@ -365,10 +365,10 @@ class RewardsCfg:
         weight=1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name),
                 "command_name": "trunk_target",
-                "coeff": 1e-1,
-                "dist_coeff": 3.,
-                "err_coeff": 10.,
-                "bias": 0,
+                "coeff": 0.5,
+                "dist_coeff": 5,
+                "err_coeff": 4.,
+                "bias": 1,
                 "foot_height_offset": foot_offset,
                 "foot_name": foot_name,
                 "mode": mode},
@@ -417,7 +417,7 @@ class NegativeRewardsCfg:
 
     touchdown_bounce_penalization = RewTerm(
         func=mdp.touchdown_bounce_penalization,
-        weight=-2,
+        weight=-1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
     )
 
@@ -480,7 +480,7 @@ class LocomotionJumpEnvCfg(RLPlanningTaskEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.episode_length_s = 2
+        self.episode_length_s = 1.5
         self.sim.dt = time_step
         self.decimation = 1
         # simulation settings
