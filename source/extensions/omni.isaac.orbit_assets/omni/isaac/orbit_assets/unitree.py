@@ -234,7 +234,7 @@ UNITREE_ALIENGO_CFG = ArticulationCfg(
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.37),
+        pos=(0.0, 0.0, 0.375),
         joint_pos={
             ".*L_hip_joint": 0.1,
             ".*R_hip_joint": -0.1,
@@ -247,15 +247,25 @@ UNITREE_ALIENGO_CFG = ArticulationCfg(
     soft_joint_pos_limit_factor=0.9,
     actuators={
         "base_legs": DCMotorCfg(
-            joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
-            effort_limit=44.4,
-            saturation_effort=44.4,
-            velocity_limit=40.0,
+            joint_names_expr=[".*_hip_joint", ".*_thigh_joint",],
+            effort_limit=35.3,
+            saturation_effort=35.3,
+            velocity_limit=20.0,
             # stiffness=25.0,
             stiffness=200.0,
             damping=1.0,
             friction=0.0,
         ),
+        "base_legs_calf": DCMotorCfg(
+            joint_names_expr=[".*_calf_joint"],
+            effort_limit=44.4,  # taken from spec sheet
+            velocity_limit=16.0,  # taken from spec sheet
+            saturation_effort=44.4,  # same as effort limit
+            # stiffness=120.0,
+            stiffness=50.0,
+            damping=0.8,
+            friction=0.0,
+        )
     },
 )
 """Configuration of Unitree AlienGo (Claw) using DC-Motor actuator model."""
