@@ -52,18 +52,20 @@ max_action = 5
 pos_x = (-0.6, 1.2)
 pos_y = (-0.6, 0.6)
 pos_z = (-0.4, 0.4)
+# pos_z = (0, 0)
 roll = (0, 0)
 pitch = (0, 0)
-yaw = (-np.pi / 2, np.pi / 2)
+# yaw = (-np.pi / 2, np.pi / 2)
+yaw = (0, 0)
 
 # pos_x = (0., 1.2)
 # pos_y = (-0.3, 0.3)
-# # pos_x = (0.6, 0.6)
-# # pos_y = (0., 0.)
+# pos_x = (0.0, 0.0)
+# pos_y = (0., 0.)
 # pos_z = (0., 0.)
 # roll = (0, 0)
 # pitch = (0, 0)
-# yaw = (0, 0)
+# yaw = (np.pi / 2, np.pi / 2)
 
 # enable extusion of roll or pitch (no uniform random)
 # roll_yaw_shufle = True
@@ -381,7 +383,7 @@ class NegativeRewardsCfg:
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
         weight=-2,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "command_name": "trunk_target"},
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "command_name": "trunk_target", "mode": mode},
     )
 
     # no_touchdown = RewTerm(

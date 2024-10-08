@@ -11,7 +11,8 @@ from typing import TYPE_CHECKING
 from omni.isaac.orbit.managers import SceneEntityCfg
 from omni.isaac.orbit.assets import Articulation, RigidObject
 from omni.isaac.orbit.sensors import ContactSensor
-from omni.isaac.orbit.utils.math import combine_frame_transforms, quat_error_magnitude, quat_mul
+from omni.isaac.orbit.utils.math import combine_frame_transforms, quat_error_magnitude, quat_mul, quat_error
+from omni.isaac.orbit.utils.math import euler_xyz_from_quat
 
 if TYPE_CHECKING:
     from omni.isaac.orbit.envs import RLTaskEnv
@@ -53,12 +54,12 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
 
     # In test use the position at the end of the episode
     if mode == "test":
-        env.extras["desirerd_td"] = des_pos_w[..., :3].clone() - env.scene.env_origins
-        env.extras["actual_td"] = curr_pos_w[..., :3].clone() - env.scene.env_origins
+        env.extras["desirerd_td"] = des_pos_w.clone() - env.scene.env_origins
+        env.extras["actual_td"] = curr_pos_w.clone() - env.scene.env_origins
 
     elif mode == "play":
-        print(f"Target: {des_pos_w[...,:3]}")
-        print(f"Landing: {curr_pos_w[...,:3]}")
+        print(f"Target: {des_pos_w}")
+        print(f"Landing: {curr_pos_w}")
 
     # in training if toudown is detected, use the detected one
     # if len(env.extras['touchdown']):
@@ -95,7 +96,7 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     # return torch.norm(curr_pos_w - des_pos_w, dim=1)
 
 
-def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, coeff: float = 1., dist_coeff: float = 1., err_coeff: float = 1., bias: float = 1) -> torch.Tensor:
+def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, coeff: float = 1., dist_coeff: float = 1., err_coeff: float = 1., bias: float = 1, mode: str = "train") -> torch.Tensor:
     """Penalize tracking orientation error using shortest path.
 
     The function computes the orientation error between the desired orientation (from the command) and the
@@ -107,7 +108,7 @@ def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: Scene
     command = env.command_manager.get_command(command_name)
     # obtain the desired and current orientations
 
-    des_quat_w = command[:, 3:7]
+    des_quat_w = command[:, 3:7].clone()
     curr_quat_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], 3:7].clone()  # type: ignore
 
     # # in training if toudown is detected, use the detected one
@@ -117,6 +118,13 @@ def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: Scene
     #     curr_quat_w[touchdown_ids] = touchdown_quat_w
 
     target_error = quat_error_magnitude(curr_quat_w, des_quat_w)
+
+    if mode == "test":
+        env.extras["quat_err"] = quat_error(curr_quat_w, des_quat_w)
+
+    elif mode == "play":
+        print(f"Target Orientation: {torch.stack(euler_xyz_from_quat(des_quat_w), dim=1)}")
+        print(f"Landing Orientation: {torch.stack(euler_xyz_from_quat(curr_quat_w), dim=1)}")
 
     return target_error
 

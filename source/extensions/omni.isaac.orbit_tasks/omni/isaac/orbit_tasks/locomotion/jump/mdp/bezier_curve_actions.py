@@ -121,8 +121,8 @@ class BezierCurveAction(ActionTerm):
         self.rl_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self.device)
         self.rr_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self.device)
 
-        # m = 13.10  # go1
-        m = 20.6  # aliengo
+        m = 13.10  # go1
+        # m = 20.6  # aliengo
         g = 9.81
 
         self.wd = torch.tensor([0, 0, m * g, 0, 0, 0]).repeat(self.num_envs, 1, 1).to(self.device)
@@ -548,8 +548,10 @@ class BezierCurveAction(ActionTerm):
         trunk_od_0 = self._asset.data.root_ang_vel_b.clone()
 
         trunk_tg = trunk_x_0 + self._env.command_manager.get_command("trunk_target")[:, 0:3]
+        trunk_tg_o = torch.stack(euler_xyz_from_quat(self._env.command_manager.get_command("trunk_target")[:, 3:7]), dim=1)
 
         self._env.extras["trunk_tg"] = trunk_tg
+        self._env.extras["trunk_tg_o"] = trunk_tg_o
 
         # self.t_th = (self.t_th_max - self.t_th_min) * 0.5 * (actions[..., 0] + 1) + self.t_th_min
         self.t_th = self.map_range(actions[..., 0], self.min_action, self.max_action, self.t_th_min, self.t_th_max)

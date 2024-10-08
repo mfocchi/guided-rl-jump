@@ -677,6 +677,22 @@ def quat_error_magnitude(q1: torch.Tensor, q2: torch.Tensor) -> torch.Tensor:
     quat_diff = quat_mul(q1, quat_conjugate(q2))
     return torch.norm(axis_angle_from_quat(quat_diff), dim=-1)
 
+@torch.jit.script
+def quat_error(q1: torch.Tensor, q2: torch.Tensor) -> torch.Tensor:
+    """Computes the rotation difference between two quaternions.
+
+    Args:
+        q1: The first quaternion in (w, x, y, z). Shape is (..., 4).
+        q2: The second quaternion in (w, x, y, z). Shape is (..., 4).
+
+    Returns:
+        Angular error between input quaternions in radians.
+    """
+    quat_diff = quat_mul(q1, quat_conjugate(q2))
+
+    
+    return axis_angle_from_quat(quat_diff)
+
 
 @torch.jit.script
 def skew_symmetric_matrix(vec: torch.Tensor) -> torch.Tensor:
