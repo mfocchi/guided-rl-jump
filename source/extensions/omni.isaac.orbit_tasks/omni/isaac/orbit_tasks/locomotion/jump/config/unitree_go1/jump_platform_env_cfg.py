@@ -42,7 +42,8 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
 
         x_limit = 0.15
         y_limit = 0.15
-        z_limit = 0.4
+        z_limit_low = 0.15
+        z_limit_up = 0.4
 
         q_0_lo = torch.tensor([0.2316, -0.2316, 0.2343, -0.2338, 1.3818, 1.3816, 1.6860, 1.6858, -2.4620, -2.4617, -2.3162, -2.3163])
 
@@ -70,9 +71,10 @@ class UnitreeGo1JumpEnvCfg(LocomotionJumpEnvCfg):
         self.actions.jump_traj.rr_joint_names = rr_joint_names
         self.actions.jump_traj.rr_body_names = rr_body_names
 
-        self.negative_rewards.singularity_penalty.params["x_limit"] = x_limit
-        self.negative_rewards.singularity_penalty.params["y_limit"] = y_limit
-        self.negative_rewards.singularity_penalty.params["z_limit"] = z_limit
+        self.running_rewards.singularity_penalty.params["x_limit"] = x_limit
+        self.running_rewards.singularity_penalty.params["y_limit"] = y_limit
+        self.running_rewards.singularity_penalty.params["z_limit_low"] = z_limit_low
+        self.running_rewards.singularity_penalty.params["z_limit_up"] = z_limit_up
 
         self.scene.contact_forces.prim_path = "{ENV_REGEX_NS}/Robot/.*(?:" + foot_name + ")$"
         self.scene.nonfoot_forces.prim_path = "{ENV_REGEX_NS}/Robot/.*?(" + thigh_name + "|" + trunk_name + ").*"

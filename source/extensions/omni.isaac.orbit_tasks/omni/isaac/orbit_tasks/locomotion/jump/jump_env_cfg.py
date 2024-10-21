@@ -94,7 +94,8 @@ rr_body_names = []
 
 x_limit = 0.
 y_limit = 0.
-z_limit = 0.
+z_limit_low = 0.
+z_limit_up = 0.
 
 q_0_lo = torch.tensor([])
 mass_range = 0
@@ -355,6 +356,12 @@ class RunningRewardsCfg:
         weight=-0.0001
     )
 
+    singularity_penalty = RewTerm(
+        func=mdp.singularity_penalty,
+        params={"x_limit": x_limit, "y_limit": y_limit, "z_limit_low": z_limit_low, "z_limit_up": z_limit_up, "initial_z": initial_z},
+        weight=-10,
+    )
+
 
 @configclass
 class RewardsCfg:
@@ -409,12 +416,6 @@ class NegativeRewardsCfg:
     liftoff_angular_velocity_error = RewTerm(
         func=mdp.liftoff_angular_velocity_error,
         weight=-0.1,
-    )
-
-    singularity_penalty = RewTerm(
-        func=mdp.singularity_penalty,
-        params={"x_limit": x_limit, "y_limit": y_limit, "z_limit": z_limit, "initial_z": initial_z},
-        weight=-10,
     )
 
     touchdown_bounce_penalization = RewTerm(

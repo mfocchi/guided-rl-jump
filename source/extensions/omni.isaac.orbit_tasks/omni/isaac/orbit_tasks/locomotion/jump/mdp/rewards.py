@@ -185,15 +185,18 @@ def t_th_total_regularization(env: RLTaskEnv, limit: float = 0.7) -> torch.Tenso
     return torch.square(t_th_total - limit)
 
 
-def singularity_penalty(env: RLTaskEnv, x_limit: float = 0.1, y_limit: float = 0.1, z_limit: float = 0.4, initial_z: float = 0.0) -> torch.Tensor:
+def singularity_penalty(env: RLTaskEnv, robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"), x_limit: float = 0.1, y_limit: float = 0.1, z_limit_low: float = 0.15, z_limit_up: float = 0.4, initial_z: float = 0.0) -> torch.Tensor:
 
-    x = torch.abs(env.extras["trunk_x_exp"][..., 0])
-    y = torch.abs(env.extras["trunk_x_exp"][..., 1])
-    z = torch.abs(env.extras["trunk_x_exp"][..., 2] - initial_z)
+    robot: Articulation = env.scene[robot_cfg.name]
+    robot_state = robot.data.root_state_w[..., 0:3].clone() - env.scene.env_origins
+
+    x = torch.abs(robot_state[..., 0])
+    y = torch.abs(robot_state[..., 1])
+    z = torch.abs(robot_state[..., 2] - initial_z)
 
     x_cost = computeActivationFunction('linear', x, -torch.inf, x_limit)
     y_cost = computeActivationFunction('linear', y, -torch.inf, y_limit)
-    z_cost = computeActivationFunction('linear', z, -torch.inf, z_limit)
+    z_cost = computeActivationFunction('linear', z, z_limit_low, z_limit_up)
 
     costs = x_cost + y_cost + z_cost
 
