@@ -96,6 +96,7 @@ def main():
             if i == 1:
                 data = np.stack((extras["desirerd_td"].cpu().numpy(), extras["actual_td"].cpu().numpy()), axis=0)
                 joblib.dump(data, os.path.join(log_root_path, 'pos_err.bin'))
+                joblib.dump(extras["target_orient"].cpu().numpy(), os.path.join(log_root_path, 'des_orient.bin'))
                 joblib.dump(extras["quat_err"].cpu().numpy(), os.path.join(log_root_path, 'orient_err.bin'))
                 joblib.dump(extras['fail_det'].cpu().numpy(), os.path.join(log_root_path, 'failed.bin'))
             

@@ -120,6 +120,7 @@ def target_orientation_error(env: RLTaskEnv, command_name: str, asset_cfg: Scene
     target_error = quat_error_magnitude(curr_quat_w, des_quat_w)
 
     if mode == "test":
+        env.extras["target_orient"] = torch.stack(euler_xyz_from_quat(des_quat_w), dim=1)
         env.extras["quat_err"] = quat_error(curr_quat_w, des_quat_w)
 
     elif mode == "play":

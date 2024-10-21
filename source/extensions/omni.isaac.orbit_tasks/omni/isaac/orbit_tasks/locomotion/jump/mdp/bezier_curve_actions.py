@@ -671,9 +671,9 @@ class BezierCurveAction(ActionTerm):
         if self.cfg.mode == "play" and self.cfg.debug_plot:
 
             if len(self.des_q):
-                self.plot_traj(self.act_q, self.des_q, "q")
-                self.plot_traj(self.act_qd, self.des_qd, "qd")
-                self.plot_traj(self.act_tau, self.des_tau, "tau")
+                self.plot_traj(self.act_q, self.des_q, "$\mathbf{q}$")
+                self.plot_traj(self.act_qd, self.des_qd, "$\mathbf{\dot{q}}$")
+                self.plot_traj(self.act_tau, self.des_tau, "$\mathbf{\\tau}$")
                 self.plot_trunk_traj(self.act_base, self.des_base, "trunk")
                 self.plot_trunk_traj(self.act_based, self.des_based, "trunk vel")
 
