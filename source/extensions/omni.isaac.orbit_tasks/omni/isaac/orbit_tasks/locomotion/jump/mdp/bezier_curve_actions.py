@@ -387,6 +387,8 @@ class BezierCurveAction(ActionTerm):
 
         qd_des = (q_des - old_q_des) / self.cfg.time_step
 
+        self._env.extras['q_des'] = q_des.clone()
+
 
         if not self.cfg.debug_control:
 
@@ -398,7 +400,8 @@ class BezierCurveAction(ActionTerm):
                 if new_lo.numel() > 0:
 
                     self._env.extras['actual_lo_config'][new_lo] = self._asset.data.root_state_w[new_lo].clone()
-                    self._env.extras['t_th_q'][new_lo] = self._asset.data.joint_pos[new_lo].clone()
+                    # self._env.extras['t_th_q'][new_lo] = self._asset.data.joint_pos[new_lo].clone()
+                    self._env.extras['t_th_q'][new_lo] = q_des[new_lo].clone()
 
                 self._env.extras['after_t_th_total'] = after_t_th_total
 
@@ -732,6 +735,7 @@ class BezierCurveAction(ActionTerm):
             # Decomment to have no ik
             # q_des = self._asset.data.default_joint_pos
             # qd_des = self._asset.data.default_joint_vel
+            # _, _, tau_ff = self.ik(x, o, self.old_q_des)
 
         self._asset.set_joint_position_target(q_des)
         self._asset.set_joint_velocity_target(qd_des)

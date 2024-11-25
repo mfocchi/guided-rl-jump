@@ -16,7 +16,7 @@ from omni.isaac.orbit_assets.unitree import UNITREE_ALIENGO_CFG  # isort: skip
 
 
 @configclass
-class UnitreeA1JumpEnvCfg(LocomotionJumpEnvCfg):
+class UnitreeAliengoJumpEnvCfg(LocomotionJumpEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -43,12 +43,13 @@ class UnitreeA1JumpEnvCfg(LocomotionJumpEnvCfg):
 
         x_limit = 0.15
         y_limit = 0.15
-        z_limit = 0.45
+        z_limit_low = 0.15
+        z_limit_up = 0.45
 
         q_0_lo = torch.tensor([0.2867, -0.2870, 0.2488, -0.2475, 1.4799, 1.4788, 1.8103, 1.8094, -2.6072, -2.6055, -2.4796, -2.4787])
 
         mass_range = 0
-        stiffness_division = 1.5
+        stiffness_division = 2
 
         self.commands.trunk_target.body_name = trunk_name
         # self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -71,9 +72,10 @@ class UnitreeA1JumpEnvCfg(LocomotionJumpEnvCfg):
         self.actions.jump_traj.rr_joint_names = rr_joint_names
         self.actions.jump_traj.rr_body_names = rr_body_names
 
-        self.negative_rewards.singularity_penalty.params["x_limit"] = x_limit
-        self.negative_rewards.singularity_penalty.params["y_limit"] = y_limit
-        self.negative_rewards.singularity_penalty.params["z_limit"] = z_limit
+        self.running_rewards.singularity_penalty.params["x_limit"] = x_limit
+        self.running_rewards.singularity_penalty.params["y_limit"] = y_limit
+        self.running_rewards.singularity_penalty.params["z_limit_low"] = z_limit_low
+        self.running_rewards.singularity_penalty.params["z_limit_up"] = z_limit_up
 
         self.scene.contact_forces.prim_path = "{ENV_REGEX_NS}/Robot/.*(?:" + foot_name + ")$"
         self.scene.nonfoot_forces.prim_path = "{ENV_REGEX_NS}/Robot/.*?(" + thigh_name + "|" + trunk_name + ").*"
@@ -95,7 +97,7 @@ class UnitreeA1JumpEnvCfg(LocomotionJumpEnvCfg):
         self.actions.jump_traj.x_r_max = 0.45
 
 @configclass
-class UnitreeA1JumpEnvCfg_PLAY(UnitreeA1JumpEnvCfg):
+class UnitreeAliengoJumpEnvCfg_PLAY(UnitreeAliengoJumpEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -106,6 +108,7 @@ class UnitreeA1JumpEnvCfg_PLAY(UnitreeA1JumpEnvCfg):
         mode = "play"
 
         self.rewards.target_position_error.params["mode"] = mode
+        self.negative_rewards.target_orientation_error.params["mode"] = mode
         self.actions.jump_traj.mode = mode
         self.episode_length_s = 1.5
         self.curriculum.jump_complexity.params["activate"] = False
@@ -113,7 +116,7 @@ class UnitreeA1JumpEnvCfg_PLAY(UnitreeA1JumpEnvCfg):
 
 
 @configclass
-class UnitreeA1JumpEnvCfg_TEST(UnitreeA1JumpEnvCfg_PLAY):
+class UnitreeAliengoJumpEnvCfg_TEST(UnitreeAliengoJumpEnvCfg_PLAY):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -124,6 +127,7 @@ class UnitreeA1JumpEnvCfg_TEST(UnitreeA1JumpEnvCfg_PLAY):
         mode = "test"
 
         self.rewards.target_position_error.params["mode"] = mode
+        self.negative_rewards.target_orientation_error.params["mode"] = mode
         self.actions.jump_traj.mode = mode
         self.episode_length_s = 1.5
         self.curriculum.jump_complexity.params["activate"] = False

@@ -150,7 +150,8 @@ def detect_apex(
         if apex_env not in existing_apex_ids:
             # adding the touchdown state
             env.extras['apex'][apex_env] = True
-            env.extras['apex_q'][apex_env] = robot.data.joint_pos[apex_env].clone()
+            # env.extras['apex_q'][apex_env] = robot.data.joint_pos[apex_env].clone()
+            env.extras['apex_q'][apex_env] = env.extras['q_des'][apex_env].clone()
             env.extras['apex_z'][apex_env] = robot.data.root_state_w[apex_env][..., 2].clone()
 
             # get if the reached foot z is greather than the saved ona but lower/equal than the target one
