@@ -27,7 +27,7 @@ def computeActivationFunction(activationType, values, lower, upper):
         raise ValueError("Invalid activation type")
 
 
-def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, z_threshold: float = 0.1, coeff: float = 1., dist_coeff: float = 1., err_coeff: float = 1., bias: float = 1, foot_height_offset: float = 0.02, foot_name: str = ".*foot", mode: str = "train") -> torch.Tensor:
+def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEntityCfg, z_threshold: float = 0.1, err_coeff: float = 1., dist_coeff: float = 1., foot_height_offset: float = 0.02, foot_name: str = ".*foot", mode: str = "train") -> torch.Tensor:
     """Penalize tracking of the position error using L2-norm.
 
     The function computes the position error between the desired position (from the command) and the
@@ -79,10 +79,10 @@ def target_position_error(env: RLTaskEnv, command_name: str, asset_cfg: SceneEnt
     # the norm of the target becaus is alredy relative
     # jump_error = target_error * torch.exp(-target_distance)
 
-    cost = 1.0 / ((coeff * target_error) + 1e-12)
-    cost = torch.log(1 + cost)
-    cost = torch.clip((((cost + (dist_coeff * torch.exp(target_distance))) * torch.pow((1 - target_error), err_coeff)) - bias), 0, torch.inf)
-
+    # cost = 1.0 / ((coeff * target_error) + 1e-12)
+    # cost = torch.log(1 + cost)
+    # cost = torch.clip((((cost + (dist_coeff * torch.exp(target_distance))) * torch.pow((1 - target_error), err_coeff)) - bias), 0, torch.inf)
+    cost = torch.clip(torch.exp(-target_error/err_coeff) * torch.exp(target_distance/dist_coeff), min=0)
     # TODO: add penalization of the cost if not touchdown detected, otherwise use the touchdown one
 
     # print(f"Avg jump_error: {target_error.mean()}")

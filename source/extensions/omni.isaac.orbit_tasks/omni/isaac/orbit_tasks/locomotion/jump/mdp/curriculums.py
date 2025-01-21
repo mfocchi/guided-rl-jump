@@ -42,7 +42,7 @@ def jump_curriculum(env: RLTaskEnv, env_ids: Sequence[int], term_name: str, star
 
             curr_roll = 0 * np.array(roll)
             curr_pitch = 0 * np.array(pitch)
-            curr_yaw = 0 * np.array(yaw)
+            curr_yaw = coeff * np.array(yaw)
 
             env.command_manager.get_term(term_name).cfg.ranges.roll = tuple(curr_roll)
             env.command_manager.get_term(term_name).cfg.ranges.pitch = tuple(curr_pitch)
@@ -55,10 +55,8 @@ def jump_curriculum(env: RLTaskEnv, env_ids: Sequence[int], term_name: str, star
             
             curr_roll = coeff * np.array(roll)
             curr_pitch = coeff * np.array(pitch)
-            curr_yaw = coeff * np.array(yaw)
 
             env.command_manager.get_term(term_name).cfg.ranges.roll = tuple(curr_roll)
             env.command_manager.get_term(term_name).cfg.ranges.pitch = tuple(curr_pitch)
-            env.command_manager.get_term(term_name).cfg.ranges.yaw = tuple(curr_yaw)
 
         print("Term: ", env.command_manager.get_term(term_name).cfg)

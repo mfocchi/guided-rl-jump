@@ -45,9 +45,11 @@ max_action = 5
 # pos_x = (-0.6, 1.2)
 # pos_y = (-0.6, 0.6)
 # pos_z = (-0.4, 0.4)
-# roll = (0, np.pi / 12)
-# pitch = (0, np.pi / 12)
-# yaw = (-np.pi, np.pi)
+# # roll = (0, np.pi / 12)
+# # pitch = (0, np.pi / 12)
+# roll = (0, 0)
+# pitch = (0, 0)
+# yaw = (-np.pi / 2, np.pi / 2)
 
 # pos_x = (-0.6, 1.2)
 # pos_y = (-0.6, 0.6)
@@ -330,37 +332,41 @@ class RunningRewardsCfg:
 
     joint_pos_limits = RewTerm(
         func=mdp.joint_pos_limits,
-        weight=-0.001
+        weight=-0.001  # Retained: Prevents joint limit violations.
     )
 
     joint_vel_limits = RewTerm(
         func=mdp.joint_vel_limits,
-        weight=-0.001,
+        weight=-0.001,  # Retained: Soft penalty for excessive velocities.
         params={"soft_ratio": 1.0}
     )
 
     applied_torque_limits = RewTerm(
         func=mdp.applied_torque_limits,
-        weight=-0.001
+        weight=-0.001  # Retained: Limits actuator torque.
     )
 
     friction_constraint = RewTerm(
         func=mdp.friction_constraint,
-        weight=-0.0001,
-        params={
-            "mu": 0.8
-        }
+        weight=-0.0001,  # Retained: Minimal weight to discourage slipping.
+        params={"mu": 0.8}
     )
 
     unilateral_constraint = RewTerm(
         func=mdp.unilateral_constraint,
-        weight=-0.0001
+        weight=-0.0001  # Retained: Ensures forces remain within physical constraints.
     )
 
     singularity_penalty = RewTerm(
         func=mdp.singularity_penalty,
-        params={"x_limit": x_limit, "y_limit": y_limit, "z_limit_low": z_limit_low, "z_limit_up": z_limit_up, "initial_z": initial_z},
-        weight=-10,
+        params={
+            "x_limit": x_limit,
+            "y_limit": y_limit,
+            "z_limit_low": z_limit_low,
+            "z_limit_up": z_limit_up,
+            "initial_z": initial_z
+        },
+        weight=-5,  # Reduced from -10 to encourage exploration of more dynamic configurations.
     )
 
 
@@ -375,10 +381,8 @@ class RewardsCfg:
         weight=1,
         params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name),
                 "command_name": "trunk_target",
-                "coeff": 0.5,
-                "dist_coeff": 5,
-                "err_coeff": 4.,
-                "bias": 1,
+                "err_coeff": 0.1,
+                "dist_coeff": 1.5,
                 "foot_height_offset": foot_offset,
                 "foot_name": foot_name,
                 "mode": mode},
@@ -390,50 +394,49 @@ class NegativeRewardsCfg:
 
     target_orientation_error = RewTerm(
         func=mdp.target_orientation_error,
-        weight=-2,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "command_name": "trunk_target", "mode": mode},
+        weight=-3.5,  # Retained: Penalizes orientation errors moderately.
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names=trunk_name),
+            "command_name": "trunk_target",
+            "mode": mode
+        },
     )
-
-    # no_touchdown = RewTerm(
-    #     func=mdp.no_touchdown,
-    #     weight=-0.5,
-    # )
 
     liftoff_position_error = RewTerm(
         func=mdp.liftoff_position_error,
-        weight=-5,
+        weight=-2,  # Reduced from -5 to encourage exploration of aggressive liftoff strategies.
     )
 
     liftoff_orientation_error = RewTerm(
         func=mdp.liftoff_orientation_error,
-        weight=-1,
+        weight=-1,  # Retained: Penalizes liftoff orientation errors for control.
     )
 
     liftoff_linear_velocity_error = RewTerm(
         func=mdp.liftoff_linear_velocity_error,
-        weight=-0.1,
+        weight=-0.2,  # Increased from -0.1 to prioritize stable velocity control.
     )
 
     liftoff_angular_velocity_error = RewTerm(
         func=mdp.liftoff_angular_velocity_error,
-        weight=-0.1,
+        weight=-0.2,  # Increased from -0.1 for better angular stability.
     )
 
     touchdown_bounce_penalization = RewTerm(
         func=mdp.touchdown_bounce_penalization,
-        weight=-1,
-        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), }
+        weight=-3,  # Increased from -1 to penalize uncontrolled landings more strongly.
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name)}
     )
 
     touchdown_angular_velocity_penalization = RewTerm(
         func=mdp.touchdown_angular_velocity_penalization,
-        weight=-0.02,
+        weight=-0.1,  # Increased from -0.02 to improve landing stability.
     )
 
     action_limit_penalization = RewTerm(
         func=mdp.action_limit_penalization,
         params={"min_action": min_action, "max_action": max_action},
-        weight=-10,
+        weight=-5,  # Reduced from -10 to allow more aggressive actions.
     )
 
 
@@ -450,9 +453,9 @@ class CurriculumCfg:
 
     jump_complexity = CurrTerm(
         func=mdp.jump_curriculum, params={"term_name": "trunk_target",
-                                          "start": 0.3,
-                                          "num_steps": 500,
-                                          "num_steps_rp": 1000,
+                                          "start": 0.2,
+                                          "num_steps": 300,
+                                          "num_steps_rp": 0,
                                           "pos_x": pos_x,
                                           "pos_y": pos_y,
                                           "pos_z": pos_z,
