@@ -10,7 +10,7 @@ from omni.isaac.orbit.scene import InteractiveScene, InteractiveSceneCfg
 from omni.isaac.orbit.managers import SceneEntityCfg
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.utils.math import subtract_frame_transforms, quat_from_euler_xyz
-from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG
+from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG, UNITREE_ALIENGO_CFG
 from omni.isaac.orbit.controllers import DifferentialIKController, DifferentialIKControllerCfg
 
 

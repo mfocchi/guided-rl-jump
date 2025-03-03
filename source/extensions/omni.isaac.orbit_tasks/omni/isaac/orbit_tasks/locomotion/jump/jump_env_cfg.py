@@ -42,6 +42,8 @@ max_action = 5
 
 
 # Target config
+
+# training
 # pos_x = (-0.6, 1.2)
 # pos_y = (-0.6, 0.6)
 # pos_z = (-0.4, 0.4)
@@ -51,23 +53,44 @@ max_action = 5
 # pitch = (0, 0)
 # yaw = (-np.pi / 2, np.pi / 2)
 
+# complete no heigh
+# pos_x = (-0.6, 1.2)
+# pos_y = (-0.6, 0.6)
+# pos_z = (0.0, 0.0)
+# roll = (0, 0)
+# pitch = (0, 0)
+# yaw = (0.0, 0.0)
+
+# complete height
 # pos_x = (-0.6, 1.2)
 # pos_y = (-0.6, 0.6)
 # pos_z = (-0.4, 0.4)
-# pos_z = (0, 0)
+# roll = (0, 0)
+# pitch = (0, 0)
+# yaw = (0.0, 0.0)
+
+# angular
+# pos_x = (-0.0, 0.0)
+# pos_y = (-0.0, 0.0)
+# pos_z = (-0.0, 0.0)
 # roll = (0, 0)
 # pitch = (0, 0)
 # yaw = (-np.pi / 2, np.pi / 2)
-# yaw = (0, 0)
 
-pos_x = (0., 1.2)
-pos_y = (-0.3, 0.3)
-# pos_x = (0.0, 0.0)
-# pos_y = (0., 0.)
-pos_z = (0., 0.)
+# forward linear
+# pos_x = (-0.0, 1.2)
+# pos_y = (-0.3, 0.3)
+# pos_z = (-0.0, 0.0)
+# roll = (0, 0)
+# pitch = (0, 0)
+# yaw = (0.0, 0.0)
+
+# custom
+pos_x = (0.4, 0.4)
+pos_y = (0.0, 0.0)
+pos_z = (0.0, 0.0)
 roll = (0, 0)
 pitch = (0, 0)
-# yaw = (-np.pi / 2, np.pi / 2)
 yaw = (0, 0)
 
 # enable extusion of roll or pitch (no uniform random)
@@ -216,7 +239,7 @@ class ActionsCfg:
                                          t_th_max=1.0,
                                          x_theta_min=np.pi / 4,
                                          x_theta_max=np.pi / 2,
-                                         x_r_min=0.15,
+                                         x_r_min=0.2,
                                          x_r_max=0.4,
                                          xd_theta_min=np.pi / 6,
                                          xd_theta_max=np.pi / 2,
@@ -322,6 +345,11 @@ class EventCfg:
         interval_range_s=(0., 0.)
     )
 
+    add_base_mass = EventTerm(
+        func=mdp.randomize_rigid_body_mass,
+        mode="startup",
+        params={"asset_cfg": SceneEntityCfg("robot", body_names=trunk_name), "mass_range": (0.0, 0.0), "operation": "add"},
+    )
 
 @configclass
 class RunningRewardsCfg:

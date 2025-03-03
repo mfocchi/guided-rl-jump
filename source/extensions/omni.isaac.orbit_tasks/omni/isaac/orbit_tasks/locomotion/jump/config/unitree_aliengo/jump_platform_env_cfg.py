@@ -43,16 +43,16 @@ class UnitreeAliengoJumpEnvCfg(LocomotionJumpEnvCfg):
 
         x_limit = 0.15
         y_limit = 0.15
-        z_limit_low = 0.15
-        z_limit_up = 0.45
+        z_limit_low = 0.2
+        z_limit_up = 0.6
 
         q_0_lo = torch.tensor([0.2867, -0.2870, 0.2488, -0.2475, 1.4799, 1.4788, 1.8103, 1.8094, -2.6072, -2.6055, -2.4796, -2.4787])
 
-        mass_range = 0
-        stiffness_division = 2
+        mass_range = 0.0
+        stiffness_division = 1.5
 
         self.commands.trunk_target.body_name = trunk_name
-        # self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
+        self.events.add_base_mass.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
         self.rewards.target_position_error.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
         self.negative_rewards.target_orientation_error.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
         self.negative_rewards.touchdown_bounce_penalization.params["asset_cfg"] = SceneEntityCfg("robot", body_names=trunk_name)
@@ -91,10 +91,11 @@ class UnitreeAliengoJumpEnvCfg(LocomotionJumpEnvCfg):
         self.actions.jump_traj.legs_name = legs_name
         self.actions.jump_traj.legs_name_calf = legs_name_calf
 
-        # self.events.add_base_mass.params["mass_range"] = (-mass_range, mass_range)
+        self.events.add_base_mass.params["mass_range"] = (mass_range, mass_range)
         self.actions.jump_traj.stiffness_division = stiffness_division
 
-        self.actions.jump_traj.x_r_max = 0.45
+        self.actions.jump_traj.x_r_min = 0.2
+        self.actions.jump_traj.x_r_max = 0.6
 
 @configclass
 class UnitreeAliengoJumpEnvCfg_PLAY(UnitreeAliengoJumpEnvCfg):

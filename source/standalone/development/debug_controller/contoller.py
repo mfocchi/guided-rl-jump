@@ -25,7 +25,7 @@ import torch
 
 import omni.isaac.orbit.sim as sim_utils
 from omni.isaac.orbit.scene import InteractiveScene
-from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG
+from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG, UNITREE_ALIENGO_CFG
 
 from SceneCfg import SceneCfg
 from Env import *
@@ -50,8 +50,8 @@ def main():
     sim.reset()
     print("[INFO]: Setup complete...")
 
-    env = Env(simulation_app, sim, scene)
-    # env = EnvPos(simulation_app, sim, scene)
+    # env = Env(simulation_app, sim, scene)
+    env = EnvPos(simulation_app, sim, scene)
     # env = EnvBezier(simulation_app, sim, scene)
 
     # Run the simulator

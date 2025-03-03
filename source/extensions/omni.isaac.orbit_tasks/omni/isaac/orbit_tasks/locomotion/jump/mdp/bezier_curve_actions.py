@@ -121,8 +121,8 @@ class BezierCurveAction(ActionTerm):
         self.rl_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self.device)
         self.rr_diff_ik_controller = DifferentialIKController(diff_ik_cfg, num_envs=self._env.scene.num_envs, device=self.device)
 
-        m = 13.10  # go1
-        # m = 20.6  # aliengo
+        m = torch.sum(self._asset.root_physx_view.get_masses()[0])
+        print(f"Mass: {m}")
         g = 9.81
 
         self.wd = torch.tensor([0, 0, m * g, 0, 0, 0]).repeat(self.num_envs, 1, 1).to(self.device)
@@ -626,6 +626,8 @@ class BezierCurveAction(ActionTerm):
         sf_n = torch.norm(self.trunk_x_exp, dim=1)
         s0_n = torch.norm(trunk_x_lo, dim=1)
 
+        print(vf_n, v0_n, sf_n, s0_n)
+
         a = 0.5 * ((torch.pow(vf_n, 2) - torch.pow(v0_n, 2)) / ((sf_n - s0_n) + 1e-15))
 
         self._env.extras["a"] = a
@@ -724,7 +726,7 @@ class BezierCurveAction(ActionTerm):
             # half second stationary
             t = np.clip(self.dt - 0.5, 0, np.inf)
 
-            x[:, 2] += (0.05 * torch.sin(torch.tensor(2 * np.pi * t) + np.pi))
+            # x[:, 2] += (0.05 * torch.sin(torch.tensor(2 * np.pi * t) + np.pi))
             # x[:, 2] -= (0.2 * t)
             # x[:, 2] = torch.clip(x[:, 2], 0.4+0.15, 0.4+0.7)
             # print(self._asset.data.root_pos_w[..., 2] - 0.4, self._asset.data.joint_pos)

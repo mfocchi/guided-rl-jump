@@ -4,7 +4,7 @@ from omni.isaac.orbit.sensors import ContactSensorCfg
 from omni.isaac.orbit.scene import InteractiveScene, InteractiveSceneCfg
 from omni.isaac.orbit.utils import configclass
 from omni.isaac.orbit.markers.config import CONTACT_SENSOR_JUMP_MARKER_CFG
-from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG
+from omni.isaac.orbit_assets.unitree import UNITREE_GO1_CFG, UNITREE_ALIENGO_CFG
 
 mu = 1.0
 
@@ -21,7 +21,8 @@ class SceneCfg(InteractiveSceneCfg):
     )
 
     # robots
-    robot = UNITREE_GO1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    # robot = UNITREE_GO1_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
+    robot = UNITREE_ALIENGO_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
 
     # sensorsc
     contact_forces = ContactSensorCfg(prim_path="{ENV_REGEX_NS}/Robot/.*(?:foot)$",

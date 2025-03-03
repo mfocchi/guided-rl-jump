@@ -252,8 +252,8 @@ UNITREE_ALIENGO_CFG = ArticulationCfg(
             saturation_effort=35.3,
             velocity_limit=20.0,
             # stiffness=25.0,
-            stiffness=90.0,
-            damping=2.5,
+            stiffness=60.0,
+            damping=4.5,
             friction=0.0,
         ),
         "base_legs_calf": DCMotorCfg(
@@ -261,9 +261,9 @@ UNITREE_ALIENGO_CFG = ArticulationCfg(
             effort_limit=44.4,  # taken from spec sheet
             velocity_limit=16.0,  # taken from spec sheet
             saturation_effort=44.4,  # same as effort limit
-            # stiffness=120.0,
-            stiffness=95.0,
-            damping=3,
+            # stiffness=25.0,
+            stiffness=60.0,
+            damping=4.5,
             friction=0.0,
         )
     },
