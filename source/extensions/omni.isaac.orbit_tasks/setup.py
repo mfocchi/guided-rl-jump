@@ -17,19 +17,28 @@ EXTENSION_PATH = os.path.dirname(os.path.realpath(__file__))
 EXTENSION_TOML_DATA = toml.load(os.path.join(EXTENSION_PATH, "config", "extension.toml"))
 
 # Minimum dependencies required prior to installation
+# INSTALL_REQUIRES = [
+#     # generic
+#     "numpy",
+#     "torch==2.0.1",
+#     "torchvision>=0.14.1",  # ensure compatibility with torch 1.13.1
+#     # 5.26.0 introduced a breaking change, so we restricted it for now.
+#     # See issue https://github.com/tensorflow/tensorboard/issues/6808 for details.
+#     "protobuf >= 3.19.6, < 5.0.0",
+#     # data collection
+#     "h5py",
+#     # basic logger
+#     "tensorboard",
+#     # video recording
+#     "moviepy",
+# ]
 INSTALL_REQUIRES = [
-    # generic
-    "numpy",
+    "numpy==1.26.4",
     "torch==2.0.1",
-    "torchvision>=0.14.1",  # ensure compatibility with torch 1.13.1
-    # 5.26.0 introduced a breaking change, so we restricted it for now.
-    # See issue https://github.com/tensorflow/tensorboard/issues/6808 for details.
-    "protobuf >= 3.19.6, < 5.0.0",
-    # data collection
+    "torchvision==0.15.2",
+    "protobuf==4.25.3",
     "h5py",
-    # basic logger
     "tensorboard",
-    # video recording
     "moviepy",
 ]
 
@@ -38,7 +47,7 @@ EXTRAS_REQUIRE = {
     "sb3": ["stable-baselines3>=2.0"],
     "skrl": ["skrl>=1.1.0"],
     "rl_games": ["rl-games==1.6.1", "gym"],  # rl-games still needs gym :(
-    "rsl_rl": ["rsl_rl@git+https://github.com/leggedrobotics/rsl_rl.git"],
+    "rsl-rl": ["rsl-rl@git+https://github.com/leggedrobotics/rsl_rl.git@v2.0.1"],
     "robomimic": ["robomimic@git+https://github.com/ARISE-Initiative/robomimic.git"],
 }
 # cumulation of all extra-requires

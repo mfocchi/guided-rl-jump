@@ -25,6 +25,9 @@ else
     SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 fi
 
+# ensure ORBIT_PATH is always available for this script
+export ORBIT_PATH=${ORBIT_PATH:-${SCRIPT_DIR}}
+
 #==
 # Helper functions
 #==
@@ -130,6 +133,7 @@ setup_conda_env() {
         conda env create --name ${env_name} -f ${build_path}/environment.yml
     fi
     # cache current paths for later
+    cache_orbit_path=$ORBIT_PATH
     cache_pythonpath=$PYTHONPATH
     cache_ld_library_path=$LD_LIBRARY_PATH
     # clear any existing files
@@ -161,7 +165,11 @@ setup_conda_env() {
     printf '%s\n' '#!/usr/bin/env bash' '' \
         '# for orbit' \
         'unalias orbit &>/dev/null' \
-        'unset ORBIT_PATH' \
+        'if [ -n "'${cache_orbit_path}'" ]; then' \
+        '    export ORBIT_PATH='${cache_orbit_path}'' \
+        'else' \
+        '    unset ORBIT_PATH' \
+        'fi' \
         '' \
         '# for isaac-sim' \
         'unset CARB_APP_PATH' \
