@@ -626,13 +626,18 @@ class BezierCurveAction(ActionTerm):
         sf_n = torch.norm(self.trunk_x_exp, dim=1)
         s0_n = torch.norm(trunk_x_lo, dim=1)
 
-        print(vf_n, v0_n, sf_n, s0_n)
+        # compute nominal acceleration using kinematic relation
+        denom = (sf_n - s0_n)
+        a = 0.5 * ((vf_n.pow(2) - v0_n.pow(2)) / (denom + 1e-12))
 
-        a = 0.5 * ((torch.pow(vf_n, 2) - torch.pow(v0_n, 2)) / ((sf_n - s0_n) + 1e-15))
+        # avoid zero/negative accelerations which would produce invalid times
+        a_clamped = torch.where(a <= 1e-6, torch.full_like(a, 1e-6), a)
+        self._env.extras["a"] = a_clamped
 
-        self._env.extras["a"] = a
-
-        self.t_exp = ((vf_n - v0_n) / (a + 1e-15)).reshape(-1, 1)
+        # compute explosion time and ensure positive, finite values
+        t_exp = (vf_n - v0_n) / (a_clamped + 1e-12)
+        t_exp = torch.clamp(t_exp, min=1e-4)
+        self.t_exp = t_exp.reshape(-1, 1)
         self.t_th_total = self.t_th + self.t_exp
         self._env.extras["t_th_total"] = self.t_th_total
 

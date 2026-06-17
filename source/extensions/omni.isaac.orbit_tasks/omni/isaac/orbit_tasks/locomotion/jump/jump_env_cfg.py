@@ -44,14 +44,14 @@ max_action = 5
 # Target config
 
 # training
-# pos_x = (-0.6, 1.2)
-# pos_y = (-0.6, 0.6)
-# pos_z = (-0.4, 0.4)
-# # roll = (0, np.pi / 12)
-# # pitch = (0, np.pi / 12)
-# roll = (0, 0)
-# pitch = (0, 0)
-# yaw = (-np.pi / 2, np.pi / 2)
+pos_x = (-0.6, 1.2)
+pos_y = (-0.6, 0.6)
+pos_z = (-0.4, 0.4)
+# roll = (0, np.pi / 12)
+# pitch = (0, np.pi / 12)
+roll = (0, 0)
+pitch = (0, 0)
+yaw = (-np.pi / 2, np.pi / 2)
 
 # complete no heigh
 # pos_x = (-0.6, 1.2)
@@ -86,12 +86,12 @@ max_action = 5
 # yaw = (0.0, 0.0)
 
 # custom
-pos_x = (0.4, 0.4)
-pos_y = (0.0, 0.0)
-pos_z = (0.0, 0.0)
-roll = (0, 0)
-pitch = (0, 0)
-yaw = (0, 0)
+# pos_x = (0.4, 0.4)
+# pos_y = (0.0, 0.0)
+# pos_z = (0.0, 0.0)
+# roll = (0, 0)
+# pitch = (0, 0)
+# yaw = (0, 0)
 
 # enable extusion of roll or pitch (no uniform random)
 # roll_yaw_shufle = True
