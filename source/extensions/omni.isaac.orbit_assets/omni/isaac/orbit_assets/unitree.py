@@ -62,6 +62,28 @@ GO1_ACTUATOR_CFG = DCMotorCfg(
     friction=0.0,
 )
 
+GO2_ACTUATOR_CALF_CFG = DCMotorCfg(
+    joint_names_expr=[".*_calf_joint"],
+    effort_limit=45.5,  # taken from spec sheet
+    velocity_limit=16.0,  # taken from spec sheet
+    saturation_effort=45.5,  # same as effort limit
+    # stiffness=120.0,
+    stiffness=60.0,
+    damping=0.8,
+    friction=0.0,
+)
+
+GO2_ACTUATOR_CFG = DCMotorCfg(
+    joint_names_expr=[".*_hip_joint", ".*_thigh_joint"],
+    effort_limit=23.7,  # taken from spec sheet
+    velocity_limit=30.0,  # taken from spec sheet
+    saturation_effort=23.7,  # same as effort limit
+    # stiffness=120.0,
+    stiffness=60.0,
+    damping=0.8,
+    friction=0.0,
+)
+
 
 # GO1_ACTUATOR_CFG = DCMotorCfg(
 #     joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
@@ -190,7 +212,7 @@ UNITREE_GO2_CFG = ArticulationCfg(
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.3),
+        pos=(0.0, 0.0, 0.32),
         joint_pos={
             ".*L_hip_joint": 0.1,
             ".*R_hip_joint": -0.1,
@@ -202,16 +224,8 @@ UNITREE_GO2_CFG = ArticulationCfg(
     ),
     soft_joint_pos_limit_factor=0.9,
     actuators={
-        "base_legs": DCMotorCfg(
-            joint_names_expr=[".*_hip_joint", ".*_thigh_joint", ".*_calf_joint"],
-            effort_limit=23.5,
-            saturation_effort=23.5,
-            velocity_limit=30.0,
-            # stiffness=25.0,
-            stiffness=130.0,
-            damping=1.0,
-            friction=0.0,
-        ),
+        "base_legs": GO2_ACTUATOR_CFG,
+        "base_legs_calf": GO2_ACTUATOR_CALF_CFG,
     },
 )
 """Configuration of Unitree Go2 using DC-Motor actuator model."""
