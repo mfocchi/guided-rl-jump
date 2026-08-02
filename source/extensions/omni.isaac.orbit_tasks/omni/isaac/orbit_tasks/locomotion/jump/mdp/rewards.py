@@ -173,7 +173,9 @@ def touchdown_bounce_penalization(env: RLTaskEnv, asset_cfg: SceneEntityCfg,) ->
         curr_pos_w = asset.data.body_state_w[:, asset_cfg.body_ids[0], :2].clone()  # type: ignore
         bounce_dist = torch.norm(touchdown_pos_w - curr_pos_w[touchdown_ids], dim=1)
         cost[touchdown_ids] = bounce_dist
+        env.extras['bounce_dist'][touchdown_ids] = bounce_dist
 
+    env.extras['bounce_err'] = env.extras['bounce_dist'].clone()
     env.extras['fail_det'] = env.extras['fail'].clone()
 
     return cost
@@ -210,7 +212,9 @@ def liftoff_position_error(env: RLTaskEnv) -> torch.Tensor:
     des_lo_pos_w = env.extras["trunk_x_exp"] + env.scene.env_origins
     curr_lo_pos_w = env.extras["actual_lo_config"][..., 0:3]
 
-    return torch.norm(des_lo_pos_w - curr_lo_pos_w, dim=1)
+    env.extras["lo_pos_error"] = torch.norm(des_lo_pos_w - curr_lo_pos_w, dim=1)
+
+    return env.extras["lo_pos_error"]
 
 
 def liftoff_orientation_error(env: RLTaskEnv) -> torch.Tensor:
@@ -220,6 +224,8 @@ def liftoff_orientation_error(env: RLTaskEnv) -> torch.Tensor:
     curr_lo_o_w = env.extras["actual_lo_config"][..., 3:7]
 
     target_error = quat_error_magnitude(des_lo_o_w, curr_lo_o_w)
+
+    env.extras["lo_orient_error"] = target_error
 
     return target_error
 
@@ -231,7 +237,9 @@ def liftoff_linear_velocity_error(env: RLTaskEnv) -> torch.Tensor:
     des_lo_lvel_w = env.extras["trunk_xd_exp"]
     curr_lo_lvel_w = env.extras["actual_lo_config"][..., 7:10]
 
-    return torch.norm(des_lo_lvel_w - curr_lo_lvel_w, dim=1)
+    env.extras["lo_vel_error"] = torch.norm(des_lo_lvel_w - curr_lo_lvel_w, dim=1)
+
+    return env.extras["lo_vel_error"]
 
 
 def liftoff_angular_velocity_error(env: RLTaskEnv) -> torch.Tensor:
@@ -240,7 +248,9 @@ def liftoff_angular_velocity_error(env: RLTaskEnv) -> torch.Tensor:
     des_lo_lvel_w = env.extras["trunk_od_lo"]
     curr_lo_lvel_w = env.extras["actual_lo_config"][..., 10:13]
 
-    return torch.norm(des_lo_lvel_w - curr_lo_lvel_w, dim=1)
+    env.extras["lo_ang_vel_error"] = torch.norm(des_lo_lvel_w - curr_lo_lvel_w, dim=1)
+
+    return env.extras["lo_ang_vel_error"]
 
 
 def friction_constraint(env: RLTaskEnv, mu: float = 0.8) -> torch.Tensor:

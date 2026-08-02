@@ -96,9 +96,15 @@ def main():
             if i == 1:
                 data = np.stack((extras["desirerd_td"].cpu().numpy(), extras["actual_td"].cpu().numpy()), axis=0)
                 joblib.dump(data, os.path.join(log_root_path, 'pos_err.bin'))
+                joblib.dump(extras["bounce_err"].cpu().numpy(), os.path.join(log_root_path, 'bounce_err.bin'))
                 joblib.dump(extras["target_orient"].cpu().numpy(), os.path.join(log_root_path, 'des_orient.bin'))
                 joblib.dump(extras["quat_err"].cpu().numpy(), os.path.join(log_root_path, 'orient_err.bin'))
                 joblib.dump(extras['fail_det'].cpu().numpy(), os.path.join(log_root_path, 'failed.bin'))
+
+                joblib.dump(extras["lo_pos_error"].cpu().numpy(), os.path.join(log_root_path, 'lo_pos_err.bin'))
+                joblib.dump(extras["lo_orient_error"].cpu().numpy(), os.path.join(log_root_path, 'lo_orient_err.bin'))
+                joblib.dump(extras["lo_vel_error"].cpu().numpy(), os.path.join(log_root_path, 'lo_vel_err.bin'))
+                joblib.dump(extras["lo_ang_vel_error"].cpu().numpy(), os.path.join(log_root_path, 'lo_ang_vel_err.bin'))    
             
 
     # close the simulator.tolist()
